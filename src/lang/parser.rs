@@ -88,6 +88,7 @@ impl Parser {
         self.expect(Token::LeftBrace);
         let body = self.parse_statement();
         self.expect(Token::RightBrace);
+        self.expect(Token::Semicolon);
         Node::FunctionDefinition(identifier, parameters, Box::new(Node::Block(vec![body])))
     }
 
@@ -160,26 +161,7 @@ impl Parser {
         self.skip();
         match self.peek() {
             Token::LeftParen => {
-                self.skip();
-                let mut args = Vec::new();
-                while self.peek() != Token::RightParen {
-                    let token = self.peek();
-                    let mut next = self.parse_expression();
-
-                    if self.peek() == Token::Comma {
-                        self.next();
-                    }
-
-                    if self.peek() == Token::LeftParen {
-                        let identifier = self.get_value_from_identifier_token(token);
-                        self.reverse();
-                        next = self.parse_identifier(identifier);
-                    }
-
-                    args.push(next)
-                }
-                self.expect(Token::RightParen);
-                Node::Function(identifier, args)
+                self.parse_fn_call(identifier)
             }
             Token::Assign => {
                 self.skip();
@@ -188,6 +170,32 @@ impl Parser {
             _ => panic!("{:?} used as expression", self.peek()),
         }
     }
+
+    fn parse_fn_call(&mut self, identifier: String) -> Node {
+        self.expect(Token::LeftParen);
+        let mut args = Vec::new();
+
+        while self.peek() != Token::RightParen {
+            let token = self.peek();
+            let mut next = self.parse_expression();
+            let peek = self.peek();
+            
+            if peek == Token::Comma {
+                self.next();
+            }
+
+            if peek == Token::LeftParen {
+                let identifier = self.get_value_from_identifier_token(token);
+                next = self.parse_fn_call(identifier);
+            }
+
+            args.push(next)
+        }
+
+        self.expect(Token::RightParen);
+        Node::Function(identifier, args)
+    }
+
 
     fn expect(&mut self, token_type: Token) {
         if self.peek() == token_type {
@@ -220,10 +228,6 @@ impl Parser {
 
     fn skip(&mut self) {
         self.pos += 1;
-    }
-
-    fn reverse(&mut self) {
-        self.pos -= 1;
     }
 }
 
@@ -556,20 +560,23 @@ mod tests {
             Node::Function(
                 "foo".to_string(),
                 vec![
-                    Node::Function(
-                        "bar".to_string(),
-                        vec![
-                            Node::Expression(Expression::Number(1.0)),
-                            Node::Expression(Expression::Number(2.0)),
-                        ],
-                    ),
-                    Node::Function(
-                        "baz".to_string(),
-                        vec![
-                            Node::Expression(Expression::Number(3.0)),
-                            Node::Expression(Expression::Number(4.0)),
-                        ],
-                    ),
+                    Node::Binary(
+                        Box::new(Node::Function(
+                            "bar".to_string(),
+                            vec![
+                                Node::Expression(Expression::Number(1.0)),
+                                Node::Expression(Expression::Number(2.0)),
+                            ],
+                        )),
+                        Operator::Plus,
+                        Box::new(Node::Function(
+                            "baz".to_string(),
+                            vec![
+                                Node::Expression(Expression::Number(3.0)),
+                                Node::Expression(Expression::Number(4.0)),
+                            ],
+                        )),
+                    )
                 ],
             )
         );
