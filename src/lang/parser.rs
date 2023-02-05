@@ -8,28 +8,53 @@ pub enum Operator {
     Divide,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Expression {
-    Number(f64),
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum Comparator {
+    Equal,
+    NotEqual,
+    GreaterThan,
+    GreatherThanEqual,
+    LessThan,
+    LessThanEqual,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Value {
     String(String),
-    Operator(Operator),
-    Parenthesis(Box<Expression>),
+    Number(f64),
+    Boolean(bool),
+    Null,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum Expression {
+    Binary(Box<Expression>, Operator, Box<Expression>),
+    Unary(Operator, Box<Expression>),
+    Comparison(Box<Expression>, Comparator, Box<Expression>),
+    Literal(Value),
+    Identifier(String),
+    FunctionCall(String, Vec<Expression>),
+}
+
+#[allow(dead_code)]
+#[derive(Debug, PartialEq)]
+pub enum Statement {
+    Assignment(String, Box<Expression>),
+    Block(Vec<Statement>),
+    Conditional(Expression, Box<Statement>, Box<Option<Statement>>),
+    Loop(Expression, Box<Statement>),
+    Return(Box<Expression>),
+    FunctionDefinition(String, Vec<String>, Box<Statement>),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Node {
+pub enum StatementExpression {
+    Statement(Statement),
     Expression(Expression),
-    Operator(Operator),
-    Identifier(String),
-    Block(Vec<Node>),
-    Parenthesis(Box<Node>),
-    Binary(Box<Node>, Operator, Box<Node>),
-    Conditional(Box<Node>, Box<Node>, Box<Option<Node>>),
-    Assignment(String, Box<Node>),
-    Function(String, Vec<Node>),
-    Return(Box<Node>),
-    FunctionDefinition(String, Vec<Node>, Box<Node>),
 }
+
 
 #[derive(Debug, PartialEq)]
 pub struct Parser {
@@ -42,36 +67,38 @@ impl Parser {
         Parser { tokens, pos: 0 }
     }
 
-    pub fn parse(&mut self) -> Node {
-        self.parse_statement()
+    pub fn parse(&mut self) -> StatementExpression {
+        if self.peek().is_statement() {
+            return StatementExpression::Statement(self.parse_statement())
+        }
+
+        StatementExpression::Expression(self.parse_expression())
     }
 
-    fn parse_statement(&mut self) -> Node {
+    fn parse_statement(&mut self) -> Statement {
         match self.peek() {
             Token::Let => self.parse_new_assignment(),
-            Token::Print => self.parse_print(),
-            Token::Identifier(ident) => self.parse_identifier(ident),
             Token::Return => self.parse_return(),
             Token::Function => self.parse_function_definition(),
             Token::If => self.parse_conditional(),
-            _ => self.parse_expression(),
+            _ => todo!()
         }
     }
 
-    fn parse_new_assignment(&mut self) -> Node {
+    fn parse_new_assignment(&mut self) -> Statement {
         self.expect(Token::Let);
         let token = self.next();
         let identifier = self.get_value_from_identifier_token(token);
         self.expect(Token::Assign);
-        Node::Assignment(identifier, Box::new(self.parse_expression()))
+        Statement::Assignment(identifier, Box::new(self.parse_expression()))
     }
 
-    fn parse_return(&mut self) -> Node {
+    fn parse_return(&mut self) -> Statement {
         self.expect(Token::Return);
-        Node::Return(Box::new(self.parse_expression()))
+        Statement::Return(Box::new(self.parse_expression()))
     }
 
-    fn parse_function_definition(&mut self) -> Node {
+    fn parse_function_definition(&mut self) -> Statement {
         self.expect(Token::Function);
         let token = self.next();
         let identifier = self.get_value_from_identifier_token(token);
@@ -79,9 +106,9 @@ impl Parser {
         let mut parameters = Vec::new();
         while self.peek() != Token::RightParen {
             let param = self.next();
-            parameters.push(Node::Identifier(self.get_value_from_identifier_token(param)));
+            parameters.push(self.get_value_from_identifier_token(param));
             if self.peek() == Token::Comma {
-                self.next();
+                self.skip();
             }
         }
         self.expect(Token::RightParen);
@@ -89,10 +116,14 @@ impl Parser {
         let body = self.parse_statement();
         self.expect(Token::RightBrace);
         self.expect(Token::Semicolon);
-        Node::FunctionDefinition(identifier, parameters, Box::new(Node::Block(vec![body])))
+        Statement::FunctionDefinition(
+            identifier,
+            parameters,
+            Box::new(Statement::Block(vec![body])),
+        )
     }
 
-    fn parse_conditional(&mut self) -> Node {
+    fn parse_conditional(&mut self) -> Statement {
         self.expect(Token::If);
         self.expect(Token::LeftParen);
         let condition = self.parse_expression();
@@ -104,15 +135,77 @@ impl Parser {
         } else {
             None
         };
-        Node::Conditional(Box::new(condition), Box::new(consequence), Box::new(alternative))
+        Statement::Conditional(condition, Box::new(consequence), Box::new(alternative))
     }
 
-    fn parse_print(&mut self) -> Node {
-        self.parse_identifier("print".to_string())
+    fn parse_literal(&mut self) -> Expression {
+        match self.peek() {
+            Token::Number(number) => {
+                self.skip();
+                Expression::Literal(Value::Number(number.parse().unwrap()))
+            }
+            Token::String(string) => {
+                self.skip();
+                Expression::Literal(Value::String(string))
+            }
+            Token::True => {
+                self.skip();
+                Expression::Literal(Value::Boolean(true))
+            }
+            Token::False => {
+                self.skip();
+                Expression::Literal(Value::Boolean(false))
+            }
+            Token::Null => {
+                self.skip();
+                Expression::Literal(Value::Null)
+            }
+            _ => panic!("{:#?} is not a literal", self.peek())
+        }
     }
 
-    fn parse_expression(&mut self) -> Node {
-        let mut node = self.parse_term();
+    fn parse_expression(&mut self) -> Expression {
+        match self.peek() {
+            Token::Number(_) | Token::String(_) | Token::True | Token::False | Token::Null => {
+                let literal = self.parse_literal();
+
+                if !self.can_peek() || !self.peek().is_operator() {
+                    return literal
+                }
+
+                self.parse_binary_expression(literal)
+            }
+            Token::Identifier(identifier) => {
+                self.skip();
+
+                if self.peek() == Token::LeftParen {
+                    return self.parse_fn_call(identifier)
+                }
+
+                if self.peek().is_comparator() {
+                    return self.parse_comparators()
+                }
+
+                if self.peek().is_operator() {
+                    let initial = Expression::Identifier(identifier);
+                    return self.parse_binary_expression(initial);
+                }
+
+                Expression::Identifier(identifier)
+            }
+            Token::If => {
+                todo!()
+            }
+            Token::Loop => {
+                todo!()
+            }
+
+            _ => panic!("Unexpected token {:?}", self.peek()),
+        }
+    }
+
+    fn parse_binary_expression(&mut self, initial: Expression) -> Expression {
+        let mut node = initial;
         loop {
             if !self.can_peek() {
                 break;
@@ -126,52 +219,13 @@ impl Parser {
                 _ => break,
             };
 
-            self.next();
-            node = Node::Binary(Box::new(node), op, Box::new(self.parse_term()));
+            self.skip();
+            node = Expression::Binary(Box::new(node), op, Box::new(self.parse_expression()));
         }
         node
     }
 
-    fn parse_term(&mut self) -> Node {
-        match self.peek() {
-            Token::Number(n) => { 
-                self.next();
-                Node::Expression(Expression::Number(n.parse().unwrap()))
-            }
-            Token::String(ident) => {
-                self.next();
-                Node::Expression(Expression::String(ident))
-            }
-            Token::Identifier(ident) => {
-                self.next();
-                Node::Identifier(ident)
-            }
-            Token::LeftParen => {
-                self.next();
-                let node = self.parse_expression();
-                self.expect(Token::RightParen);
-                node
-            }
-
-            _ => panic!("Unexpected token {:?}", self.peek()),
-        }
-    }
-
-    fn parse_identifier(&mut self, identifier: String) -> Node {
-        self.skip();
-        match self.peek() {
-            Token::LeftParen => {
-                self.parse_fn_call(identifier)
-            }
-            Token::Assign => {
-                self.skip();
-                Node::Assignment(identifier, Box::new(self.parse_expression()))
-            },
-            _ => panic!("{:?} used as expression", self.peek()),
-        }
-    }
-
-    fn parse_fn_call(&mut self, identifier: String) -> Node {
+    fn parse_fn_call(&mut self, identifier: String) -> Expression {
         self.expect(Token::LeftParen);
         let mut args = Vec::new();
 
@@ -179,9 +233,9 @@ impl Parser {
             let token = self.peek();
             let mut next = self.parse_expression();
             let peek = self.peek();
-            
+
             if peek == Token::Comma {
-                self.next();
+                self.skip();
             }
 
             if peek == Token::LeftParen {
@@ -189,27 +243,36 @@ impl Parser {
                 next = self.parse_fn_call(identifier);
             }
 
+            if peek.is_comparator() || peek.is_operator() {
+                next = self.parse_binary_expression(next);
+            }
+
             args.push(next)
         }
 
         self.expect(Token::RightParen);
-        Node::Function(identifier, args)
+        Expression::FunctionCall(identifier, args)
     }
 
+    fn parse_comparators(&mut self) -> Expression {
+        todo!()
+    }
 
     fn expect(&mut self, token_type: Token) {
         if self.peek() == token_type {
-            self.next();
-        } else {
-            panic!("Expected {:?} but found {:?}", token_type, self.peek());
+            self.skip();
+            return
         }
+
+        panic!("Expected {:?} but found {:?}", token_type, self.peek());
     }
 
     fn get_value_from_identifier_token(&self, token: Token) -> String {
-        match token {
-            Token::Identifier(ident) => ident,
-            _ => panic!("Expected identifier but found {:?}", token),
+        if let Token::Identifier(ident) = token {
+            return ident;
         }
+
+        panic!("Expected identifier but found {:?}", token);
     }
 
     fn can_peek(&self) -> bool {
@@ -229,6 +292,13 @@ impl Parser {
     fn skip(&mut self) {
         self.pos += 1;
     }
+
+    #[allow(dead_code)]
+    fn parse_unary_expression(&self, _literal: Expression) -> Expression {
+        todo!()
+    }
+
+
 }
 
 #[cfg(test)]
@@ -247,32 +317,31 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Assignment(
+            StatementExpression::Statement(Statement::Assignment(
                 "x".to_string(),
-                Box::new(Node::Expression(Expression::Number(1.0)))
+                Box::new(Expression::Literal(Value::Number(1.0)))
             )
-        );
+        ));
     }
 
     #[test]
     fn test_parser_print_no_arguments() {
-        let tokens = vec![
-            Token::Print,
-            Token::LeftParen,
-            Token::RightParen,
-        ];
+        let tokens = vec![Token::Identifier("print".to_string()), Token::LeftParen, Token::RightParen];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function("print".to_string(), vec![])
+            StatementExpression::Expression(Expression::FunctionCall(
+                "print".to_string(),
+                vec![]
+            ))
         );
     }
 
     #[test]
     fn test_parser_parse_print() {
         let tokens = vec![
-            Token::Print,
+            Token::Identifier("print".to_string()),
             Token::LeftParen,
             Token::Identifier("x".to_string()),
             Token::RightParen,
@@ -281,17 +350,17 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "print".to_string(),
-                vec![Node::Identifier("x".to_string())]
-            )
+                vec![Expression::Identifier("x".to_string())]
+            ))
         );
     }
 
     #[test]
     fn test_parser_print_two_identifiers() {
         let tokens = vec![
-            Token::Print,
+            Token::Identifier("print".to_string()),
             Token::LeftParen,
             Token::Identifier("x".to_string()),
             Token::Plus,
@@ -302,23 +371,21 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "print".to_string(),
-                vec![
-                    Node::Binary(
-                        Box::new(Node::Identifier("x".to_string())),
-                        Operator::Plus,
-                        Box::new(Node::Identifier("y".to_string()))
-                    )
-                ]
-            )
+                vec![Expression::Binary(
+                    Box::new(Expression::Identifier("x".to_string())),
+                    Operator::Plus,
+                    Box::new(Expression::Identifier("y".to_string()))
+                )]
+            ))
         );
     }
 
     #[test]
     fn test_nested_call_with_print() {
         let tokens = vec![
-            Token::Print,
+            Token::Identifier("print".to_string()),
             Token::LeftParen,
             Token::Identifier("x".to_string()),
             Token::LeftParen,
@@ -331,16 +398,14 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "print".to_string(),
-                vec![
-                    Node::Function(
-                        "x".to_string(),
-                        vec![Node::Identifier("y".to_string())]
-                    )
-                ]
+                vec![Expression::FunctionCall(
+                    "x".to_string(),
+                    vec![Expression::Identifier("y".to_string())]
+                )]
             )
-        );
+        ));
     }
 
     #[test]
@@ -354,12 +419,12 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Binary(
-                Box::new(Node::Expression(Expression::Number(1.0))),
+            StatementExpression::Expression(Expression::Binary(
+                Box::new(Expression::Literal(Value::Number(1.0))),
                 Operator::Plus,
-                Box::new(Node::Expression(Expression::Number(2.0)))
+                Box::new(Expression::Literal(Value::Number(2.0)))
             )
-        );
+        ));
     }
 
     #[test]
@@ -376,14 +441,14 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "foo".to_string(),
                 vec![
-                    Node::Expression(Expression::Number(1.0)),
-                    Node::Expression(Expression::Number(2.0)),
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0)),
                 ],
             )
-        );
+        ));
     }
 
     #[test]
@@ -407,32 +472,22 @@ mod tests {
 
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
-        
+
         assert_eq!(
             node,
-            Node::FunctionDefinition(
+            StatementExpression::Statement(Statement::FunctionDefinition(
                 "adder".to_string(),
                 vec![
-                    Node::Identifier("x".to_string()),
-                    Node::Identifier("y".to_string()),
+                    "x".to_string(),
+                    "y".to_string(),
                 ],
-                Box::new(
-                    Node::Block(
-                        vec![
-                            Node::Return(
-                                Box::new(
-                                    Node::Binary(
-                                        Box::new(Node::Identifier("x".to_string())),
-                                        Operator::Plus,
-                                        Box::new(Node::Identifier("y".to_string())),
-                                    )
-                                )
-                            )
-                        ]
-                    )
-                )
+                Box::new(Statement::Block(vec![Statement::Return(Box::new(Expression::Binary(
+                    Box::new(Expression::Identifier("x".to_string())),
+                    Operator::Plus,
+                    Box::new(Expression::Identifier("y".to_string())),
+                )))]))
             )
-        );
+        ));
     }
 
     #[test]
@@ -449,14 +504,14 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "foo".to_string(),
                 vec![
-                    Node::Expression(Expression::Number(1.0)),
-                    Node::Expression(Expression::Number(2.0)),
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0)),
                 ],
             )
-        );
+        ));
     }
 
     #[test]
@@ -477,19 +532,17 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "foo".to_string(),
-                vec![
-                    Node::Function(
-                        "bar".to_string(),
-                        vec![
-                            Node::Expression(Expression::Number(1.0)),
-                            Node::Expression(Expression::Number(2.0)),
-                        ],
-                    ),
-                ],
+                vec![Expression::FunctionCall(
+                    "bar".to_string(),
+                    vec![
+                        Expression::Literal(Value::Number(1.0)),
+                        Expression::Literal(Value::Number(2.0)),
+                    ],
+                ),],
             )
-        );
+        ));
     }
 
     #[test]
@@ -512,29 +565,30 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "foo".to_string(),
                 vec![
-                    Node::Binary(
-                        Box::new(Node::Binary(
-                            Box::new(Node::Binary(
-                                Box::new(Node::Expression(Expression::Number(1.0))),
-                                Operator::Plus,
-                                Box::new(Node::Expression(Expression::Number(2.0))),
-                            )),
+                    Expression::Binary(
+                        Box::new(Expression::Literal(Value::Number(1.0))),
+                        Operator::Plus,
+                        Box::new(Expression::Binary(
+                            Box::new(Expression::Literal(Value::Number(2.0))),
                             Operator::Plus,
-                            Box::new(Node::Expression(Expression::Number(3.0))),
-                        )),
-                        Operator::Minus,
-                        Box::new(Node::Expression(Expression::Number(4.0))),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Literal(Value::Number(3.0))),
+                                Operator::Minus,
+                                Box::new(Expression::Literal(Value::Number(4.0)))
+                            ))
+                        ))
                     )
                 ],
             )
-        );
+        ));
     }
 
     #[test]
     fn test_nested_binary_calls() {
+        // foo(bar(1, 2) + baz(3, 4))
         let tokens = vec![
             Token::Identifier("foo".to_string()),
             Token::LeftParen,
@@ -557,28 +611,26 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            Node::Function(
+            StatementExpression::Expression(Expression::FunctionCall(
                 "foo".to_string(),
-                vec![
-                    Node::Binary(
-                        Box::new(Node::Function(
-                            "bar".to_string(),
-                            vec![
-                                Node::Expression(Expression::Number(1.0)),
-                                Node::Expression(Expression::Number(2.0)),
-                            ],
-                        )),
-                        Operator::Plus,
-                        Box::new(Node::Function(
-                            "baz".to_string(),
-                            vec![
-                                Node::Expression(Expression::Number(3.0)),
-                                Node::Expression(Expression::Number(4.0)),
-                            ],
-                        )),
-                    )
-                ],
+                vec![Expression::Binary(
+                    Box::new(Expression::FunctionCall(
+                        "bar".to_string(),
+                        vec![
+                            Expression::Literal(Value::Number(1.0)),
+                            Expression::Literal(Value::Number(2.0)),
+                        ],
+                    )),
+                    Operator::Plus,
+                    Box::new(Expression::FunctionCall(
+                        "baz".to_string(),
+                        vec![
+                            Expression::Literal(Value::Number(3.0)),
+                            Expression::Literal(Value::Number(4.0)),
+                        ],
+                    )),
+                )],
             )
-        );
+        ));
     }
 }

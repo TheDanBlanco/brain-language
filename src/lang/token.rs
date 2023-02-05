@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Token {
     // Single-character tokens.
@@ -21,9 +22,9 @@ pub enum Token {
     NotEqual,
     Equal,
     Greater,
-    // GreaterEqual,
+    GreaterEqual,
     Less,
-    // LessEqual,
+    LessEqual,
     Assign,
 
     // Literals.
@@ -40,11 +41,12 @@ pub enum Token {
     Function,
     For,
     If,
-    Nil,
+    Null,
     Or,
     Print,
     Return,
     Let,
+    Loop,
 
     // End of file.
     Eof,
@@ -72,6 +74,27 @@ impl Token {
         match self {
             Token::True | Token::False => true,
             _ => false,
+        }
+    }
+
+    pub fn is_statement(&self) -> bool {
+        match self {
+            Token::Assign | Token::Else | Token::If | Token::Function | Token::Return | Token::Let => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_comparator(&self) -> bool {
+        match self {
+            Token::Less | Token::Greater | Token::Equal | Token:: NotEqual | Token::GreaterEqual | Token::LessEqual => true,
+            _ => false
+        }
+    }
+
+    pub fn is_operator(&self) -> bool {
+        match self {
+            Token::Plus | Token::Minus | Token::Divide | Token::Times => true,
+            _ => false
         }
     }
 }

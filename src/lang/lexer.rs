@@ -156,9 +156,8 @@ impl Lexer {
                     "for" => Token::For,
                     "fn" => Token::Function,
                     "if" => Token::If,
-                    "nil" => Token::Nil,
+                    "null" => Token::Null,
                     "or" => Token::Or,
-                    "print" => Token::Print,
                     "return" => Token::Return,
                     "true" => Token::True,
                     _ => Token::Identifier(identifier),
@@ -275,14 +274,14 @@ mod tests {
     fn test_print() {
         let input = "print";
         let mut l = Lexer::new(input.to_string());
-        assert_eq!(l.next_token(), Token::Print);
+        assert_eq!(l.next_token(), Token::Identifier("print".to_string()));
     }
 
     #[test]
     fn test_print_and_parens() {
         let input = "print(a);";
         let mut l = Lexer::new(input.to_string());
-        assert_eq!(l.next_token(), Token::Print);
+        assert_eq!(l.next_token(), Token::Identifier("print".to_string()));
         assert_eq!(l.next_token(), Token::LeftParen);
         assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
         assert_eq!(l.next_token(), Token::RightParen);
