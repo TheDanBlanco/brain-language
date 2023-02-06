@@ -79,7 +79,7 @@ impl Token {
 
     pub fn is_statement(&self) -> bool {
         match self {
-            Token::Assign | Token::Else | Token::If | Token::Function | Token::Return | Token::Let => true,
+            Token::Assign | Token::Else | Token::If | Token::Function | Token::Let => true,
             _ => false,
         }
     }
@@ -91,10 +91,21 @@ impl Token {
         }
     }
 
-    pub fn is_operator(&self) -> bool {
+    pub fn is_mathematical(&self) -> bool {
         match self {
             Token::Plus | Token::Minus | Token::Divide | Token::Times => true,
             _ => false
         }
+    }
+
+    pub fn is_logical(&self) -> bool {
+        match self {
+            Token::And | Token::Or => true,
+            _ => false
+        }
+    }
+
+    pub fn is_operator(&self) -> bool {
+        return self.is_logical() || self.is_comparator() || self.is_mathematical()
     }
 }

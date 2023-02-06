@@ -1,7 +1,9 @@
+use std::{fmt::Debug};
+
 use super::token::Token;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Operator {
+pub enum MathematicalOperator {
     Plus,
     Minus,
     Times,
@@ -10,7 +12,7 @@ pub enum Operator {
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
-pub enum Comparator {
+pub enum ComparisonOperator {
     Equal,
     NotEqual,
     GreaterThan,
@@ -20,39 +22,53 @@ pub enum Comparator {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+pub enum LogicalOperator {
+    And,
+    Or,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Value {
     String(String),
     Number(f64),
     Boolean(bool),
+    Function(Vec<String>, Box<Statement>),
     Null,
 }
+
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expression {
     Binary(Box<Expression>, Operator, Box<Expression>),
     Unary(Operator, Box<Expression>),
-    Comparison(Box<Expression>, Comparator, Box<Expression>),
     Literal(Value),
     Identifier(String),
     FunctionCall(String, Vec<Expression>),
+    Return(Box<Expression>),
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Assignment(String, Box<Expression>),
-    Block(Vec<Statement>),
+    Block(Vec<StatementExpression>),
     Conditional(Expression, Box<Statement>, Box<Option<Statement>>),
     Loop(Expression, Box<Statement>),
-    Return(Box<Expression>),
     FunctionDefinition(String, Vec<String>, Box<Statement>),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum StatementExpression {
     Statement(Statement),
     Expression(Expression),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Operator {
+    MathematicalOperator(MathematicalOperator),
+    LogicalOperator(LogicalOperator),
+    ComparisonOperator(ComparisonOperator),
 }
 
 
@@ -78,9 +94,9 @@ impl Parser {
     fn parse_statement(&mut self) -> Statement {
         match self.peek() {
             Token::Let => self.parse_new_assignment(),
-            Token::Return => self.parse_return(),
             Token::Function => self.parse_function_definition(),
             Token::If => self.parse_conditional(),
+            // Token::Loop => self.parse_loop(),
             _ => todo!()
         }
     }
@@ -91,11 +107,6 @@ impl Parser {
         let identifier = self.get_value_from_identifier_token(token);
         self.expect(Token::Assign);
         Statement::Assignment(identifier, Box::new(self.parse_expression()))
-    }
-
-    fn parse_return(&mut self) -> Statement {
-        self.expect(Token::Return);
-        Statement::Return(Box::new(self.parse_expression()))
     }
 
     fn parse_function_definition(&mut self) -> Statement {
@@ -113,7 +124,7 @@ impl Parser {
         }
         self.expect(Token::RightParen);
         self.expect(Token::LeftBrace);
-        let body = self.parse_statement();
+        let body = self.parse();
         self.expect(Token::RightBrace);
         self.expect(Token::Semicolon);
         Statement::FunctionDefinition(
@@ -178,16 +189,15 @@ impl Parser {
             Token::Identifier(identifier) => {
                 self.skip();
 
-                if self.peek() == Token::LeftParen {
+                let next = self.peek();
+
+                if next == Token::LeftParen {
                     return self.parse_fn_call(identifier)
                 }
 
-                if self.peek().is_comparator() {
-                    return self.parse_comparators()
-                }
-
-                if self.peek().is_operator() {
+                if next.is_operator() {
                     let initial = Expression::Identifier(identifier);
+
                     return self.parse_binary_expression(initial);
                 }
 
@@ -199,30 +209,72 @@ impl Parser {
             Token::Loop => {
                 todo!()
             }
+            Token::Return => {
+                self.skip();
+                return Expression::Return(Box::new(self.parse_expression()))
+            }
 
             _ => panic!("Unexpected token {:?}", self.peek()),
         }
     }
 
     fn parse_binary_expression(&mut self, initial: Expression) -> Expression {
-        let mut node = initial;
+        let node = initial.clone();
         loop {
             if !self.can_peek() {
                 break;
             }
 
-            let op = match self.peek() {
-                Token::Plus => Operator::Plus,
-                Token::Minus => Operator::Minus,
-                Token::Times => Operator::Times,
-                Token::Divide => Operator::Divide,
-                _ => break,
-            };
+            if self.peek().is_mathematical() {
+                return self.parse_mathematical_operator(initial.clone());
+            }
 
-            self.skip();
-            node = Expression::Binary(Box::new(node), op, Box::new(self.parse_expression()));
+            if self.peek().is_comparator() {
+                return self.parse_comparison_operator(initial.clone())
+            }
+
+            return self.parse_logical_operator(initial.clone());
         }
         node
+    }
+
+    fn parse_mathematical_operator(&mut self, initial: Expression) -> Expression {
+        let op = match self.peek() {
+            Token::Plus => MathematicalOperator::Plus,
+            Token::Minus => MathematicalOperator::Minus,
+            Token::Times => MathematicalOperator::Times,
+            Token::Divide => MathematicalOperator::Divide,
+            _ => panic!("node is not an operator")
+        };
+
+        self.skip();
+        return Expression::Binary(Box::new(initial), Operator::MathematicalOperator(op), Box::new(self.parse_expression()));
+    }
+
+    fn parse_comparison_operator(&mut self, initial: Expression) -> Expression {
+        let comparator = match self.peek() {
+            Token::Less => ComparisonOperator::LessThan,
+            Token::LessEqual => ComparisonOperator::LessThanEqual,
+            Token::Equal => ComparisonOperator::Equal,
+            Token::NotEqual => ComparisonOperator::NotEqual,
+            Token::Greater => ComparisonOperator::GreaterThan,
+            Token::GreaterEqual => ComparisonOperator::GreatherThanEqual,
+            _ => panic!("node is not a comparator")
+        };
+
+        self.skip();
+        return Expression::Binary(Box::new(initial), Operator::ComparisonOperator(comparator), Box::new(self.parse_expression()));
+    }
+
+    fn parse_logical_operator(&mut self, initial: Expression) -> Expression {
+        let logical = match self.peek() {
+            Token::And => LogicalOperator::And,
+            Token::Or => LogicalOperator::Or,
+            _ => panic!("node is not a comparator")
+        };
+
+        self.skip();
+        return Expression::Binary(Box::new(initial), Operator::LogicalOperator(logical), Box::new(self.parse_expression()));
     }
 
     fn parse_fn_call(&mut self, identifier: String) -> Expression {
@@ -243,7 +295,7 @@ impl Parser {
                 next = self.parse_fn_call(identifier);
             }
 
-            if peek.is_comparator() || peek.is_operator() {
+            if peek.is_operator() {
                 next = self.parse_binary_expression(next);
             }
 
@@ -252,10 +304,6 @@ impl Parser {
 
         self.expect(Token::RightParen);
         Expression::FunctionCall(identifier, args)
-    }
-
-    fn parse_comparators(&mut self) -> Expression {
-        todo!()
     }
 
     fn expect(&mut self, token_type: Token) {
@@ -375,7 +423,7 @@ mod tests {
                 "print".to_string(),
                 vec![Expression::Binary(
                     Box::new(Expression::Identifier("x".to_string())),
-                    Operator::Plus,
+                    Operator::MathematicalOperator(MathematicalOperator::Plus),
                     Box::new(Expression::Identifier("y".to_string()))
                 )]
             ))
@@ -421,7 +469,7 @@ mod tests {
             node,
             StatementExpression::Expression(Expression::Binary(
                 Box::new(Expression::Literal(Value::Number(1.0))),
-                Operator::Plus,
+                Operator::MathematicalOperator(MathematicalOperator::Plus),
                 Box::new(Expression::Literal(Value::Number(2.0)))
             )
         ));
@@ -453,6 +501,7 @@ mod tests {
 
     #[test]
     fn test_assign_function() {
+        // fn adder(x, y) { return x + y };
         let tokens = vec![
             Token::Function,
             Token::Identifier("adder".to_string()),
@@ -475,19 +524,37 @@ mod tests {
 
         assert_eq!(
             node,
-            StatementExpression::Statement(Statement::FunctionDefinition(
-                "adder".to_string(),
-                vec![
-                    "x".to_string(),
-                    "y".to_string(),
-                ],
-                Box::new(Statement::Block(vec![Statement::Return(Box::new(Expression::Binary(
-                    Box::new(Expression::Identifier("x".to_string())),
-                    Operator::Plus,
-                    Box::new(Expression::Identifier("y".to_string())),
-                )))]))
+            StatementExpression::Statement(
+                Statement::FunctionDefinition(
+                    "adder".to_string(), 
+                    vec![
+                        "x".to_string(),
+                        "y".to_string(),
+                    ],
+                    Box::new(
+                        Statement::Block(
+                            vec![
+                                StatementExpression::Expression(
+                                    Expression::Return(
+                                        Box::new(
+                                            Expression::Binary(
+                                                Box::new(
+                                                    Expression::Identifier("x".to_string()),
+                                                ),
+                                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                                Box::new(
+                                                    Expression::Identifier("y".to_string()),
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                )
             )
-        ));
+        );
     }
 
     #[test]
@@ -570,13 +637,13 @@ mod tests {
                 vec![
                     Expression::Binary(
                         Box::new(Expression::Literal(Value::Number(1.0))),
-                        Operator::Plus,
+                        Operator::MathematicalOperator(MathematicalOperator::Plus),
                         Box::new(Expression::Binary(
                             Box::new(Expression::Literal(Value::Number(2.0))),
-                            Operator::Plus,
+                            Operator::MathematicalOperator(MathematicalOperator::Plus),
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Literal(Value::Number(3.0))),
-                                Operator::Minus,
+                                Operator::MathematicalOperator(MathematicalOperator::Minus),
                                 Box::new(Expression::Literal(Value::Number(4.0)))
                             ))
                         ))
@@ -621,7 +688,7 @@ mod tests {
                             Expression::Literal(Value::Number(2.0)),
                         ],
                     )),
-                    Operator::Plus,
+                    Operator::MathematicalOperator(MathematicalOperator::Plus),
                     Box::new(Expression::FunctionCall(
                         "baz".to_string(),
                         vec![
