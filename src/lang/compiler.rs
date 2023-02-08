@@ -108,11 +108,36 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
 fn parse_statement(statement: Statement, symbols: &mut HashMap<String, Value>) {
     match statement {
         Statement::Assignment(identifier, expression) => {
+            if let Some(_) = symbols.get(&identifier) {
+                panic!("value already assigned for identifier {}", identifier)
+            }
+
+            let value = parse_expression(*expression, symbols);
+            symbols.insert(identifier, value);
+        }
+        Statement::Reassignment(identifier, expression) => {
+            if let None = symbols.get(&identifier) {
+                panic!("value not previously assigned for identifier {}", identifier)
+            }
+
             let value = parse_expression(*expression, symbols);
             symbols.insert(identifier, value);
         }
         Statement::FunctionDefinition(identifier, arguments, definition) => {
             symbols.insert(identifier, Value::Function(arguments, definition));
+        }
+        Statement::Conditional(condition, consequence, alternative) => {
+            let value = parse_expression(condition, symbols);
+            if let Value::Boolean(result) = value {
+                if result {
+                    parse_block(consequence, symbols);
+                    return;
+                }
+
+                if let Some(alt) = *alternative {
+                    parse_block(Box::new(alt), symbols);
+                }
+            }
         }
         _ => println!("couldnt figure out node: {:#?}", statement)
 
@@ -130,6 +155,12 @@ pub fn evaluate(statement_expression: StatementExpression, symbols: &mut HashMap
     }
 }
 
+pub fn run(statement_expression: Vec<StatementExpression>, symbols: &mut HashMap<String, Value>) {
+    for statement_expression in statement_expression {
+        evaluate(statement_expression, symbols);
+    }
+}
+
 pub fn parse_block(statement: Box<Statement>, symbols: &mut HashMap<String, Value>) -> Value {
     if let Statement::Block(block) = *statement {
         for statement_expression in block {
@@ -141,8 +172,54 @@ pub fn parse_block(statement: Box<Statement>, symbols: &mut HashMap<String, Valu
 
             evaluate(statement_expression, symbols)
         }
-    
+    } else {
+        panic!("attempted to parse {:#?} as a block", statement); 
     }
 
-    panic!("function definition was not a block");
+    Value::Null
+
+    // panic!("attempted to parse {:#?} as a block", statement);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parser_parse_assignment() {
+        let mut symbols: HashMap<String, Value> = HashMap::new();
+
+        let ast = StatementExpression::Statement(Statement::Assignment(
+            "x".to_string(),
+            Box::new(Expression::Literal(Value::Number(1.0)))
+        ));
+
+        evaluate(ast, &mut symbols);
+
+        let x = symbols.get("x").unwrap();
+
+        assert_eq!(
+            x,
+            &Value::Number(1.0),
+        )   
+    }
+
+    #[test]
+    fn test_parser_parse_function_definition() {
+        let mut symbols: HashMap<String, Value> = HashMap::new();
+
+        let ast = StatementExpression::Statement(Statement::Assignment(
+            "x".to_string(),
+            Box::new(Expression::Literal(Value::Number(1.0)))
+        ));
+
+        evaluate(ast, &mut symbols);
+
+        let x = symbols.get("x").unwrap();
+
+        assert_eq!(
+            x,
+            &Value::Number(1.0),
+        )   
+    }
 }

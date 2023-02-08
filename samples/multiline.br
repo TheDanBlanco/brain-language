@@ -1,0 +1,5 @@
+fn adder(x,y) {
+    return x + y
+}
+
+print(adder(x,y))

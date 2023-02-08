@@ -52,6 +52,7 @@ pub enum Expression {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Statement {
     Assignment(String, Box<Expression>),
+    Reassignment(String, Box<Expression>),
     Block(Vec<StatementExpression>),
     Conditional(Expression, Box<Statement>, Box<Option<Statement>>),
     Loop(Expression, Box<Statement>),
@@ -83,11 +84,29 @@ impl Parser {
         Parser { tokens, pos: 0 }
     }
 
+    pub fn create_ast(&mut self) -> Vec<StatementExpression> {
+        let mut output = Vec::new();
+
+        loop {
+            output.push(self.parse());
+
+            if !self.can_peek() {
+                break;
+            }
+        }
+
+        output
+    }
+
     pub fn parse(&mut self) -> StatementExpression {
+        if let Some(statement) = self.handle_identifier_statement_case() {
+            return statement
+        }
+
         if self.peek().is_statement() {
             return StatementExpression::Statement(self.parse_statement())
         }
-
+    
         StatementExpression::Expression(self.parse_expression())
     }
 
@@ -96,6 +115,7 @@ impl Parser {
             Token::Let => self.parse_new_assignment(),
             Token::Function => self.parse_function_definition(),
             Token::If => self.parse_conditional(),
+            Token::Identifier(identifier) => self.parse_reassignment(identifier),
             // Token::Loop => self.parse_loop(),
             _ => todo!()
         }
@@ -106,7 +126,20 @@ impl Parser {
         let token = self.next();
         let identifier = self.get_value_from_identifier_token(token);
         self.expect(Token::Assign);
-        Statement::Assignment(identifier, Box::new(self.parse_expression()))
+        let statement = Statement::Assignment(identifier, Box::new(self.parse_expression()));
+        self.expect(Token::Semicolon);
+
+        return statement;
+    }
+
+    // can these be combined?
+    fn parse_reassignment(&mut self, identifier: String) -> Statement {
+        self.skip();
+        self.expect(Token::Assign);
+        let statement = Statement::Reassignment(identifier, Box::new(self.parse_expression()));
+        self.expect(Token::Semicolon);
+
+        return statement;
     }
 
     fn parse_function_definition(&mut self) -> Statement {
@@ -123,62 +156,69 @@ impl Parser {
             }
         }
         self.expect(Token::RightParen);
+        let block = self.parse_block();
+        let statement = Statement::FunctionDefinition(
+            identifier,
+            parameters,
+            Box::new(block),
+        );
+
+        self.expect(Token::Semicolon);
+        return statement;
+    }
+
+    fn parse_block(&mut self) -> Statement {
         self.expect(Token::LeftBrace);
         let body = self.parse();
         self.expect(Token::RightBrace);
-        self.expect(Token::Semicolon);
-        Statement::FunctionDefinition(
-            identifier,
-            parameters,
-            Box::new(Statement::Block(vec![body])),
+        Statement::Block(
+            vec![body]
         )
+    }
+
+    fn handle_identifier_statement_case(&mut self) -> Option<StatementExpression>{
+        if let Some((next, following)) = self.double_peek() {
+            return match (next, following) {
+                (Token::Identifier(_), Token::Assign) => Some(StatementExpression::Statement(self.parse_statement())),
+                _ => None
+            }
+        }
+
+        None
     }
 
     fn parse_conditional(&mut self) -> Statement {
         self.expect(Token::If);
-        self.expect(Token::LeftParen);
         let condition = self.parse_expression();
-        self.expect(Token::RightParen);
-        let consequence = self.parse_statement();
+        let consequence = self.parse_block();
         let alternative = if self.peek() == Token::Else {
             self.next();
-            Some(self.parse_statement())
+            Some(self.parse_block())
         } else {
             None
         };
-        Statement::Conditional(condition, Box::new(consequence), Box::new(alternative))
+        let statement = Statement::Conditional(condition, Box::new(consequence), Box::new(alternative));
+
+        return statement;
     }
 
-    fn parse_literal(&mut self) -> Expression {
-        match self.peek() {
-            Token::Number(number) => {
-                self.skip();
-                Expression::Literal(Value::Number(number.parse().unwrap()))
-            }
-            Token::String(string) => {
-                self.skip();
-                Expression::Literal(Value::String(string))
-            }
-            Token::True => {
-                self.skip();
-                Expression::Literal(Value::Boolean(true))
-            }
-            Token::False => {
-                self.skip();
-                Expression::Literal(Value::Boolean(false))
-            }
-            Token::Null => {
-                self.skip();
-                Expression::Literal(Value::Null)
-            }
-            _ => panic!("{:#?} is not a literal", self.peek())
+    fn parse_literal(&mut self, next: Token) -> Expression {
+        match next {
+            Token::Number(number) => Expression::Literal(Value::Number(number.parse().unwrap())),
+            Token::String(string) => Expression::Literal(Value::String(string)),
+            Token::True => Expression::Literal(Value::Boolean(true)),
+            Token::False => Expression::Literal(Value::Boolean(false)),
+            Token::Null => Expression::Literal(Value::Null),
+            _ => panic!("{:#?} is not a literal", next)
         }
     }
 
     fn parse_expression(&mut self) -> Expression {
-        match self.peek() {
+        let next = self.next();
+
+        let expression = match next {
             Token::Number(_) | Token::String(_) | Token::True | Token::False | Token::Null => {
-                let literal = self.parse_literal();
+                let literal = self.parse_literal(next);
 
                 if !self.can_peek() || !self.peek().is_operator() {
                     return literal
@@ -187,18 +227,16 @@ impl Parser {
                 self.parse_binary_expression(literal)
             }
             Token::Identifier(identifier) => {
-                self.skip();
-
                 let next = self.peek();
 
                 if next == Token::LeftParen {
-                    return self.parse_fn_call(identifier)
+                    return self.parse_fn_call(identifier);
                 }
 
                 if next.is_operator() {
                     let initial = Expression::Identifier(identifier);
 
-                    return self.parse_binary_expression(initial);
+                    return self.parse_binary_expression(initial)
                 }
 
                 Expression::Identifier(identifier)
@@ -210,12 +248,18 @@ impl Parser {
                 todo!()
             }
             Token::Return => {
-                self.skip();
-                return Expression::Return(Box::new(self.parse_expression()))
+                Expression::Return(Box::new(self.parse_expression()))
             }
-
             _ => panic!("Unexpected token {:?}", self.peek()),
+        };
+
+        println!("{:#?}", expression);
+
+        if self.can_peek() && self.peek() == Token::Semicolon {
+            self.skip();
         }
+
+        return expression;
     }
 
     fn parse_binary_expression(&mut self, initial: Expression) -> Expression {
@@ -303,16 +347,23 @@ impl Parser {
         }
 
         self.expect(Token::RightParen);
+        if self.can_peek() && self.peek() == Token::Semicolon {
+            self.skip();
+        }
         Expression::FunctionCall(identifier, args)
     }
 
     fn expect(&mut self, token_type: Token) {
+        if !self.can_peek() {
+            panic!("expected {:?} but found nothing", token_type);
+        }
+
         if self.peek() == token_type {
             self.skip();
             return
         }
 
-        panic!("Expected {:?} but found {:?}", token_type, self.peek());
+        panic!("expected {:?} but found {:?}", token_type, self.peek());
     }
 
     fn get_value_from_identifier_token(&self, token: Token) -> String {
@@ -320,18 +371,37 @@ impl Parser {
             return ident;
         }
 
-        panic!("Expected identifier but found {:?}", token);
+        panic!("expected identifier but found {:?}", token);
     }
 
     fn can_peek(&self) -> bool {
         self.pos < self.tokens.len()
     }
 
+    fn can_double_peek(&self) -> bool {
+        self.pos + 1 < self.tokens.len()
+    }
+
     fn peek(&self) -> Token {
+        if !self.can_peek() {
+            panic!("choked at {:?} at position {}", self.tokens[self.pos].clone(), self.pos);
+        }
+
         self.tokens[self.pos].clone()
     }
 
+    fn double_peek(&self) -> Option<(Token, Token)> {
+        if !self.can_double_peek() {
+            return None
+        }
+        Some((self.peek(), self.tokens[self.pos+1].clone()))
+    }
+
     fn next(&mut self) -> Token {
+        if !self.can_peek() {
+            panic!("choked at {:?} at position {}", self.tokens[self.pos].clone(), self.pos);
+        }
+
         let token = self.tokens[self.pos].clone();
         self.pos += 1;
         token
@@ -360,12 +430,32 @@ mod tests {
             Token::Identifier("x".to_string()),
             Token::Assign,
             Token::Number("1".to_string()),
+            Token::Semicolon,
         ];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(
             node,
             StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Literal(Value::Number(1.0)))
+            )
+        ));
+    }
+
+    #[test]
+    fn test_parser_parse_reassignment() {
+        let tokens = vec![
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::Number("1".to_string()),
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Reassignment(
                 "x".to_string(),
                 Box::new(Expression::Literal(Value::Number(1.0)))
             )
@@ -386,6 +476,11 @@ mod tests {
         );
     }
 
+    // #[test]
+    // fn test_if_statement_no_else() {
+    //     // let tokens = vec![]
+    // }
+
     #[test]
     fn test_parser_parse_print() {
         let tokens = vec![
@@ -393,6 +488,7 @@ mod tests {
             Token::LeftParen,
             Token::Identifier("x".to_string()),
             Token::RightParen,
+            Token::Semicolon,
         ];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
@@ -406,6 +502,31 @@ mod tests {
     }
 
     #[test]
+    fn test_parser_parse_print_with_two_arguments() {
+        let tokens = vec![
+            Token::Identifier("print".to_string()),
+            Token::LeftParen,
+            Token::Identifier("x".to_string()),
+            Token::Comma,
+            Token::Identifier("y".to_string()),
+            Token::RightParen,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::FunctionCall(
+                "print".to_string(),
+                vec![
+                    Expression::Identifier("x".to_string()),
+                    Expression::Identifier("y".to_string()),
+                ]
+            ))
+        );
+    }
+
+    #[test]
     fn test_parser_print_two_identifiers() {
         let tokens = vec![
             Token::Identifier("print".to_string()),
@@ -414,6 +535,7 @@ mod tests {
             Token::Plus,
             Token::Identifier("y".to_string()),
             Token::RightParen,
+            Token::Semicolon
         ];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
@@ -470,6 +592,44 @@ mod tests {
             StatementExpression::Expression(Expression::Binary(
                 Box::new(Expression::Literal(Value::Number(1.0))),
                 Operator::MathematicalOperator(MathematicalOperator::Plus),
+                Box::new(Expression::Literal(Value::Number(2.0)))
+            )
+        ));
+    }
+
+    #[test]
+    fn test_parser_compare_two_numbers() {
+        let tokens = vec![
+            Token::Number("1".to_string()),
+            Token::Greater,
+            Token::Number("2".to_string()),
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Binary(
+                Box::new(Expression::Literal(Value::Number(1.0))),
+                Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
+                Box::new(Expression::Literal(Value::Number(2.0)))
+            )
+        ));
+    }
+
+    #[test]
+    fn test_parser_logical_and_two_numbers() {
+        let tokens = vec![
+            Token::Number("1".to_string()),
+            Token::And,
+            Token::Number("2".to_string()),
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Binary(
+                Box::new(Expression::Literal(Value::Number(1.0))),
+                Operator::LogicalOperator(LogicalOperator::And),
                 Box::new(Expression::Literal(Value::Number(2.0)))
             )
         ));

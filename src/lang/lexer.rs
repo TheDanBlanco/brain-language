@@ -31,19 +31,19 @@ impl Lexer {
 
     fn peek_char(&self) -> Option<char> {
         if self.read_position >= self.input.len() {
-            None
-        } else {
-            Some(self.input.chars().nth(self.read_position).unwrap())
-        }
+            return None
+        } 
+        
+        Some(self.input.chars().nth(self.read_position).unwrap())
     }
 
     fn skip_whitespace(&mut self) {
         while let Some(c) = self.ch {
-            if c.is_whitespace() {
+            if c.is_whitespace() || c.is_ascii_whitespace() || c == ' ' {
                 self.read_char();
-            } else {
-                break;
             }
+
+            break;
         }
     }
 
@@ -52,9 +52,10 @@ impl Lexer {
         while let Some(c) = self.ch {
             if c.is_alphanumeric() || c == '_' {
                 self.read_char();
-            } else {
-                break;
-            }
+                continue;
+            } 
+
+            break;
         }
         self.input[position..self.position].to_string()
     }
@@ -64,9 +65,10 @@ impl Lexer {
         while let Some(c) = self.ch {
             if c.is_digit(10) {
                 self.read_char();
-            } else {
-                break;
+                continue;
             }
+
+            break
         }
         self.input[position..self.position].to_string()
     }
@@ -110,24 +112,25 @@ impl Lexer {
 
     fn read_token(&mut self) -> Token {
         self.skip_whitespace();
+        
         let tok = match self.ch {
             Some('=') => {
                 if self.peek_char() == Some('=') {
                     self.read_char();
-                    Token::Equal
-                } else {
-                    Token::Assign
-                }
+                    return Token::Equal
+                } 
+
+                Token::Assign
             }
             Some('+') => Token::Plus,
             Some('-') => Token::Minus,
             Some('!') => {
                 if self.peek_char() == Some('=') {
                     self.read_char();
-                    Token::NotEqual
-                } else {
-                    Token::Bang
-                }
+                    return Token::NotEqual
+                } 
+                
+                Token::Bang
             }
             Some('*') => Token::Times,
             Some('/') => Token::Divide,
@@ -184,11 +187,11 @@ impl Lexer {
     pub fn get_all_tokens(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         loop {
-            let tok = self.next_token();
-            if tok == Token::Eof {
-                break;
+            let token = self.next_token();
+            if token == Token::Eof {
+                break
             }
-            tokens.push(tok);
+            tokens.push(token)
         }
         tokens
     }
@@ -484,5 +487,16 @@ mod tests {
         assert_eq!(l.next_token(), Token::Assign);
         assert_eq!(l.next_token(), Token::False);
         assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn if_statement() {
+        let input = "if a > 5 {";
+        let mut l = Lexer::new(input.to_string());
+        assert_eq!(l.next_token(), Token::If);
+        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Greater);
+        assert_eq!(l.next_token(), Token::Number("5".to_string()));
+        assert_eq!(l.next_token(), Token::LeftBrace);
     }
 }
