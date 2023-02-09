@@ -1,7 +1,4 @@
 let x = 5;
 
-if x > 3 {
-print("larger than 3");
-} else {
-print("not larger than three");
-}
+if x > 3 { x = x + 1; }
+if x < 3 { x = x - 1; }

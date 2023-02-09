@@ -47,6 +47,7 @@ pub enum Token {
     Return,
     Let,
     Loop,
+    Break,
 
     // End of file.
     Eof,
@@ -79,7 +80,7 @@ impl Token {
 
     pub fn is_statement(&self) -> bool {
         match self {
-            Token::Assign | Token::Else | Token::If | Token::Function | Token::Let => true,
+            Token::Assign | Token::Else | Token::If | Token::Function | Token::Let | Token::Loop | Token::LeftBrace => true,
             _ => false,
         }
     }

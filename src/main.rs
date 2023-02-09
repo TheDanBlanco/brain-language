@@ -8,6 +8,12 @@ mod lang;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let file = &args[1];
+    let mut verbose = false;
+
+    if let Some(verbosity) = args.get(2) {
+        verbose = verbosity == "--verbose";
+    }
+    
     let mut symbols: HashMap<String, Value> = HashMap::new();
     let mut input = Vec::new();
 
@@ -22,9 +28,18 @@ fn main() {
 
         let mut lexer = Lexer::new(input.concat());
         let tokens = lexer.get_all_tokens();
-        // println!("{:#?}", tokens);
+
+        if verbose {
+            println!("tokens:\n {:#?}\n", tokens);
+        }
+
         let mut parser = Parser::new(tokens);
         let ast = parser.create_ast();
+
+        if verbose {
+            println!("ast:\n {:#?}\n", ast);
+        }
+
         run(ast, &mut symbols);
     }
 }

@@ -1,5 +1,5 @@
 fn adder(x, y) { 
-    return x + y; 
+return x + y; 
 };
 
 print(adder(2, 3));

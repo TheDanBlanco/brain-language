@@ -4,6 +4,13 @@ use crate::lang::parser::{MathematicalOperator, LogicalOperator};
 
 use super::parser::{Operator, Value, Expression, Statement, StatementExpression, ComparisonOperator};
 
+#[derive(Debug, PartialEq)]
+pub enum BlockReturn {
+    Break,
+    ReturnValue(Value),
+    None,
+}
+
 fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>) -> Value {
     match expression {
         Expression::Literal(value) => {
@@ -83,7 +90,10 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
                         let val = parse_expression(value, &mut local_symbols.clone());
                         local_symbols.insert(identifier.to_string(), val);
                     }
-                    return parse_block(definition.to_owned(), &mut local_symbols)
+                    if let BlockReturn::ReturnValue(return_value) = parse_block(definition.to_owned(), &mut local_symbols) {
+                        return return_value
+                    }
+                    
                 }
 
                 panic!("expected function type for identifier {}", identifier);
@@ -138,9 +148,13 @@ fn parse_statement(statement: Statement, symbols: &mut HashMap<String, Value>) {
                     parse_block(Box::new(alt), symbols);
                 }
             }
+        },
+        Statement::Loop(_loop_statement) => {
+            unimplemented!()
         }
-        _ => println!("couldnt figure out node: {:#?}", statement)
-
+        Statement::Block(_) => {
+            parse_block(Box::new(statement), symbols);
+        }
     }
 }
 
@@ -161,12 +175,21 @@ pub fn run(statement_expression: Vec<StatementExpression>, symbols: &mut HashMap
     }
 }
 
-pub fn parse_block(statement: Box<Statement>, symbols: &mut HashMap<String, Value>) -> Value {
+
+pub fn parse_block(statement: Box<Statement>, symbols: &mut HashMap<String, Value>) -> BlockReturn {
+    let mut out = BlockReturn::None;
+
     if let Statement::Block(block) = *statement {
         for statement_expression in block {
             if let StatementExpression::Expression(expression) = statement_expression.clone() {
-                if let Expression::Return(return_expression) = expression {
-                    return parse_expression(*return_expression, symbols)
+                if let Expression::Return(return_expression) = expression.clone() {
+                    out = BlockReturn::ReturnValue(parse_expression(*return_expression, symbols));
+                    break;
+                }
+
+                if let Expression::Break = expression.clone() {
+                    out = BlockReturn::Break;
+                    break;
                 }
             }
 
@@ -176,9 +199,7 @@ pub fn parse_block(statement: Box<Statement>, symbols: &mut HashMap<String, Valu
         panic!("attempted to parse {:#?} as a block", statement); 
     }
 
-    Value::Null
-
-    // panic!("attempted to parse {:#?} as a block", statement);
+    out
 }
 
 #[cfg(test)]

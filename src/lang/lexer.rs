@@ -112,7 +112,7 @@ impl Lexer {
 
     fn read_token(&mut self) -> Token {
         self.skip_whitespace();
-        
+
         let tok = match self.ch {
             Some('=') => {
                 if self.peek_char() == Some('=') {
@@ -163,6 +163,8 @@ impl Lexer {
                     "or" => Token::Or,
                     "return" => Token::Return,
                     "true" => Token::True,
+                    "loop" => Token::Loop,
+                    "break" => Token::Break,
                     _ => Token::Identifier(identifier),
                 }
             },
@@ -202,37 +204,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_read_identifier() {
+    fn read_identifier() {
         let input = "foobar";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_identifier(), "foobar");
     }
 
     #[test]
-    fn test_read_number() {
+    fn read_number() {
         let input = "123";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_number(), "123");
     }
 
     #[test]
-    fn test_read_string() {
+    fn read_string() {
         let input = r#""foo bar""#;
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_string(), "foo bar");
     }
 
     #[test]
-    fn test_read_char_literal() {
+    fn read_char_literal() {
         let input = r#"'f'"#;
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_char_literal(), "f");
     }
 
     #[test]
-    fn test_read_token() {
+    fn read_token() {
         let input = "=+(){},;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
 
         assert_eq!(l.next_token(), Token::Assign);
         assert_eq!(l.next_token(), Token::Plus);
@@ -246,47 +248,47 @@ mod tests {
     }
 
     #[test]
-    fn test_read_identifier_with_underscore() {
+    fn read_identifier_with_underscore() {
         let input = "foobar_";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_identifier(), "foobar_");
     }
 
     #[test]
-    fn test_read_identifier_with_number() {
+    fn read_identifier_with_number() {
         let input = "foobar1";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_identifier(), "foobar1");
     }
 
     #[test]
-    fn test_read_identifier_with_number_and_underscore() {
+    fn read_identifier_with_number_and_underscore() {
         let input = "foobar1_";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_identifier(), "foobar1_");
     }
 
     #[test]
-    fn test_read_identifier_with_number_and_underscore_and_letter() {
+    fn read_identifier_with_number_and_underscore_and_letter() {
         let input = "foobar1_a";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.read_identifier(), "foobar1_a");
     }
 
     #[test]
-    fn test_print() {
+    fn print() {
         let input = "print";
-        let mut l = Lexer::new(input.to_string());
-        assert_eq!(l.next_token(), Token::Identifier("print".to_string()));
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Identifier("print".into()));
     }
 
     #[test]
-    fn test_print_and_parens() {
+    fn print_and_parens() {
         let input = "print(a);";
-        let mut l = Lexer::new(input.to_string());
-        assert_eq!(l.next_token(), Token::Identifier("print".to_string()));
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Identifier("print".into()));
         assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::Semicolon);
     }
@@ -294,128 +296,128 @@ mod tests {
     #[test]
     fn assign_number_to_identifier() {
         let input = "let a = 1;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_string_to_identifier() {
         let input = "let a = \"foo bar\";";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::String("foo bar".to_string()));
+        assert_eq!(l.next_token(), Token::String("foo bar".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_char_to_identifier() {
         let input = "let a = 'f';";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::Char("f".to_string()));
+        assert_eq!(l.next_token(), Token::Char("f".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_identifier_to_identifier() {
         let input = "let a = b;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::Identifier("b".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("b".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_string_plus_string_to_identifier() {
         let input = "let a = \"foo\" + \"bar\";";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::String("foo".to_string()));
+        assert_eq!(l.next_token(), Token::String("foo".into()));
         assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::String("bar".to_string()));
+        assert_eq!(l.next_token(), Token::String("bar".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_string_plus_number_to_identifier() {
         let input = "let a = \"foo\" + 1;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::String("foo".to_string()));
+        assert_eq!(l.next_token(), Token::String("foo".into()));
         assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_number_plus_string_to_identifier() {
         let input = "let a = 1 + \"foo\";";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::String("foo".to_string()));
+        assert_eq!(l.next_token(), Token::String("foo".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_number_plus_number_to_identifier() {
         let input = "let a = 1 + 1;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_identifier_with_dot_to_identifier() {
         let input = "let a = b.c;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
-        assert_eq!(l.next_token(), Token::Identifier("b".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("b".into()));
         assert_eq!(l.next_token(), Token::Dot);
-        assert_eq!(l.next_token(), Token::Identifier("c".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("c".into()));
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
     #[test]
     fn assign_function_to_identifier() {
         let input = "let a = fn(x) { return x + 1 };";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
         assert_eq!(l.next_token(), Token::Function);
         assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::Identifier("x".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::LeftBrace);
         assert_eq!(l.next_token(), Token::Return);
-        assert_eq!(l.next_token(), Token::Identifier("x".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
         assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::RightBrace);
         assert_eq!(l.next_token(), Token::Semicolon);
     }    
@@ -423,24 +425,24 @@ mod tests {
     #[test]
     fn call_function_with_identifier() {
         let input = "let a = fn(x) { return x + 1 }; a(1);";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
         assert_eq!(l.next_token(), Token::Function);
         assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::Identifier("x".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::LeftBrace);
         assert_eq!(l.next_token(), Token::Return);
-        assert_eq!(l.next_token(), Token::Identifier("x".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
         assert_eq!(l.next_token(), Token::Plus);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::RightBrace);
         assert_eq!(l.next_token(), Token::Semicolon);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::Number("1".to_string()));
+        assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::Semicolon);
     }
@@ -448,12 +450,12 @@ mod tests {
     #[test]
     fn call_function_inside_function() {
         let input = "some_fn(another_fn(x));";
-        let mut l = Lexer::new(input.to_string());
-        assert_eq!(l.next_token(), Token::Identifier("some_fn".to_string()));
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Identifier("some_fn".into()));
         assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::Identifier("another_fn".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("another_fn".into()));
         assert_eq!(l.next_token(), Token::LeftParen);
-        assert_eq!(l.next_token(), Token::Identifier("x".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::Semicolon);
@@ -462,7 +464,7 @@ mod tests {
     #[test]
     fn comment_block() {
         let input = "# this is a comment block";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Comment);
         
     }
@@ -470,9 +472,9 @@ mod tests {
     #[test]
     fn true_assignment() {
         let input = "let a = true;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
         assert_eq!(l.next_token(), Token::True);
         assert_eq!(l.next_token(), Token::Semicolon);
@@ -481,9 +483,9 @@ mod tests {
     #[test]
     fn false_assignment() {
         let input = "let a = false;";
-        let mut l = Lexer::new(input.to_string());
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Let);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Assign);
         assert_eq!(l.next_token(), Token::False);
         assert_eq!(l.next_token(), Token::Semicolon);
@@ -491,12 +493,75 @@ mod tests {
 
     #[test]
     fn if_statement() {
-        let input = "if a > 5 {";
-        let mut l = Lexer::new(input.to_string());
+        let input = "if a > 5 { a + 1; }";
+        let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::If);
-        assert_eq!(l.next_token(), Token::Identifier("a".to_string()));
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
         assert_eq!(l.next_token(), Token::Greater);
-        assert_eq!(l.next_token(), Token::Number("5".to_string()));
+        assert_eq!(l.next_token(), Token::Number("5".into()));
         assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Plus);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Semicolon);
+        assert_eq!(l.next_token(), Token::RightBrace);
+    }
+
+    #[test]
+    fn if_else_statement() {
+        let input = "if a > 5 { a + 1; } else { a - 1; }";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::If);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Greater);
+        assert_eq!(l.next_token(), Token::Number("5".into()));
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Plus);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Semicolon);
+        assert_eq!(l.next_token(), Token::RightBrace);
+        assert_eq!(l.next_token(), Token::Else);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Minus);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Semicolon);
+        assert_eq!(l.next_token(), Token::RightBrace);
+    }
+
+    #[test]
+    fn loop_statement() {
+        let input = "loop {}";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Loop);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::RightBrace);
+    }
+
+    #[test]
+    fn loop_statement_with_break() {
+        let input = "loop { break }";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Loop);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Break);
+        assert_eq!(l.next_token(), Token::RightBrace);
+    }
+
+    #[test]
+    fn loop_statement_with_if() {
+        let input = "loop { if x > 5 { break } }";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Loop);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::If);
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
+        assert_eq!(l.next_token(), Token::Greater);
+        assert_eq!(l.next_token(), Token::Number("5".into()));
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Break);
+        assert_eq!(l.next_token(), Token::RightBrace);
+        assert_eq!(l.next_token(), Token::RightBrace);
     }
 }
