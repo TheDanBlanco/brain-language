@@ -1,20 +1,27 @@
-use std::{env, fs::File, io::{self, BufRead}, path::Path, collections::HashMap};
-use lang::parser::Value;
+use std::{env, fs::File, io::{self, BufRead}, path::Path};
+use lang::interpreter::interpret;
 
-use crate::lang::{lexer::Lexer, parser::Parser, compiler::run};
+use crate::lang::{lexer::Lexer, parser::Parser};
 
 mod lang;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let file = &args[1];
     let mut verbose = false;
+    
+    if let None = args.get(1) {
+        println!("Usage: brain FILENAME\n");
+        println!("  version: 0.1");
+
+        return;
+    }
 
     if let Some(verbosity) = args.get(2) {
         verbose = verbosity == "--verbose";
     }
-    
-    let mut symbols: HashMap<String, Value> = HashMap::new();
+
+    let file = &args[1];
+
     let mut input = Vec::new();
 
     if let Ok(lines) = read_lines(file) {
@@ -40,7 +47,7 @@ fn main() {
             println!("ast:\n {:#?}\n", ast);
         }
 
-        run(ast, &mut symbols);
+        interpret(ast);
     }
 }
 

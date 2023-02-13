@@ -41,6 +41,7 @@ impl Lexer {
         while let Some(c) = self.ch {
             if c.is_whitespace() || c.is_ascii_whitespace() || c == ' ' {
                 self.read_char();
+                continue;
             }
 
             break;
@@ -131,7 +132,7 @@ impl Lexer {
                 } 
                 
                 Token::Bang
-            }
+            },
             Some('*') => Token::Times,
             Some('/') => Token::Divide,
             Some('.') => Token::Dot,

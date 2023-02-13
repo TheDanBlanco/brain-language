@@ -80,7 +80,15 @@ impl Token {
 
     pub fn is_statement(&self) -> bool {
         match self {
-            Token::Assign | Token::Else | Token::If | Token::Function | Token::Let | Token::Loop | Token::LeftBrace => true,
+            Token::Assign | 
+            Token::Else | 
+            Token::If | 
+            Token::Function | 
+            Token::Let | 
+            Token::Loop | 
+            Token::LeftBrace | 
+            Token::Return | 
+            Token::Break => true,
             _ => false,
         }
     }
@@ -108,5 +116,91 @@ impl Token {
 
     pub fn is_operator(&self) -> bool {
         return self.is_logical() || self.is_comparator() || self.is_mathematical()
+    }
+}
+
+// tests for the token module
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_builtin_function() {
+        assert!(Token::Print.is_builtin_function());
+        assert!(Token::Function.is_builtin_function());
+        assert!(!Token::Plus.is_builtin_function());
+    }
+
+    #[test]
+    fn test_skip_readchar() {
+        assert!(Token::Number("123".into()).skip_readchar());
+        assert!(Token::Identifier("abc".into()).skip_readchar());
+        assert!(!Token::Plus.skip_readchar());
+    }
+
+    #[test]
+    fn test_is_bool_literal() {
+        assert!(Token::True.is_bool_literal());
+        assert!(Token::False.is_bool_literal());
+        assert!(!Token::Plus.is_bool_literal());
+    }
+
+    #[test]
+    fn test_is_statement() {
+        assert!(Token::Assign.is_statement());
+        assert!(Token::Else.is_statement());
+        assert!(Token::If.is_statement());
+        assert!(Token::Function.is_statement());
+        assert!(Token::Let.is_statement());
+        assert!(Token::Loop.is_statement());
+        assert!(Token::LeftBrace.is_statement());
+        assert!(Token::Return.is_statement());
+        assert!(Token::Break.is_statement());
+        assert!(!Token::Plus.is_statement());
+    }
+
+    #[test]
+    fn test_is_comparator() {
+        assert!(Token::Less.is_comparator());
+        assert!(Token::Greater.is_comparator());
+        assert!(Token::Equal.is_comparator());
+        assert!(Token::NotEqual.is_comparator());
+        assert!(Token::GreaterEqual.is_comparator());
+        assert!(Token::LessEqual.is_comparator());
+        assert!(!Token::Plus.is_comparator());
+    }
+
+    #[test]
+    fn test_is_mathematical() {
+        assert!(Token::Plus.is_mathematical());
+        assert!(Token::Minus.is_mathematical());
+        assert!(Token::Divide.is_mathematical());
+        assert!(Token::Times.is_mathematical());
+        assert!(!Token::Less.is_mathematical());
+    }
+
+    #[test]
+    fn test_is_logical() {
+        assert!(Token::And.is_logical());
+        assert!(Token::Or.is_logical());
+        assert!(!Token::Less.is_logical());
+    }
+
+
+    #[test]
+    fn test_is_operator() {
+        assert!(Token::Plus.is_operator());
+        assert!(Token::Minus.is_operator());
+        assert!(Token::Divide.is_operator());
+        assert!(Token::Times.is_operator());
+        assert!(Token::Less.is_operator());
+        assert!(Token::Greater.is_operator());
+        assert!(Token::Equal.is_operator());
+        assert!(Token::NotEqual.is_operator());
+        assert!(Token::GreaterEqual.is_operator());
+        assert!(Token::LessEqual.is_operator());
+        assert!(Token::And.is_operator());
+        assert!(Token::Or.is_operator());
+        assert!(!Token::LeftBrace.is_operator());
     }
 }

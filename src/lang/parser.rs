@@ -1,4 +1,4 @@
-use std::{fmt::Debug};
+use std::{fmt::{Debug, self}};
 
 use super::token::Token;
 
@@ -36,6 +36,18 @@ pub enum Value {
     Null,
 }
 
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::String(string) => write!(f, "{}", string),
+            Value::Number(number) => write!(f, "{}", number),
+            Value::Boolean(bool) => write!(f, "{}", bool),
+            Value::Null => write!(f, "null"),
+            Value::Function(_, _) => write!(f, "[function]"),
+        }
+    }
+}
+
 
 #[allow(dead_code)]
 #[derive(Debug, PartialEq, Clone)]
@@ -45,8 +57,6 @@ pub enum Expression {
     Literal(Value),
     Identifier(String),
     FunctionCall(String, Vec<Expression>),
-    Return(Box<Expression>),
-    Break,
 }
 
 #[allow(dead_code)]
@@ -58,6 +68,8 @@ pub enum Statement {
     Conditional(Expression, Box<Statement>, Box<Option<Statement>>),
     Loop(Box<Statement>),
     FunctionDefinition(String, Vec<String>, Box<Statement>),
+    Return(Box<Expression>),
+    Break,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -119,6 +131,8 @@ impl Parser {
             Token::Identifier(identifier) => self.parse_reassignment(identifier),
             Token::Loop => self.parse_loop(),
             Token::LeftBrace => self.parse_block(),
+            Token::Break => self.parse_break(),
+            Token::Return => self.parse_return(),
             _ => todo!()
         }
     }
@@ -207,14 +221,23 @@ impl Parser {
         } else {
             None
         };
-        let statement = Statement::Conditional(condition, Box::new(consequence), Box::new(alternative));
-
-        return statement;
+        Statement::Conditional(condition, Box::new(consequence), Box::new(alternative))
     }
 
     fn parse_loop(&mut self) -> Statement {
         self.expect(Token::Loop);
         Statement::Loop(Box::new(self.parse_block()))
+    }
+
+    fn parse_return(&mut self) -> Statement {
+        self.expect(Token::Return);
+        Statement::Return(Box::new(self.parse_expression()))
+    }
+
+    fn parse_break(&mut self) -> Statement {
+        self.expect(Token::Break);
+        self.check_and_skip(Token::Semicolon);
+        Statement::Break
     }
 
     fn parse_literal(&mut self, next: Token) -> Expression {
@@ -255,19 +278,11 @@ impl Parser {
                 }
 
                 Expression::Identifier(identifier)
-            }
-            Token::Return => {
-                Expression::Return(Box::new(self.parse_expression()))
             },
-            Token::Break => {
-                Expression::Break
-            }
             _ => panic!("Unexpected token {:?}", self.peek()),
         };
 
-        if self.check(Token::Semicolon) {
-            self.skip();
-        }
+        self.check_and_skip(Token::Semicolon);
 
         return expression;
     }
@@ -358,9 +373,8 @@ impl Parser {
 
         self.expect(Token::RightParen);
 
-        if self.check(Token::Semicolon) {
-            self.skip();
-        }
+        self.check_and_skip(Token::Semicolon);
+
         Expression::FunctionCall(identifier, args)
     }
 
@@ -409,6 +423,12 @@ impl Parser {
         return self.peek() == token;
     }
 
+    fn check_and_skip(&mut self, token: Token) {
+        if self.check(token) {
+            self.skip();
+        }
+    }
+
     fn double_peek(&self) -> Option<(Token, Token)> {
         if !self.can_double_peek() {
             return None
@@ -441,6 +461,14 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parse_number() {
+        let tokens = vec![Token::Number("1".to_string())];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(node, StatementExpression::Expression(Expression::Literal(Value::Number(1.0))));
+    }
 
     #[test]
     fn parse_assignment() {
@@ -796,8 +824,8 @@ mod tests {
                     Box::new(
                         Statement::Block(
                             vec![
-                                StatementExpression::Expression(
-                                    Expression::Return(
+                                StatementExpression::Statement(
+                                    Statement::Return(
                                         Box::new(
                                             Expression::Binary(
                                                 Box::new(
@@ -1016,6 +1044,51 @@ mod tests {
     }
 
     #[test]
+    fn test_if_statement_singular_condition() {
+        let tokens = vec![
+            Token::If,
+            Token::Identifier("x".into()),
+            Token::LeftBrace,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Identifier("x".into()),
+            Token::Plus,
+            Token::Number("1".into()),
+            Token::Semicolon,
+            Token::RightBrace,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(
+                Statement::Conditional(
+                    Expression::Identifier("x".into()), 
+                    Box::new(
+                        Statement::Block(
+                            vec![
+                                StatementExpression::Statement(
+                                    Statement::Reassignment(
+                                        "x".into(),
+                                        Box::new(
+                                            Expression::Binary(
+                                                Box::new(Expression::Identifier("x".into())), 
+                                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                            )
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    ),
+                    Box::new(None),
+                ),
+            )
+        );
+    }
+
+    #[test]
     fn test_if_statement_with_else() {
         let tokens = vec![
             Token::If,
@@ -1091,6 +1164,127 @@ mod tests {
                         )
                     )
                 ),
+            )
+        );
+    }
+
+    #[test]
+    fn test_loop_statement() {
+        let tokens = vec![
+            Token::Loop,
+            Token::LeftBrace,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Identifier("x".into()),
+            Token::Plus,
+            Token::Number("1".into()),
+            Token::Semicolon,
+            Token::RightBrace,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(
+                Statement::Loop(
+                    Box::new(
+                        Statement::Block(
+                            vec![
+                                StatementExpression::Statement(
+                                    Statement::Reassignment(
+                                        "x".into(),
+                                        Box::new(
+                                            Expression::Binary(
+                                                Box::new(Expression::Identifier("x".into())), 
+                                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                            )
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )
+                )
+            )
+        );
+    }
+
+    #[test]
+    fn test_loop_with_conditional() {
+        let tokens = vec![
+            Token::Loop,
+            Token::LeftBrace,
+            Token::If,
+            Token::Identifier("x".into()),
+            Token::Less,
+            Token::Number("10".into()),
+            Token::LeftBrace,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Identifier("x".into()),
+            Token::Plus,
+            Token::Number("1".into()),
+            Token::Semicolon,
+            Token::RightBrace,
+            Token::Else,
+            Token::LeftBrace,
+            Token::Break,
+            Token::Semicolon,
+            Token::RightBrace,
+            Token::RightBrace,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(
+                Statement::Loop(
+                    Box::new(
+                        Statement::Block(
+                            vec![
+                                StatementExpression::Statement(
+                                    Statement::Conditional(
+                                        Expression::Binary(
+                                            Box::new(Expression::Identifier("x".into())), 
+                                            Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                                            Box::new(Expression::Literal(Value::Number(10.0)))
+                                        ), 
+                                        Box::new(
+                                            Statement::Block(
+                                                vec![
+                                                    StatementExpression::Statement(
+                                                        Statement::Reassignment(
+                                                            "x".into(),
+                                                            Box::new(
+                                                                Expression::Binary(
+                                                                    Box::new(Expression::Identifier("x".into())), 
+                                                                    Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                                                    Box::new(Expression::Literal(Value::Number(1.0))),
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                ]
+                                            )
+                                        ),
+                                        Box::new(
+                                            Some(
+                                                Statement::Block(
+                                                    vec![
+                                                        StatementExpression::Statement(
+                                                            Statement::Break
+                                                        )
+                                                    ]
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ]
+                        )
+                    )   
+                )
             )
         );
     }
