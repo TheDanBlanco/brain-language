@@ -14,15 +14,7 @@ pub enum InterpreterReturn {
 
 fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>) -> Value {
     match expression {
-        Expression::Literal(value) => {
-            return match value {
-                Value::Number(num) => Value::Number(num),
-                Value::String(str) => Value::String(str),
-                Value::Boolean(bool) => Value::Boolean(bool),
-                Value::Function(args, block) => Value::Function(args, block),
-                _ => Value::Null,
-            }
-        }
+        Expression::Literal(value) => return value,
         Expression::Binary(lhs, operator, rhs) => {
             let lhs = parse_expression(*lhs, symbols);
             let rhs = parse_expression(*rhs, symbols);
