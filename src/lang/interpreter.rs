@@ -115,6 +115,14 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
 
             panic!("could not find identifier {}", identifier);
         }
+        Expression::Collection(collection) => {
+            let mut values = Vec::new();
+            for value in collection {
+                values.push(parse_expression(value, symbols));
+            }
+
+            return Value::Collection(values);
+        }
         _ => println!("couldn't parse expression")
     }
 
@@ -1106,6 +1114,24 @@ mod tests {
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Null);
+    }
+
+    #[test]
+    fn test_parse_collection() {
+        let mut symbols = HashMap::new();
+        let expression = Expression::Collection(
+            vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(3.0)),
+            ]
+        );
+        let value = parse_expression(expression, &mut symbols);
+        assert_eq!(value, Value::Collection(vec![
+            Value::Number(1.0),
+            Value::Number(2.0),
+            Value::Number(3.0),
+        ]));
     }
 
     #[test]

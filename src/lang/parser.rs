@@ -33,6 +33,7 @@ pub enum Value {
     Number(f64),
     Boolean(bool),
     Function(Vec<String>, Box<Statement>),
+    Collection(Vec<Value>),
     Null,
 }
 
@@ -44,6 +45,16 @@ impl fmt::Display for Value {
             Value::Boolean(bool) => write!(f, "{}", bool),
             Value::Null => write!(f, "null"),
             Value::Function(_, _) => write!(f, "[function]"),
+            Value::Collection(collection) => {
+                let mut output = String::new();
+                for (i, value) in collection.iter().enumerate() {
+                    output.push_str(&value.to_string());
+                    if i != collection.len() - 1 {
+                        output.push_str(", ");
+                    }
+                }
+                write!(f, "[{}]", output)
+            }
         }
     }
 }
@@ -55,6 +66,7 @@ pub enum Expression {
     Binary(Box<Expression>, Operator, Box<Expression>),
     Unary(Operator, Box<Expression>),
     Literal(Value),
+    Collection(Vec<Expression>),
     Identifier(String),
     FunctionCall(String, Vec<Expression>),
 }
@@ -143,7 +155,7 @@ impl Parser {
         let identifier = self.get_value_from_identifier_token(token);
         self.expect(Token::Assign);
         let statement = Statement::Assignment(identifier, Box::new(self.parse_expression()));
-        self.expect(Token::Semicolon);
+        self.check_and_skip(Token::Semicolon);
 
         return statement;
     }
@@ -279,6 +291,7 @@ impl Parser {
 
                 Expression::Identifier(identifier)
             },
+            Token::LeftBracket => self.parse_collection(),
             _ => panic!("Unexpected token {:?}", self.peek()),
         };
 
@@ -305,6 +318,18 @@ impl Parser {
             return self.parse_logical_operator(initial.clone());
         }
         node
+    }
+
+    fn parse_collection(&mut self) -> Expression {
+        let mut values = Vec::new();
+        while self.peek() != Token::RightBracket {
+            let expression = self.parse_expression();
+            values.push(expression);
+            self.check_and_skip(Token::Comma);
+        }
+        self.expect(Token::RightBracket);
+        self.check_and_skip(Token::Semicolon);
+        Expression::Collection(values)
     }
 
     fn parse_mathematical_operator(&mut self, initial: Expression) -> Expression {
@@ -455,7 +480,6 @@ impl Parser {
         todo!()
     }
 
-
 }
 
 #[cfg(test)]
@@ -507,6 +531,29 @@ mod tests {
                 Box::new(Expression::Literal(Value::Number(1.0)))
             )
         ));
+    }
+
+    #[test]
+    fn parse_collection() {
+        let tokens = vec![
+            Token::LeftBracket,
+            Token::Number("1".to_string()),
+            Token::Comma,
+            Token::Number("2".to_string()),
+            Token::RightBracket,
+            Token::Semicolon
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Collection(
+                vec![
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0))
+                ]
+            ))
+        );
     }
 
     #[test]

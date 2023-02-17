@@ -339,6 +339,40 @@ mod tests {
     }
 
     #[test]
+    fn assign_collection_to_identifier() {
+        let input = "let a = [1, 2, 3];";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBracket);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::Number("2".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::Number("3".into()));
+        assert_eq!(l.next_token(), Token::RightBracket);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn assign_mixed_collection_to_identifier() {
+        let input = "let a = [1, \"foo\", 'b'];";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBracket);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::String("foo".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::Char("b".into()));
+        assert_eq!(l.next_token(), Token::RightBracket);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
     fn assign_string_plus_string_to_identifier() {
         let input = "let a = \"foo\" + \"bar\";";
         let mut l = Lexer::new(input.into());
