@@ -160,6 +160,7 @@ impl Lexer {
                     "for" => Token::For,
                     "fn" => Token::Function,
                     "if" => Token::If,
+                    "in" => Token::In,
                     "null" => Token::Null,
                     "or" => Token::Or,
                     "return" => Token::Return,
@@ -356,6 +357,29 @@ mod tests {
     }
 
     #[test]
+    fn assign_collection_of_collection_to_identifier() {
+        let input = "let a = [[1, 2], [3, 4]];";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBracket);
+        assert_eq!(l.next_token(), Token::LeftBracket);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::Number("2".into()));
+        assert_eq!(l.next_token(), Token::RightBracket);
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::LeftBracket);
+        assert_eq!(l.next_token(), Token::Number("3".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::Number("4".into()));
+        assert_eq!(l.next_token(), Token::RightBracket);
+        assert_eq!(l.next_token(), Token::RightBracket);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
     fn assign_mixed_collection_to_identifier() {
         let input = "let a = [1, \"foo\", 'b'];";
         let mut l = Lexer::new(input.into());
@@ -494,6 +518,22 @@ mod tests {
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::RightParen);
         assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn for_loop() {
+        let input = "for item in collection { do_something(item) }";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::For);
+        assert_eq!(l.next_token(), Token::Identifier("item".into()));
+        assert_eq!(l.next_token(), Token::In);
+        assert_eq!(l.next_token(), Token::Identifier("collection".into()));
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Identifier("do_something".into()));
+        assert_eq!(l.next_token(), Token::LeftParen);
+        assert_eq!(l.next_token(), Token::Identifier("item".into()));
+        assert_eq!(l.next_token(), Token::RightParen);
+        assert_eq!(l.next_token(), Token::RightBrace);
     }
 
     #[test]

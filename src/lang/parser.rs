@@ -69,6 +69,7 @@ pub enum Expression {
     Collection(Vec<Expression>),
     Identifier(String),
     FunctionCall(String, Vec<Expression>),
+    IndexAccess(Box<Expression>),
 }
 
 #[allow(dead_code)]
@@ -81,6 +82,7 @@ pub enum Statement {
     Loop(Box<Statement>),
     FunctionDefinition(String, Vec<String>, Box<Statement>),
     Return(Box<Expression>),
+    For(String, Box<Expression>, Box<Statement>),
     Break,
 }
 
@@ -142,6 +144,7 @@ impl Parser {
             Token::If => self.parse_conditional(),
             Token::Identifier(identifier) => self.parse_reassignment(identifier),
             Token::Loop => self.parse_loop(),
+            Token::For => self.parse_for(),
             Token::LeftBrace => self.parse_block(),
             Token::Break => self.parse_break(),
             Token::Return => self.parse_return(),
@@ -165,7 +168,7 @@ impl Parser {
         self.skip();
         self.expect(Token::Assign);
         let statement = Statement::Reassignment(identifier, Box::new(self.parse_expression()));
-        self.expect(Token::Semicolon);
+        self.check_and_skip(Token::Semicolon);
 
         return statement;
     }
@@ -191,7 +194,7 @@ impl Parser {
             Box::new(block),
         );
 
-        self.expect(Token::Semicolon);
+        self.check_and_skip(Token::Semicolon);
         return statement;
     }
 
@@ -480,6 +483,16 @@ impl Parser {
         todo!()
     }
 
+    fn parse_for(&mut self) -> Statement {
+        self.expect(Token::For);
+        let next = self.next();
+        let identifier = self.get_value_from_identifier_token(next);
+        self.expect(Token::In);
+        let collection = self.parse_expression();
+        let block = self.parse_block();
+        Statement::For(identifier, Box::new(collection), Box::new(block))
+    }
+
 }
 
 #[cfg(test)]
@@ -551,6 +564,79 @@ mod tests {
                 vec![
                     Expression::Literal(Value::Number(1.0)),
                     Expression::Literal(Value::Number(2.0))
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_nested_collection() {
+        let tokens = vec![
+            Token::LeftBracket,
+            Token::Number("1".to_string()),
+            Token::Comma,
+            Token::LeftBracket,
+            Token::Number("2".to_string()),
+            Token::Comma,
+            Token::Number("3".to_string()),
+            Token::RightBracket,
+            Token::RightBracket,
+            Token::Semicolon
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Collection(
+                vec![
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Collection(
+                        vec![
+                            Expression::Literal(Value::Number(2.0)),
+                            Expression::Literal(Value::Number(3.0))
+                        ]
+                    )
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_collection_of_collections() {
+        let tokens = vec![
+            Token::LeftBracket,
+            Token::LeftBracket,
+            Token::Number("1".to_string()),
+            Token::Comma,
+            Token::Number("2".to_string()),
+            Token::RightBracket,
+            Token::Comma,
+            Token::LeftBracket,
+            Token::Number("3".to_string()),
+            Token::Comma,
+            Token::Number("4".to_string()),
+            Token::RightBracket,
+            Token::RightBracket,
+            Token::Semicolon
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Collection(
+                vec![
+                    Expression::Collection(
+                        vec![
+                            Expression::Literal(Value::Number(1.0)),
+                            Expression::Literal(Value::Number(2.0))
+                        ]
+                    ),
+                    Expression::Collection(
+                        vec![
+                            Expression::Literal(Value::Number(3.0)),
+                            Expression::Literal(Value::Number(4.0))
+                        ]
+                    )
                 ]
             ))
         );
@@ -1038,6 +1124,52 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn test_for_loop() {
+        let tokens = vec![
+            Token::For,
+            Token::Identifier("i".into()),
+            Token::In,
+            Token::LeftBracket,
+            Token::Number("0".into()),
+            Token::Comma,
+            Token::Number("1".into()),
+            Token::Comma,
+            Token::Number("2".into()),
+            Token::RightBracket,
+            Token::LeftBrace,
+            Token::Identifier("print".into()),
+            Token::LeftParen,
+            Token::Identifier("i".into()),
+            Token::RightParen,
+            Token::Semicolon,
+            Token::RightBrace,
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::For(
+                "i".into(),
+                Box::new(Expression::Collection(vec![
+                    Expression::Literal(Value::Number(0.0)),
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0)),
+                ])),
+                Box::new(Statement::Block(
+                    vec![
+                        StatementExpression::Expression(
+                            Expression::FunctionCall(
+                                "print".into(),
+                                vec![Expression::Identifier("i".into())],
+                            )
+                        )
+                    ]
+                ))
+            ))
+        );
+    }
 
     #[test]
     fn test_if_statement_no_else() {

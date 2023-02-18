@@ -1,3 +1,11 @@
-let a = [1, 2, 3];
+let collections = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
 
-print(a);
+for collection in collections {
+    for item in collection {
+        print(item);
+    }
+}
