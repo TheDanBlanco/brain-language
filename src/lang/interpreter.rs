@@ -1116,6 +1116,45 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_returned_function_call() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "adder".into(),
+            Value::Function(
+                vec!["a".into(), "b".into()],
+                Box::new(Statement::Block(vec![StatementExpression::Statement(
+                    Statement::Return(Box::new(Expression::Binary(
+                        Box::new(Expression::Identifier("a".into())),
+                        Operator::MathematicalOperator(MathematicalOperator::Plus),
+                        Box::new(Expression::Identifier("b".into())),
+                    ))),
+                )])),
+            ),
+        );
+        symbols.insert(
+            "return_adder".into(),
+            Value::Function(
+                vec![],
+                Box::new(Statement::Block(vec![StatementExpression::Statement(
+                    Statement::Return(Box::new(Expression::Identifier("adder".into()))),
+                )])),
+            ),
+        );
+        let expression = Expression::FunctionCall(
+            Box::new(Expression::FunctionCall(
+                Box::new(Expression::Identifier("return_adder".into())),
+                vec![],
+            )),
+            vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0)),
+            ],
+        );
+        let value = parse_expression(expression, &mut symbols);
+        assert_eq!(value, Value::Number(3.0));
+    }
+
+    #[test]
     #[should_panic(expected = "could not find identifier adder")]
     fn test_parse_function_call_identifier_not_found() {
         let mut symbols = HashMap::new();

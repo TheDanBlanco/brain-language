@@ -139,7 +139,7 @@ impl Parser {
         let identifier = self.get_value_from_identifier_token(token);
         self.expect(Token::Assign);
         let statement = Statement::Assignment(identifier, Box::new(self.parse_expression()));
-        self.expect(Token::Semicolon);
+        self.check_and_skip(Token::Semicolon);
 
         statement
     }
@@ -149,7 +149,7 @@ impl Parser {
         self.skip();
         self.expect(Token::Assign);
         let statement = Statement::Reassignment(identifier, Box::new(self.parse_expression()));
-        self.expect(Token::Semicolon);
+        self.check_and_skip(Token::Semicolon);
 
         statement
     }
@@ -171,7 +171,7 @@ impl Parser {
         let block = self.parse_block();
         let statement = Statement::FunctionDefinition(identifier, parameters, Box::new(block));
 
-        self.expect(Token::Semicolon);
+        self.check_and_skip(Token::Semicolon);
         statement
     }
 
