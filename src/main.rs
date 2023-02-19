@@ -1,5 +1,10 @@
-use std::{env, fs::File, io::{self, BufRead}, path::Path};
 use lang::interpreter::interpret;
+use std::{
+    env,
+    fs::File,
+    io::{self, BufRead},
+    path::Path,
+};
 
 use crate::lang::{lexer::Lexer, parser::Parser};
 
@@ -8,8 +13,8 @@ mod lang;
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut verbose = false;
-    
-    if let None = args.get(1) {
+
+    if args.get(1).is_none() {
         println!("Usage: brain FILENAME\n");
         println!("  version: 0.1");
 
@@ -27,8 +32,8 @@ fn main() {
     if let Ok(lines) = read_lines(file) {
         for line in lines {
             if let Ok(line) = line {
-                if line != "" {
-                    input.push(line);            
+                if !line.is_empty() {
+                    input.push(line);
                 }
             }
         }
@@ -37,14 +42,14 @@ fn main() {
         let tokens = lexer.get_all_tokens();
 
         if verbose {
-            println!("tokens:\n {:#?}\n", tokens);
+            println!("tokens:\n {tokens:#?}\n");
         }
 
         let mut parser = Parser::new(tokens);
         let ast = parser.create_ast();
 
         if verbose {
-            println!("ast:\n {:#?}\n", ast);
+            println!("ast:\n {ast:#?}\n");
         }
 
         interpret(ast);
@@ -52,8 +57,10 @@ fn main() {
 }
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where P: AsRef<Path>, {
+where
+    P: AsRef<Path>,
+{
     let file = File::open(filename)?;
     Ok(io::BufReader::new(file).lines())
 }
-// 
+//

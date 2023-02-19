@@ -31,9 +31,9 @@ impl Lexer {
 
     fn peek_char(&self) -> Option<char> {
         if self.read_position >= self.input.len() {
-            return None
-        } 
-        
+            return None;
+        }
+
         Some(self.input.chars().nth(self.read_position).unwrap())
     }
 
@@ -54,7 +54,7 @@ impl Lexer {
             if c.is_alphanumeric() || c == '_' {
                 self.read_char();
                 continue;
-            } 
+            }
 
             break;
         }
@@ -64,12 +64,12 @@ impl Lexer {
     fn read_number(&mut self) -> String {
         let position = self.position;
         while let Some(c) = self.ch {
-            if c.is_digit(10) {
+            if c.is_ascii_digit() {
                 self.read_char();
                 continue;
             }
 
-            break
+            break;
         }
         self.input[position..self.position].to_string()
     }
@@ -118,8 +118,8 @@ impl Lexer {
             Some('=') => {
                 if self.peek_char() == Some('=') {
                     self.read_char();
-                    return Token::Equal
-                } 
+                    return Token::Equal;
+                }
 
                 Token::Assign
             }
@@ -128,11 +128,11 @@ impl Lexer {
             Some('!') => {
                 if self.peek_char() == Some('=') {
                     self.read_char();
-                    return Token::NotEqual
-                } 
-                
+                    return Token::NotEqual;
+                }
+
                 Token::Bang
-            },
+            }
             Some('*') => Token::Times,
             Some('/') => Token::Divide,
             Some('.') => Token::Dot,
@@ -168,7 +168,7 @@ impl Lexer {
                     "break" => Token::Break,
                     _ => Token::Identifier(identifier),
                 }
-            },
+            }
             None => Token::Eof,
             _ => Token::Illegal,
         };
@@ -179,20 +179,19 @@ impl Lexer {
 
         self.read_char();
 
-        return tok;
+        tok
     }
 
     pub fn next_token(&mut self) -> Token {
         self.read_token()
     }
 
-
     pub fn get_all_tokens(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
         loop {
             let token = self.next_token();
             if token == Token::Eof {
-                break
+                break;
             }
             tokens.push(token)
         }
@@ -421,7 +420,7 @@ mod tests {
         assert_eq!(l.next_token(), Token::Number("1".into()));
         assert_eq!(l.next_token(), Token::RightBrace);
         assert_eq!(l.next_token(), Token::Semicolon);
-    }    
+    }
 
     #[test]
     fn call_function_with_identifier() {
@@ -467,7 +466,6 @@ mod tests {
         let input = "# this is a comment block";
         let mut l = Lexer::new(input.into());
         assert_eq!(l.next_token(), Token::Comment);
-        
     }
 
     #[test]
