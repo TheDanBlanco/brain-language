@@ -1,3 +1,4 @@
+use core::panic;
 use std::collections::HashMap;
 
 use crate::lang::parser::{LogicalOperator, MathematicalOperator};
@@ -8,7 +9,7 @@ use super::parser::{
 
 // enum for the different types of interpreter return values
 #[derive(Debug, PartialEq)]
-pub enum InterpreterReturn {
+enum InterpreterReturn {
     Value(Value),
     Break,
     None,
@@ -79,38 +80,32 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
                 }
             };
         }
-        Expression::FunctionCall(identifier, incoming_arguments) => {
-            if identifier == "print" {
-                let mut print_statement = String::new();
-                for arg in incoming_arguments {
-                    let val = parse_expression(arg, symbols);
-                    print_statement = format!("{print_statement}{val} ");
+        Expression::FunctionCall(expression, incoming_arguments) => {
+            let builtin_return =
+                check_builtin_functions(*expression.clone(), incoming_arguments.clone(), symbols);
+
+            if builtin_return.is_some() {
+                return builtin_return.unwrap();
+            }
+
+            let function = parse_expression(*expression.clone(), symbols);
+
+            if let Value::Function(defined_arguments, definition) = function {
+                let mut local_symbols = symbols.clone();
+                for (identifier, value) in defined_arguments.iter().zip(incoming_arguments) {
+                    let val = parse_expression(value, &mut local_symbols.clone());
+                    local_symbols.insert(identifier.to_string(), val);
                 }
-                println!("{:#?}", print_statement.trim_end());
+                if let InterpreterReturn::Value(return_value) =
+                    parse_block(definition.to_owned(), &mut local_symbols)
+                {
+                    return return_value;
+                }
 
                 return Value::Null;
             }
 
-            if let Some(function) = symbols.get(&identifier) {
-                if let Value::Function(defined_arguments, definition) = function {
-                    let mut local_symbols = symbols.clone();
-                    for (identifier, value) in defined_arguments.iter().zip(incoming_arguments) {
-                        let val = parse_expression(value, &mut local_symbols.clone());
-                        local_symbols.insert(identifier.to_string(), val);
-                    }
-                    if let InterpreterReturn::Value(return_value) =
-                        parse_block(definition.to_owned(), &mut local_symbols)
-                    {
-                        return return_value;
-                    }
-
-                    return Value::Null;
-                }
-
-                panic!("expected function type for identifier {identifier}");
-            }
-
-            panic!("function {identifier} was never defined");
+            panic!("{function} was not a function");
         }
         Expression::Identifier(identifier) => {
             if let Some(val) = symbols.get(&identifier) {
@@ -185,7 +180,7 @@ fn parse_statement(
     }
 }
 
-pub fn evaluate(
+fn evaluate(
     statement_expression: StatementExpression,
     symbols: &mut HashMap<String, Value>,
 ) -> InterpreterReturn {
@@ -203,7 +198,7 @@ pub fn interpret(statement_expression: Vec<StatementExpression>) {
     evaluate_statement_expressions(statement_expression, &mut symbols);
 }
 
-pub fn evaluate_statement_expressions(
+fn evaluate_statement_expressions(
     statement_expressions: Vec<StatementExpression>,
     symbols: &mut HashMap<String, Value>,
 ) -> InterpreterReturn {
@@ -218,7 +213,7 @@ pub fn evaluate_statement_expressions(
     InterpreterReturn::None
 }
 
-pub fn parse_block(
+fn parse_block(
     statement: Box<Statement>,
     symbols: &mut HashMap<String, Value>,
 ) -> InterpreterReturn {
@@ -227,6 +222,29 @@ pub fn parse_block(
     }
 
     panic!("attempted to parse {statement:#?} as a block");
+}
+
+fn check_builtin_functions(
+    expression: Expression,
+    arguments: Vec<Expression>,
+    symbols: &mut HashMap<String, Value>,
+) -> Option<Value> {
+    if let Expression::Identifier(identifier) = expression {
+        match identifier.as_str() {
+            "print" => {
+                let mut out = String::new();
+                for argument in arguments {
+                    let value = parse_expression(argument, symbols);
+                    out.push_str(&value.to_string());
+                }
+                println!("{}", out);
+                return Some(Value::Null);
+            }
+            _ => return None,
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -1064,7 +1082,7 @@ mod tests {
             ),
         );
         let expression = Expression::FunctionCall(
-            "adder".into(),
+            Box::new(Expression::Identifier("adder".into())),
             vec![
                 Expression::Literal(Value::Number(1.0)),
                 Expression::Literal(Value::Number(2.0)),
@@ -1075,11 +1093,34 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "function adder was never defined")]
+    fn test_function_call_with_function_expression() {
+        let mut symbols = HashMap::new();
+        let expression = Expression::FunctionCall(
+            Box::new(Expression::Literal(Value::Function(
+                vec!["a".into(), "b".into()],
+                Box::new(Statement::Block(vec![StatementExpression::Statement(
+                    Statement::Return(Box::new(Expression::Binary(
+                        Box::new(Expression::Identifier("a".into())),
+                        Operator::MathematicalOperator(MathematicalOperator::Plus),
+                        Box::new(Expression::Identifier("b".into())),
+                    ))),
+                )])),
+            ))),
+            vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0)),
+            ],
+        );
+        let value = parse_expression(expression, &mut symbols);
+        assert_eq!(value, Value::Number(3.0));
+    }
+
+    #[test]
+    #[should_panic(expected = "could not find identifier adder")]
     fn test_parse_function_call_identifier_not_found() {
         let mut symbols = HashMap::new();
         let expression = Expression::FunctionCall(
-            "adder".into(),
+            Box::new(Expression::Identifier("adder".into())),
             vec![
                 Expression::Literal(Value::Number(1.0)),
                 Expression::Literal(Value::Number(2.0)),

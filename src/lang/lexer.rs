@@ -182,7 +182,7 @@ impl Lexer {
         tok
     }
 
-    pub fn next_token(&mut self) -> Token {
+    fn next_token(&mut self) -> Token {
         self.read_token()
     }
 
