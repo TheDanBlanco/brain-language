@@ -16,7 +16,7 @@ pub enum Token {
     Divide,
     Times,
     Comment,
-    
+
     // One or two character tokens.
     Bang,
     NotEqual,
@@ -66,8 +66,7 @@ impl Token {
 
     pub fn skip_readchar(&self) -> bool {
         match self {
-            Token::Number(_) |
-            Token::Identifier(_) => true,
+            Token::Number(_) | Token::Identifier(_) => true,
             _ => false,
         }
     }
@@ -81,43 +80,48 @@ impl Token {
 
     pub fn is_statement(&self) -> bool {
         match self {
-            Token::Assign | 
-            Token::Else | 
-            Token::If | 
-            Token::Function | 
-            Token::Let | 
-            Token::Loop | 
-            Token::For | 
-            Token::LeftBrace | 
-            Token::Return | 
-            Token::Break => true,
+            Token::Assign
+            | Token::Else
+            | Token::If
+            | Token::Function
+            | Token::Let
+            | Token::Loop
+            | Token::For  
+            | Token::LeftBrace
+            | Token::Return
+            | Token::Break => true,
             _ => false,
         }
     }
 
     pub fn is_comparator(&self) -> bool {
         match self {
-            Token::Less | Token::Greater | Token::Equal | Token:: NotEqual | Token::GreaterEqual | Token::LessEqual => true,
-            _ => false
+            Token::Less
+            | Token::Greater
+            | Token::Equal
+            | Token::NotEqual
+            | Token::GreaterEqual
+            | Token::LessEqual => true,
+            _ => false,
         }
     }
 
     pub fn is_mathematical(&self) -> bool {
         match self {
             Token::Plus | Token::Minus | Token::Divide | Token::Times => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_logical(&self) -> bool {
         match self {
             Token::And | Token::Or => true,
-            _ => false
+            _ => false,
         }
     }
 
     pub fn is_operator(&self) -> bool {
-        return self.is_logical() || self.is_comparator() || self.is_mathematical()
+        self.is_logical() || self.is_comparator() || self.is_mathematical()
     }
 }
 
@@ -187,7 +191,6 @@ mod tests {
         assert!(Token::Or.is_logical());
         assert!(!Token::Less.is_logical());
     }
-
 
     #[test]
     fn test_is_operator() {
