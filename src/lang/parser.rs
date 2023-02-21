@@ -32,6 +32,7 @@ pub enum Value {
     Number(f64),
     Boolean(bool),
     Function(Vec<String>, Box<Statement>),
+    Collection(Vec<Value>),
     Null,
 }
 
@@ -43,6 +44,16 @@ impl fmt::Display for Value {
             Value::Boolean(bool) => write!(f, "{bool}"),
             Value::Null => write!(f, "null"),
             Value::Function(_, _) => write!(f, "[function]"),
+            Value::Collection(collection) => {
+                let mut output = String::new();
+                for (i, value) in collection.iter().enumerate() {
+                    output.push_str(&value.to_string());
+                    if i != collection.len() - 1 {
+                        output.push_str(", ");
+                    }
+                }
+                write!(f, "[{}]", output)
+            }
         }
     }
 }
@@ -53,6 +64,7 @@ pub enum Expression {
     Binary(Box<Expression>, Operator, Box<Expression>),
     Unary(Operator, Box<Expression>),
     Literal(Value),
+    Collection(Vec<Expression>),
     Identifier(String),
     FunctionCall(Box<Expression>, Vec<Expression>),
 }
@@ -66,6 +78,7 @@ pub enum Statement {
     Loop(Box<Statement>),
     FunctionDefinition(String, Vec<String>, Box<Statement>),
     Return(Box<Expression>),
+    For(String, Box<Expression>, Box<Statement>),
     Break,
 }
 
@@ -126,6 +139,7 @@ impl Parser {
             Token::If => self.parse_conditional(),
             Token::Identifier(identifier) => self.parse_reassignment(identifier),
             Token::Loop => self.parse_loop(),
+            Token::For => self.parse_for(),
             Token::LeftBrace => self.parse_block(),
             Token::Break => self.parse_break(),
             Token::Return => self.parse_return(),
@@ -269,7 +283,7 @@ impl Parser {
                     expression = self.parse_fn_call(expression);
                 }
 
-                expression
+                Expression::Identifier(identifier)
             }
             _ => panic!("Unexpected token {:?}", self.peek()),
         };
@@ -297,6 +311,18 @@ impl Parser {
             return self.parse_logical_operator(initial);
         }
         node
+    }
+
+    fn parse_collection(&mut self) -> Expression {
+        let mut values = Vec::new();
+        while self.peek() != Token::RightBracket {
+            let expression = self.parse_expression();
+            values.push(expression);
+            self.check_and_skip(Token::Comma);
+        }
+        self.expect(Token::RightBracket);
+        self.check_and_skip(Token::Semicolon);
+        Expression::Collection(values)
     }
 
     fn parse_mathematical_operator(&mut self, initial: Expression) -> Expression {
@@ -461,6 +487,17 @@ impl Parser {
     fn parse_unary_expression(&self, _literal: Expression) -> Expression {
         todo!()
     }
+
+    fn parse_for(&mut self) -> Statement {
+        self.expect(Token::For);
+        let next = self.next();
+        let identifier = self.get_value_from_identifier_token(next);
+        self.expect(Token::In);
+        let collection = self.parse_expression();
+        let block = self.parse_block();
+        Statement::For(identifier, Box::new(collection), Box::new(block))
+    }
+
 }
 
 #[cfg(test)]
@@ -513,6 +550,102 @@ mod tests {
             StatementExpression::Statement(Statement::Reassignment(
                 "x".to_string(),
                 Box::new(Expression::Literal(Value::Number(1.0)))
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_collection() {
+        let tokens = vec![
+            Token::LeftBracket,
+            Token::Number("1".to_string()),
+            Token::Comma,
+            Token::Number("2".to_string()),
+            Token::RightBracket,
+            Token::Semicolon
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Collection(
+                vec![
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0))
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_nested_collection() {
+        let tokens = vec![
+            Token::LeftBracket,
+            Token::Number("1".to_string()),
+            Token::Comma,
+            Token::LeftBracket,
+            Token::Number("2".to_string()),
+            Token::Comma,
+            Token::Number("3".to_string()),
+            Token::RightBracket,
+            Token::RightBracket,
+            Token::Semicolon
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Collection(
+                vec![
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Collection(
+                        vec![
+                            Expression::Literal(Value::Number(2.0)),
+                            Expression::Literal(Value::Number(3.0))
+                        ]
+                    )
+                ]
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_collection_of_collections() {
+        let tokens = vec![
+            Token::LeftBracket,
+            Token::LeftBracket,
+            Token::Number("1".to_string()),
+            Token::Comma,
+            Token::Number("2".to_string()),
+            Token::RightBracket,
+            Token::Comma,
+            Token::LeftBracket,
+            Token::Number("3".to_string()),
+            Token::Comma,
+            Token::Number("4".to_string()),
+            Token::RightBracket,
+            Token::RightBracket,
+            Token::Semicolon
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Collection(
+                vec![
+                    Expression::Collection(
+                        vec![
+                            Expression::Literal(Value::Number(1.0)),
+                            Expression::Literal(Value::Number(2.0))
+                        ]
+                    ),
+                    Expression::Collection(
+                        vec![
+                            Expression::Literal(Value::Number(3.0)),
+                            Expression::Literal(Value::Number(4.0))
+                        ]
+                    )
+                ]
             ))
         );
     }
@@ -987,6 +1120,53 @@ mod tests {
                         ],
                     )),
                 )],
+            ))
+        );
+    }
+
+    #[test]
+    fn test_for_loop() {
+        let tokens = vec![
+            Token::For,
+            Token::Identifier("i".into()),
+            Token::In,
+            Token::LeftBracket,
+            Token::Number("0".into()),
+            Token::Comma,
+            Token::Number("1".into()),
+            Token::Comma,
+            Token::Number("2".into()),
+            Token::RightBracket,
+            Token::LeftBrace,
+            Token::Identifier("print".into()),
+            Token::LeftParen,
+            Token::Identifier("i".into()),
+            Token::RightParen,
+            Token::Semicolon,
+            Token::RightBrace,
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::For(
+                "i".into(),
+                Box::new(Expression::Collection(vec![
+                    Expression::Literal(Value::Number(0.0)),
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0)),
+                ])),
+                Box::new(Statement::Block(
+                    vec![
+                        StatementExpression::Expression(
+                            Expression::FunctionCall(
+                                "print".into(),
+                                vec![Expression::Identifier("i".into())],
+                            )
+                        )
+                    ]
+                ))
             ))
         );
     }

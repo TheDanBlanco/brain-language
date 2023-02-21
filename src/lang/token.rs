@@ -41,6 +41,7 @@ pub enum Token {
     Function,
     For,
     If,
+    In,
     Null,
     Or,
     Print,
@@ -85,6 +86,7 @@ impl Token {
             | Token::Function
             | Token::Let
             | Token::Loop
+            | Token::For  
             | Token::LeftBrace
             | Token::Return
             | Token::Break => true,
