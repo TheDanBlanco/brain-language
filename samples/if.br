@@ -1,4 +1,4 @@
-let x = 2;
+let x = 5;
 
 if x > 3 { x = x + 1; }
 if x < 3 { x = x - 1; }
