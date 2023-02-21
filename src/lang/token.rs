@@ -86,7 +86,7 @@ impl Token {
             | Token::Function
             | Token::Let
             | Token::Loop
-            | Token::For  
+            | Token::For
             | Token::LeftBrace
             | Token::Return
             | Token::Break => true,
