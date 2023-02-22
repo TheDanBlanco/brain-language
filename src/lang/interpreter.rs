@@ -171,10 +171,7 @@ fn parse_statement(
                 }
 
                 if let Some(alt) = *alternative {
-                    let out = parse_block(Box::new(alt), symbols);
-                    if out == InterpreterReturn::Break {
-                        return out;
-                    }
+                    return parse_block(Box::new(alt), symbols);
                 }
 
                 return InterpreterReturn::None;
