@@ -1,0 +1,10 @@
+let x = 5;
+
+loop {
+  if x < 10 {
+    x = x + 1;
+    print(x);
+  } else {
+    break;
+  }
+}

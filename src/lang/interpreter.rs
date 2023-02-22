@@ -166,7 +166,7 @@ fn parse_statement(
                 }
 
                 if let Some(alt) = *alternative {
-                    parse_block(Box::new(alt), symbols);
+                    return parse_block(Box::new(alt), symbols);
                 }
 
                 return InterpreterReturn::None;
@@ -1394,5 +1394,75 @@ mod tests {
         ]);
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn test_parse_statement_loop_with_else() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Block(vec![
+            StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Literal(Value::Number(3.0))),
+            )),
+            StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                        Box::new(Expression::Literal(Value::Number(10.0))),
+                    ),
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            )),
+                        ),
+                    )])),
+                    Box::new(Some(Statement::Block(vec![
+                        StatementExpression::Statement(Statement::Break),
+                    ]))),
+                )),
+            ])))),
+        ]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn test_parse_statement_loop_with_else_immediately_breaks() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Block(vec![
+            StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Literal(Value::Number(15.0))),
+            )),
+            StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                        Box::new(Expression::Literal(Value::Number(10.0))),
+                    ),
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            )),
+                        ),
+                    )])),
+                    Box::new(Some(Statement::Block(vec![
+                        StatementExpression::Statement(Statement::Break),
+                    ]))),
+                )),
+            ])))),
+        ]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(15.0));
     }
 }
