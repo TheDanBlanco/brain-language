@@ -171,20 +171,18 @@ fn parse_statement(
                 }
 
                 if let Some(alt) = *alternative {
-                    parse_block(Box::new(alt), symbols);
+                    return parse_block(Box::new(alt), symbols);
                 }
 
                 return InterpreterReturn::None;
             }
 
             panic!("expected boolean value for conditional statement");
-        },
-        Statement::Loop(loop_statement) => {
-            loop {
-                let out = parse_block(loop_statement.clone(), symbols);
-                if let InterpreterReturn::Break = out {
-                    break out;
-                }
+        }
+        Statement::Loop(loop_statement) => loop {
+            let out = parse_block(loop_statement.clone(), symbols);
+            if let InterpreterReturn::Break = out {
+                break out;
             }
         },
         Statement::For(identifier, collection, block) => {
@@ -200,7 +198,7 @@ fn parse_statement(
             }
 
             InterpreterReturn::None
-        },
+        }
         Statement::Block(_) => {
             return parse_block(Box::new(statement), symbols);
         }
@@ -1118,69 +1116,64 @@ mod tests {
     #[test]
     fn test_parse_collection() {
         let mut symbols = HashMap::new();
-        let expression = Expression::Collection(
-            vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
-                Expression::Literal(Value::Number(3.0)),
-            ]
-        );
+        let expression = Expression::Collection(vec![
+            Expression::Literal(Value::Number(1.0)),
+            Expression::Literal(Value::Number(2.0)),
+            Expression::Literal(Value::Number(3.0)),
+        ]);
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Collection(vec![
-            Value::Number(1.0),
-            Value::Number(2.0),
-            Value::Number(3.0),
-        ]));
+        assert_eq!(
+            value,
+            Value::Collection(vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+            ])
+        );
     }
 
     #[test]
     fn test_parse_collection_of_collections() {
         let mut symbols = HashMap::new();
-        let expression = Expression::Collection(
-            vec![
-                Expression::Collection(
-                    vec![
-                        Expression::Literal(Value::Number(1.0)),
-                        Expression::Literal(Value::Number(2.0)),
-                        Expression::Literal(Value::Number(3.0)),
-                    ]
-                ),
-                Expression::Collection(
-                    vec![
-                        Expression::Literal(Value::Number(4.0)),
-                        Expression::Literal(Value::Number(5.0)),
-                        Expression::Literal(Value::Number(6.0)),
-                    ]
-                ),
-                Expression::Collection(
-                    vec![
-                        Expression::Literal(Value::Number(7.0)),
-                        Expression::Literal(Value::Number(8.0)),
-                        Expression::Literal(Value::Number(9.0)),
-                    ]
-                ),
-            ]
-        );
+        let expression = Expression::Collection(vec![
+            Expression::Collection(vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(3.0)),
+            ]),
+            Expression::Collection(vec![
+                Expression::Literal(Value::Number(4.0)),
+                Expression::Literal(Value::Number(5.0)),
+                Expression::Literal(Value::Number(6.0)),
+            ]),
+            Expression::Collection(vec![
+                Expression::Literal(Value::Number(7.0)),
+                Expression::Literal(Value::Number(8.0)),
+                Expression::Literal(Value::Number(9.0)),
+            ]),
+        ]);
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Collection(vec![
+        assert_eq!(
+            value,
             Value::Collection(vec![
-                Value::Number(1.0),
-                Value::Number(2.0),
-                Value::Number(3.0),
-            ]),
-            Value::Collection(vec![
-                Value::Number(4.0),
-                Value::Number(5.0),
-                Value::Number(6.0),
-            ]),
-            Value::Collection(vec![
-                Value::Number(7.0),
-                Value::Number(8.0),
-                Value::Number(9.0),
-            ]),
-        ]));
+                Value::Collection(vec![
+                    Value::Number(1.0),
+                    Value::Number(2.0),
+                    Value::Number(3.0),
+                ]),
+                Value::Collection(vec![
+                    Value::Number(4.0),
+                    Value::Number(5.0),
+                    Value::Number(6.0),
+                ]),
+                Value::Collection(vec![
+                    Value::Number(7.0),
+                    Value::Number(8.0),
+                    Value::Number(9.0),
+                ]),
+            ])
+        );
     }
-
 
     #[test]
     fn test_parse_for() {
@@ -1188,29 +1181,21 @@ mod tests {
         symbols.insert("x".into(), Value::Number(0.0));
         let statement = Statement::For(
             "item".into(),
-            Box::new(
-                Expression::Collection(
-                    vec![
-                        Expression::Literal(Value::Number(1.0)),
-                        Expression::Literal(Value::Number(2.0)),
-                        Expression::Literal(Value::Number(3.0)),
-                    ]
-                )
-            ),
-            Box::new(Statement::Block(vec![
-                StatementExpression::Statement(
-                    Statement::Reassignment(
-                        "x".into(),
-                        Box::new(
-                            Expression::Binary(
-                                Box::new(Expression::Identifier("x".into())),
-                                Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Identifier("item".into()))
-                            )
-                        )
-                    )
+            Box::new(Expression::Collection(vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(3.0)),
+            ])),
+            Box::new(Statement::Block(vec![StatementExpression::Statement(
+                Statement::Reassignment(
+                    "x".into(),
+                    Box::new(Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::MathematicalOperator(MathematicalOperator::Plus),
+                        Box::new(Expression::Identifier("item".into())),
+                    )),
                 ),
-            ]))
+            )])),
         );
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(6.0));
@@ -1222,55 +1207,39 @@ mod tests {
         symbols.insert("x".into(), Value::Number(0.0));
         let statement = Statement::For(
             "collection".into(),
-            Box::new(
-                Expression::Collection(
-                    vec![
-                        Expression::Collection(
-                            vec![
-                                Expression::Literal(Value::Number(1.0)),
-                                Expression::Literal(Value::Number(2.0)),
-                                Expression::Literal(Value::Number(3.0)),
-                            ]
+            Box::new(Expression::Collection(vec![
+                Expression::Collection(vec![
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0)),
+                    Expression::Literal(Value::Number(3.0)),
+                ]),
+                Expression::Collection(vec![
+                    Expression::Literal(Value::Number(4.0)),
+                    Expression::Literal(Value::Number(5.0)),
+                    Expression::Literal(Value::Number(6.0)),
+                ]),
+                Expression::Collection(vec![
+                    Expression::Literal(Value::Number(7.0)),
+                    Expression::Literal(Value::Number(8.0)),
+                    Expression::Literal(Value::Number(9.0)),
+                ]),
+            ])),
+            Box::new(Statement::Block(vec![StatementExpression::Statement(
+                Statement::For(
+                    "item".into(),
+                    Box::new(Expression::Identifier("collection".into())),
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Identifier("item".into())),
+                            )),
                         ),
-                        Expression::Collection(
-                            vec![
-                                Expression::Literal(Value::Number(4.0)),
-                                Expression::Literal(Value::Number(5.0)),
-                                Expression::Literal(Value::Number(6.0)),
-                            ]
-                        ),
-                        Expression::Collection(
-                            vec![
-                                Expression::Literal(Value::Number(7.0)),
-                                Expression::Literal(Value::Number(8.0)),
-                                Expression::Literal(Value::Number(9.0)),
-                            ]
-                        ),
-                    ]
-                )
-            ),
-            Box::new(Statement::Block(vec![
-                StatementExpression::Statement(
-                    Statement::For(
-                        "item".into(),
-                        Box::new(Expression::Identifier("collection".into())),
-                        Box::new(Statement::Block(vec![
-                            StatementExpression::Statement(
-                                Statement::Reassignment(
-                                    "x".into(),
-                                    Box::new(
-                                        Expression::Binary(
-                                            Box::new(Expression::Identifier("x".into())),
-                                            Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                            Box::new(Expression::Identifier("item".into()))
-                                        )
-                                    )
-                                )
-                            ),
-                        ]))
-                    )
+                    )])),
                 ),
-            ]))
+            )])),
         );
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(45.0));
@@ -1282,48 +1251,32 @@ mod tests {
         symbols.insert("x".into(), Value::Number(0.0));
         let statement = Statement::For(
             "item".into(),
-            Box::new(
-                Expression::Collection(
-                    vec![
-                        Expression::Literal(Value::Number(1.0)),
-                        Expression::Literal(Value::Number(2.0)),
-                        Expression::Literal(Value::Number(3.0)),
-                    ]
-                )
-            ),
+            Box::new(Expression::Collection(vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(3.0)),
+            ])),
             Box::new(Statement::Block(vec![
-                StatementExpression::Statement(
-                    Statement::Reassignment(
-                        "x".into(),
-                        Box::new(
-                            Expression::Binary(
-                                Box::new(Expression::Identifier("x".into())),
-                                Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Identifier("item".into()))
-                            )
-                        )
-                    )
-                ),
-                StatementExpression::Statement(
-                    Statement::Conditional(
-                        Expression::Binary(
-                            Box::new(Expression::Identifier("x".into())),
-                            Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-                            Box::new(Expression::Literal(Value::Number(2.0)))
-                        ), 
-                        Box::new(
-                            Statement::Block(
-                                vec![
-                                    StatementExpression::Statement(
-                                        Statement::Break
-                                    )
-                                ]
-                            )
-                        ), 
-                        Box::new(None),
-                    )
-                )
-            ]))
+                StatementExpression::Statement(Statement::Reassignment(
+                    "x".into(),
+                    Box::new(Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::MathematicalOperator(MathematicalOperator::Plus),
+                        Box::new(Expression::Identifier("item".into())),
+                    )),
+                )),
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
+                        Box::new(Expression::Literal(Value::Number(2.0))),
+                    ),
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Break,
+                    )])),
+                    Box::new(None),
+                )),
+            ])),
         );
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(3.0));
@@ -1361,5 +1314,75 @@ mod tests {
         ]);
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn test_parse_statement_loop_with_else() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Block(vec![
+            StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Literal(Value::Number(3.0))),
+            )),
+            StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                        Box::new(Expression::Literal(Value::Number(10.0))),
+                    ),
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            )),
+                        ),
+                    )])),
+                    Box::new(Some(Statement::Block(vec![
+                        StatementExpression::Statement(Statement::Break),
+                    ]))),
+                )),
+            ])))),
+        ]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn test_parse_statement_loop_with_else_immediately_breaks() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Block(vec![
+            StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Literal(Value::Number(15.0))),
+            )),
+            StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                        Box::new(Expression::Literal(Value::Number(10.0))),
+                    ),
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            )),
+                        ),
+                    )])),
+                    Box::new(Some(Statement::Block(vec![
+                        StatementExpression::Statement(Statement::Break),
+                    ]))),
+                )),
+            ])))),
+        ]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(15.0));
     }
 }

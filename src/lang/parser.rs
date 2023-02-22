@@ -287,7 +287,7 @@ impl Parser {
                 }
 
                 Expression::Identifier(identifier)
-            },
+            }
             Token::LeftBracket => self.parse_collection(),
             _ => panic!("Unexpected token {:?}", self.peek()),
         };
@@ -506,7 +506,6 @@ impl Parser {
         let block = self.parse_block();
         Statement::For(identifier, Box::new(collection), Box::new(block))
     }
-
 }
 
 #[cfg(test)]
@@ -571,18 +570,16 @@ mod tests {
             Token::Comma,
             Token::Number("2".to_string()),
             Token::RightBracket,
-            Token::Semicolon
+            Token::Semicolon,
         ];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(
             node,
-            StatementExpression::Expression(Expression::Collection(
-                vec![
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Literal(Value::Number(2.0))
-                ]
-            ))
+            StatementExpression::Expression(Expression::Collection(vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(2.0))
+            ]))
         );
     }
 
@@ -598,23 +595,19 @@ mod tests {
             Token::Number("3".to_string()),
             Token::RightBracket,
             Token::RightBracket,
-            Token::Semicolon
+            Token::Semicolon,
         ];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(
             node,
-            StatementExpression::Expression(Expression::Collection(
-                vec![
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Collection(
-                        vec![
-                            Expression::Literal(Value::Number(2.0)),
-                            Expression::Literal(Value::Number(3.0))
-                        ]
-                    )
-                ]
-            ))
+            StatementExpression::Expression(Expression::Collection(vec![
+                Expression::Literal(Value::Number(1.0)),
+                Expression::Collection(vec![
+                    Expression::Literal(Value::Number(2.0)),
+                    Expression::Literal(Value::Number(3.0))
+                ])
+            ]))
         );
     }
 
@@ -634,28 +627,22 @@ mod tests {
             Token::Number("4".to_string()),
             Token::RightBracket,
             Token::RightBracket,
-            Token::Semicolon
+            Token::Semicolon,
         ];
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(
             node,
-            StatementExpression::Expression(Expression::Collection(
-                vec![
-                    Expression::Collection(
-                        vec![
-                            Expression::Literal(Value::Number(1.0)),
-                            Expression::Literal(Value::Number(2.0))
-                        ]
-                    ),
-                    Expression::Collection(
-                        vec![
-                            Expression::Literal(Value::Number(3.0)),
-                            Expression::Literal(Value::Number(4.0))
-                        ]
-                    )
-                ]
-            ))
+            StatementExpression::Expression(Expression::Collection(vec![
+                Expression::Collection(vec![
+                    Expression::Literal(Value::Number(1.0)),
+                    Expression::Literal(Value::Number(2.0))
+                ]),
+                Expression::Collection(vec![
+                    Expression::Literal(Value::Number(3.0)),
+                    Expression::Literal(Value::Number(4.0))
+                ])
+            ]))
         );
     }
 
@@ -1140,16 +1127,12 @@ mod tests {
                     Expression::Literal(Value::Number(1.0)),
                     Expression::Literal(Value::Number(2.0)),
                 ])),
-                Box::new(Statement::Block(
-                    vec![
-                        StatementExpression::Expression(
-                            Expression::FunctionCall(
-                                "print".into(),
-                                vec![Expression::Identifier("i".into())],
-                            )
-                        )
-                    ]
-                ))
+                Box::new(Statement::Block(vec![StatementExpression::Expression(
+                    Expression::FunctionCall(
+                        "print".into(),
+                        vec![Expression::Identifier("i".into())],
+                    )
+                )]))
             ))
         );
     }
