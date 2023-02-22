@@ -1,7 +1,7 @@
 use core::panic;
 use std::collections::HashMap;
 
-use crate::lang::parser::{LogicalOperator, MathematicalOperator};
+use crate::lang::parser::{Accessor, LogicalOperator, MathematicalOperator};
 
 use super::parser::{
     ComparisonOperator, Expression, Operator, Statement, StatementExpression, Value,
@@ -121,6 +121,23 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
             }
 
             return Value::Collection(values);
+        }
+        Expression::Accessor(item, accessor) => {
+            let item = parse_expression(*item, symbols);
+            let accessor = match accessor {
+                Accessor::Index(expression) => parse_expression(*expression, symbols),
+                Accessor::Property(_) => panic!("property accessors are not yet implemented"),
+            };
+
+            if let Value::Collection(collection) = &item {
+                if let Value::Number(index) = accessor {
+                    if let Some(val) = collection.get(index as usize) {
+                        return Value::to_owned(val);
+                    }
+                }
+            }
+
+            panic!("could not access item {item} with accessor {accessor}");
         }
         _ => println!("couldn't parse expression"),
     }
@@ -1394,5 +1411,87 @@ mod tests {
         ]);
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+    }
+
+    #[test]
+    fn test_parse_index_accessor() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Collection(vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+            ]),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(2.0));
+    }
+
+    #[test]
+    fn test_parse_index_accessor_multiple_indices() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Collection(vec![
+                Value::Collection(vec![
+                    Value::Number(1.0),
+                    Value::Number(2.0),
+                    Value::Number(3.0),
+                ]),
+                Value::Collection(vec![
+                    Value::Number(4.0),
+                    Value::Number(5.0),
+                    Value::Number(6.0),
+                ]),
+                Value::Collection(vec![
+                    Value::Number(7.0),
+                    Value::Number(8.0),
+                    Value::Number(9.0),
+                ]),
+            ]),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Accessor(
+                    Box::new(Expression::Identifier("x".into())),
+                    Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                )),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(5.0),);
+    }
+
+    #[test]
+    #[should_panic(expected = "property accessors are not yet implemented")]
+    fn test_parse_property_accessor() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Collection(vec![
+                Value::Number(1.0),
+                Value::Number(2.0),
+                Value::Number(3.0),
+            ]),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Property(Value::String("length".into())),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3.0));
     }
 }

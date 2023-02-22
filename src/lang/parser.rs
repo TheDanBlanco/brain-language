@@ -67,6 +67,7 @@ pub enum Expression {
     Collection(Vec<Expression>),
     Identifier(String),
     FunctionCall(Box<Expression>, Vec<Expression>),
+    Accessor(Box<Expression>, Accessor),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -93,6 +94,13 @@ pub enum Operator {
     MathematicalOperator(MathematicalOperator),
     LogicalOperator(LogicalOperator),
     ComparisonOperator(ComparisonOperator),
+}
+
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone)]
+pub enum Accessor {
+    Index(Box<Expression>),
+    Property(Value),
 }
 
 #[derive(Debug, PartialEq)]
@@ -279,19 +287,65 @@ impl Parser {
                     return self.parse_binary_expression(expression);
                 }
 
-                while self.check(Token::LeftParen) {
-                    expression = self.parse_fn_call(expression);
+                if self.peek().is_accessor_indicator() {
+                    expression = self.parse_possible_accessor(Some(expression));
                 }
 
                 expression
             }
-            Token::LeftBracket => self.parse_collection(),
+            Token::LeftBracket => self.parse_possible_accessor(None),
             _ => panic!("Unexpected token {:?}", self.peek()),
         };
 
         self.check_and_skip(Token::Semicolon);
 
         expression
+    }
+
+    fn parse_possible_accessor(&mut self, initial: Option<Expression>) -> Expression {
+        let mut expression: Expression;
+
+        if let Some(identifier) = initial {
+            expression = identifier;
+
+            while self.can_peek() && self.peek().is_accessor_indicator() {
+                if self.check(Token::LeftParen) {
+                    expression = self.parse_fn_call(expression);
+                    continue;
+                }
+
+                if self.check(Token::LeftBracket) {
+                    expression = self.parse_index_accessor(expression);
+                    continue;
+                }
+
+                expression = self.parse_property_accessor(expression);
+            }
+
+            return expression;
+        }
+
+        self.parse_collection()
+    }
+
+    fn parse_index_accessor(&mut self, identifier: Expression) -> Expression {
+        self.expect(Token::LeftBracket);
+        let index = self.parse_expression();
+        self.expect(Token::RightBracket);
+        Expression::Accessor(Box::new(identifier), Accessor::Index(Box::new(index)))
+    }
+
+    fn parse_property_accessor(&mut self, identifier: Expression) -> Expression {
+        self.expect(Token::Dot);
+        let property = self.next();
+        if let Token::Identifier(property_identifier) = property {
+            return Expression::Accessor(
+                Box::new(identifier),
+                Accessor::Property(Value::String(property_identifier)),
+            );
+        }
+
+        panic!("unexpected property accessor {:#?}", property);
     }
 
     fn parse_binary_expression(&mut self, initial: Expression) -> Expression {
@@ -1371,6 +1425,92 @@ mod tests {
                     ])))
                 ))
             ]))))
+        );
+    }
+
+    #[test]
+    fn test_accessor_index() {
+        let tokens = vec![
+            Token::Identifier("x".into()),
+            Token::LeftBracket,
+            Token::Number("1".into()),
+            Token::RightBracket,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+            ))
+        );
+    }
+
+    #[test]
+    fn test_accessor_index_multiple_indices() {
+        let tokens = vec![
+            Token::Identifier("x".into()),
+            Token::LeftBracket,
+            Token::Number("1".into()),
+            Token::RightBracket,
+            Token::LeftBracket,
+            Token::Number("2".into()),
+            Token::RightBracket,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Accessor(
+                Box::new(Expression::Accessor(
+                    Box::new(Expression::Identifier("x".into())),
+                    Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                )),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(2.0)))),
+            ))
+        );
+    }
+
+    #[test]
+    fn test_accessor_property() {
+        let tokens = vec![
+            Token::Identifier("x".into()),
+            Token::Dot,
+            Token::Identifier("y".into()),
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Property(Value::String("y".into()))
+            ),)
+        );
+    }
+
+    #[test]
+    fn test_accessor_property_multiple_properties() {
+        let tokens = vec![
+            Token::Identifier("x".into()),
+            Token::Dot,
+            Token::Identifier("y".into()),
+            Token::Dot,
+            Token::Identifier("z".into()),
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Expression(Expression::Accessor(
+                Box::new(Expression::Accessor(
+                    Box::new(Expression::Identifier("x".into())),
+                    Accessor::Property(Value::String("y".into())),
+                )),
+                Accessor::Property(Value::String("z".into())),
+            ))
         );
     }
 }

@@ -9,3 +9,5 @@ for collection in collections {
         print(item);
     }
 }
+
+print("collections[0][0]: ", collections[0][0]);
