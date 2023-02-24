@@ -1563,4 +1563,52 @@ mod tests {
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
     }
+
+    #[test]
+    fn test_parse_statement_loop_with_early_continue() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Block(vec![
+            StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Literal(Value::Number(3.0))),
+            )),
+            StatementExpression::Statement(Statement::Assignment(
+                "y".into(),
+                Box::new(Expression::Literal(Value::Number(5.0))),
+            )),
+            StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("y".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                        Box::new(Expression::Literal(Value::Number(10.0))),
+                    ),
+                    Box::new(Statement::Block(vec![
+                        StatementExpression::Statement(Statement::Reassignment(
+                            "y".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("y".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            )),
+                        )),
+                        StatementExpression::Statement(Statement::Continue),
+                        StatementExpression::Statement(Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            )),
+                        )),
+                    ])),
+                    Box::new(None),
+                )),
+                StatementExpression::Statement(Statement::Break),
+            ])))),
+        ]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3.0));
+        assert_eq!(symbols.get("y").unwrap(), &Value::Number(10.0));
+    }
 }
