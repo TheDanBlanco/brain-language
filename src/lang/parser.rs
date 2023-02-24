@@ -652,7 +652,10 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            StatementExpression::Expression(Expression::FunctionCall(Box::new(Expression::Identifier("print".to_string())), vec![]))
+            StatementExpression::Expression(Expression::FunctionCall(
+                Box::new(Expression::Identifier("print".to_string())),
+                vec![]
+            ))
         );
     }
 
@@ -1102,7 +1105,7 @@ mod tests {
                     )),
                     Operator::MathematicalOperator(MathematicalOperator::Plus),
                     Box::new(Expression::FunctionCall(
-                        Box::new(Expression::Identifier( "baz".to_string())),
+                        Box::new(Expression::Identifier("baz".to_string())),
                         vec![
                             Expression::Literal(Value::Number(3.0)),
                             Expression::Literal(Value::Number(4.0)),
