@@ -167,6 +167,7 @@ impl Lexer {
                     "true" => Token::True,
                     "loop" => Token::Loop,
                     "break" => Token::Break,
+                    "continue" => Token::Continue,
                     _ => Token::Identifier(identifier),
                 }
             }
@@ -619,6 +620,16 @@ mod tests {
         assert_eq!(l.next_token(), Token::Loop);
         assert_eq!(l.next_token(), Token::LeftBrace);
         assert_eq!(l.next_token(), Token::Break);
+        assert_eq!(l.next_token(), Token::RightBrace);
+    }
+
+    #[test]
+    fn loop_statement_with_continue() {
+        let input = "loop { continue }";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Loop);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::Continue);
         assert_eq!(l.next_token(), Token::RightBrace);
     }
 
