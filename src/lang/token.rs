@@ -123,6 +123,13 @@ impl Token {
     pub fn is_operator(&self) -> bool {
         self.is_logical() || self.is_comparator() || self.is_mathematical()
     }
+
+    pub fn is_accessor_indicator(&self) -> bool {
+        match self {
+            Token::LeftParen | Token::Dot | Token::LeftBracket => true,
+            _ => false,
+        }
+    }
 }
 
 // tests for the token module
@@ -207,5 +214,13 @@ mod tests {
         assert!(Token::And.is_operator());
         assert!(Token::Or.is_operator());
         assert!(!Token::LeftBrace.is_operator());
+    }
+
+    #[test]
+    fn test_is_accessor_indicator() {
+        assert!(Token::LeftParen.is_accessor_indicator());
+        assert!(Token::Dot.is_accessor_indicator());
+        assert!(Token::LeftBracket.is_accessor_indicator());
+        assert!(!Token::Plus.is_accessor_indicator());
     }
 }
