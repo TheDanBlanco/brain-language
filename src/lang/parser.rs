@@ -83,6 +83,7 @@ pub enum Statement {
     Return(Box<Expression>),
     For(String, Box<Expression>, Box<Statement>),
     Break,
+    Continue,
 }
 
 #[allow(dead_code)]
@@ -152,6 +153,7 @@ impl Parser {
             Token::For => self.parse_for(),
             Token::LeftBrace => self.parse_block(),
             Token::Break => self.parse_break(),
+            Token::Continue => self.parse_continue(),
             Token::Return => self.parse_return(),
             _ => todo!(),
         }
@@ -254,6 +256,12 @@ impl Parser {
         self.expect(Token::Break);
         self.check_and_skip(Token::Semicolon);
         Statement::Break
+    }
+
+    fn parse_continue(&mut self) -> Statement {
+        self.expect(Token::Continue);
+        self.check_and_skip(Token::Semicolon);
+        Statement::Continue
     }
 
     fn parse_literal(&mut self, next: Token) -> Expression {
@@ -1438,6 +1446,7 @@ mod tests {
             Token::Number("1".into()),
             Token::RightBracket,
         ];
+
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(
@@ -1446,6 +1455,57 @@ mod tests {
                 Box::new(Expression::Identifier("x".into())),
                 Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
             ))
+        );
+    }
+
+    fn test_loop_with_continue() {
+        let tokens = vec![
+            Token::Loop,
+            Token::LeftBrace,
+            Token::If,
+            Token::Identifier("x".into()),
+            Token::Less,
+            Token::Number("10".into()),
+            Token::LeftBrace,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Identifier("x".into()),
+            Token::Plus,
+            Token::Number("1".into()),
+            Token::Semicolon,
+            Token::Continue,
+            Token::RightBrace,
+            Token::Break,
+            Token::Semicolon,
+            Token::RightBrace,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
+                StatementExpression::Statement(Statement::Conditional(
+                    Expression::Binary(
+                        Box::new(Expression::Identifier("x".into())),
+                        Operator::ComparisonOperator(ComparisonOperator::LessThan),
+                        Box::new(Expression::Literal(Value::Number(10.0)))
+                    ),
+                    Box::new(Statement::Block(vec![
+                        StatementExpression::Statement(Statement::Reassignment(
+                            "x".into(),
+                            Box::new(Expression::Binary(
+                                Box::new(Expression::Identifier("x".into())),
+                                Operator::MathematicalOperator(MathematicalOperator::Plus),
+                                Box::new(Expression::Literal(Value::Number(1.0))),
+                            ))
+                        )),
+                        StatementExpression::Statement(Statement::Continue)
+                    ])),
+                    Box::new(None),
+                )),
+                StatementExpression::Statement(Statement::Break)
+            ],))))
         );
     }
 

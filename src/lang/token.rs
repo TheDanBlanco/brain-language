@@ -49,6 +49,7 @@ pub enum Token {
     Let,
     Loop,
     Break,
+    Continue,
 
     // End of file.
     Eof,
@@ -89,7 +90,8 @@ impl Token {
             | Token::For
             | Token::LeftBrace
             | Token::Return
-            | Token::Break => true,
+            | Token::Break
+            | Token::Continue => true,
             _ => false,
         }
     }
@@ -169,6 +171,7 @@ mod tests {
         assert!(Token::LeftBrace.is_statement());
         assert!(Token::Return.is_statement());
         assert!(Token::Break.is_statement());
+        assert!(Token::Continue.is_statement());
         assert!(!Token::Plus.is_statement());
     }
 
