@@ -51,6 +51,9 @@ impl fmt::Display for Value {
             Value::Function(_, _) => write!(f, "[function]"),
             Value::Collection(collection) => {
                 let mut output = String::new();
+                if collection.len() == 0 {
+                    return write!(f, "[empty collection]");
+                }
                 for (i, value) in collection.iter().enumerate() {
                     output.push_str(&value.to_string());
                     if i != collection.len() - 1 {
@@ -61,6 +64,9 @@ impl fmt::Display for Value {
             }
             Value::Map(map) => {
                 let mut output = String::new();
+                if map.len() == 0 {
+                    return write!(f, "{{empty map}}");
+                }
                 for (_i, (key, value)) in map.iter().enumerate() {
                     output.push_str(&format!("{key}: {value}\n"));
                 }
@@ -726,6 +732,152 @@ mod tests {
                     Expression::Literal(Value::Number(4))
                 ])
             ]))
+        );
+    }
+
+    #[test]
+    fn parse_map() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::LeftBrace,
+            Token::Number("1".to_string()),
+            Token::Colon,
+            Token::Number("2".to_string()),
+            Token::Comma,
+            Token::Number("3".to_string()),
+            Token::Colon,
+            Token::Number("4".to_string()),
+            Token::RightBrace,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Map(vec![
+                    (
+                        Expression::Literal(Value::Number(1)),
+                        Expression::Literal(Value::Number(2))
+                    ),
+                    (
+                        Expression::Literal(Value::Number(3)),
+                        Expression::Literal(Value::Number(4))
+                    )
+                ]))
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_nested_map() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::LeftBrace,
+            Token::Number("1".to_string()),
+            Token::Colon,
+            Token::LeftBrace,
+            Token::Number("2".to_string()),
+            Token::Colon,
+            Token::Number("3".to_string()),
+            Token::RightBrace,
+            Token::Comma,
+            Token::Number("4".to_string()),
+            Token::Colon,
+            Token::Number("5".to_string()),
+            Token::RightBrace,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Map(vec![
+                    (
+                        Expression::Literal(Value::Number(1)),
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(2)),
+                            Expression::Literal(Value::Number(3))
+                        )])
+                    ),
+                    (
+                        Expression::Literal(Value::Number(4)),
+                        Expression::Literal(Value::Number(5))
+                    )
+                ]))
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_map_of_maps() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::LeftBrace,
+            Token::LeftBrace,
+            Token::Number("1".to_string()),
+            Token::Colon,
+            Token::Number("2".to_string()),
+            Token::RightBrace,
+            Token::Colon,
+            Token::LeftBrace,
+            Token::Number("3".to_string()),
+            Token::Colon,
+            Token::Number("4".to_string()),
+            Token::RightBrace,
+            Token::Comma,
+            Token::LeftBrace,
+            Token::Number("5".to_string()),
+            Token::Colon,
+            Token::Number("6".to_string()),
+            Token::RightBrace,
+            Token::Colon,
+            Token::LeftBrace,
+            Token::Number("7".to_string()),
+            Token::Colon,
+            Token::Number("8".to_string()),
+            Token::RightBrace,
+            Token::RightBrace,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Map(vec![
+                    (
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(1)),
+                            Expression::Literal(Value::Number(2))
+                        )]),
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(3)),
+                            Expression::Literal(Value::Number(4))
+                        )])
+                    ),
+                    (
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(5)),
+                            Expression::Literal(Value::Number(6))
+                        )]),
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(7)),
+                            Expression::Literal(Value::Number(8))
+                        )])
+                    )
+                ]))
+            ))
         );
     }
 
@@ -1485,6 +1637,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn test_loop_with_continue() {
         let tokens = vec![
             Token::Loop,
@@ -1516,7 +1669,7 @@ mod tests {
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0)))
+                        Box::new(Expression::Literal(Value::Number(10)))
                     ),
                     Box::new(Statement::Block(vec![
                         StatementExpression::Statement(Statement::Reassignment(
@@ -1524,7 +1677,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             ))
                         )),
                         StatementExpression::Statement(Statement::Continue)

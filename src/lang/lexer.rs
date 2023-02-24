@@ -398,6 +398,44 @@ mod tests {
     }
 
     #[test]
+    fn assign_map_to_identifier() {
+        let input = "let a = {\"foo\": 1, \"bar\": 2};";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::String("foo".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::String("bar".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::Number("2".into()));
+        assert_eq!(l.next_token(), Token::RightBrace);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn assign_mixed_map_to_identifier() {
+        let input = "let a = {\"foo\": 1, \"bar\": \"baz\"};";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::String("foo".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::String("bar".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::String("baz".into()));
+        assert_eq!(l.next_token(), Token::RightBrace);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
     fn assign_string_plus_string_to_identifier() {
         let input = "let a = \"foo\" + \"bar\";";
         let mut l = Lexer::new(input.into());

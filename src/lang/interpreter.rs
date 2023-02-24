@@ -125,7 +125,15 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
         Expression::Map(map) => {
             let mut values = BTreeMap::new();
             for (key, value) in map {
-                let key = parse_expression(key, symbols);
+                let mut key = parse_expression(key, symbols);
+
+                key = match key {
+                    Value::String(val) => Value::String(val),
+                    Value::Number(val) => Value::Number(val),
+                    Value::Boolean(val) => Value::Boolean(val),
+                    _ => panic!("cannot use type {key} as a key in a map"),
+                };
+
                 let value = parse_expression(value, symbols);
                 values.insert(key, value);
             }
@@ -134,27 +142,32 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
         }
         Expression::Accessor(item, accessor) => {
             let item = parse_expression(*item, symbols);
-            let accessor = match accessor {
+
+            let value = match accessor.clone() {
                 Accessor::Index(expression) => parse_expression(*expression, symbols),
                 Accessor::Property(val) => val,
             };
 
             if let Value::Collection(collection) = &item {
-                if let Value::Number(index) = accessor {
+                if let Accessor::Property(_) = accessor {
+                    panic!("cannot access property of collection");
+                }
+
+                if let Value::Number(index) = value {
                     if let Some(val) = collection.get(index as usize) {
                         return Value::to_owned(val);
                     }
                 }
 
-                panic!("could not find index {accessor} in collection");
+                panic!("could not find index {value} in collection");
             }
 
             if let Value::Map(map) = &item {
-                if let Some(val) = map.get(&accessor) {
+                if let Some(val) = map.get(&value) {
                     return Value::to_owned(val);
                 }
 
-                panic!("could not find key {accessor} in map");
+                panic!("could not find key {value} in map");
             }
         }
         _ => println!("couldn't parse expression"),
@@ -1332,6 +1345,100 @@ mod tests {
     }
 
     #[test]
+    fn test_map() {
+        let mut symbols = HashMap::new();
+        let tree = BTreeMap::from_iter(vec![
+            (Value::String("a".into()), Value::Number(1)),
+            (Value::String("b".into()), Value::Number(2)),
+            (Value::String("c".into()), Value::Number(3)),
+        ]);
+        let statement = Statement::Assignment(
+            "x".into(),
+            Box::new(Expression::Map(vec![
+                (
+                    Expression::Literal(Value::String("a".into())),
+                    Expression::Literal(Value::Number(1)),
+                ),
+                (
+                    Expression::Literal(Value::String("b".into())),
+                    Expression::Literal(Value::Number(2)),
+                ),
+                (
+                    Expression::Literal(Value::String("c".into())),
+                    Expression::Literal(Value::Number(3)),
+                ),
+            ])),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Map(tree));
+    }
+
+    #[test]
+    fn test_empty_map() {
+        let mut symbols = HashMap::new();
+        let tree = BTreeMap::new();
+        let statement = Statement::Assignment("x".into(), Box::new(Expression::Map(vec![])));
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Map(tree));
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot use type [empty collection] as a key in a map")]
+    fn test_map_with_collection_key() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Assignment(
+            "x".into(),
+            Box::new(Expression::Map(vec![(
+                Expression::Literal(Value::Collection(vec![])),
+                Expression::Literal(Value::Number(1)),
+            )])),
+        );
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot use type {empty map} as a key in a map")]
+    fn test_map_with_map_key() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Assignment(
+            "x".into(),
+            Box::new(Expression::Map(vec![(
+                Expression::Literal(Value::Map(BTreeMap::new())),
+                Expression::Literal(Value::Number(1)),
+            )])),
+        );
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot use type null as a key in a map")]
+    fn test_map_with_null_key() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Assignment(
+            "x".into(),
+            Box::new(Expression::Map(vec![(
+                Expression::Literal(Value::Null),
+                Expression::Literal(Value::Number(1)),
+            )])),
+        );
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot use type [function] as a key in a map")]
+    fn test_map_with_function_key() {
+        let mut symbols = HashMap::new();
+        let statement = Statement::Assignment(
+            "x".into(),
+            Box::new(Expression::Map(vec![(
+                Expression::Literal(Value::Function(vec![], Box::new(Statement::Block(vec![])))),
+                Expression::Literal(Value::Number(1)),
+            )])),
+        );
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
     fn test_parse_statement_loop() {
         let mut symbols = HashMap::new();
         let statement = Statement::Block(vec![
@@ -1479,18 +1586,91 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "property accessors are not yet implemented")]
     fn test_parse_property_accessor() {
         let mut symbols = HashMap::new();
         symbols.insert(
             "x".into(),
-            Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3)]),
+            Value::Map(BTreeMap::from_iter(vec![(
+                Value::String("property".into()),
+                Value::Number(3),
+            )])),
         );
         let statement = Statement::Reassignment(
             "x".into(),
             Box::new(Expression::Accessor(
                 Box::new(Expression::Identifier("x".into())),
-                Accessor::Property(Value::String("length".into())),
+                Accessor::Property(Value::String("property".into())),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
+    }
+
+    #[test]
+    fn test_parse_property_accessor_nested_map() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Map(BTreeMap::from_iter(vec![(
+                Value::String("property".into()),
+                Value::Map(BTreeMap::from_iter(vec![(
+                    Value::String("property".into()),
+                    Value::Number(3),
+                )])),
+            )])),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Accessor(
+                    Box::new(Expression::Identifier("x".into())),
+                    Accessor::Property(Value::String("property".into())),
+                )),
+                Accessor::Property(Value::String("property".into())),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
+    }
+
+    #[test]
+    #[should_panic(expected = "could not find key something_else in map")]
+    fn test_parse_property_does_not_exist() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Map(BTreeMap::from_iter(vec![(
+                Value::String("property".into()),
+                Value::Number(3),
+            )])),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Property(Value::String("something_else".into())),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
+    }
+
+    #[test]
+    #[should_panic(expected = "cannot access property of collection")]
+    fn test_parse_property_in_collection() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Collection(vec![
+                Value::String("something".into()),
+                Value::String("something_else".into()),
+            ]),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Property(Value::String("something_else".into())),
             )),
         );
         parse_statement(statement, &mut symbols);
@@ -1503,14 +1683,14 @@ mod tests {
         let statement = Statement::Block(vec![
             StatementExpression::Statement(Statement::Assignment(
                 "x".into(),
-                Box::new(Expression::Literal(Value::Number(3.0))),
+                Box::new(Expression::Literal(Value::Number(3))),
             )),
             StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Conditional(
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0))),
+                        Box::new(Expression::Literal(Value::Number(10))),
                     ),
                     Box::new(Statement::Block(vec![
                         StatementExpression::Statement(Statement::Reassignment(
@@ -1518,7 +1698,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             )),
                         )),
                         StatementExpression::Statement(Statement::Continue),
@@ -1529,7 +1709,7 @@ mod tests {
             ])))),
         ]);
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10));
     }
 
     #[test]
@@ -1538,18 +1718,18 @@ mod tests {
         let statement = Statement::Block(vec![
             StatementExpression::Statement(Statement::Assignment(
                 "x".into(),
-                Box::new(Expression::Literal(Value::Number(3.0))),
+                Box::new(Expression::Literal(Value::Number(3))),
             )),
             StatementExpression::Statement(Statement::Assignment(
                 "y".into(),
-                Box::new(Expression::Literal(Value::Number(5.0))),
+                Box::new(Expression::Literal(Value::Number(5))),
             )),
             StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Conditional(
                     Expression::Binary(
                         Box::new(Expression::Identifier("y".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0))),
+                        Box::new(Expression::Literal(Value::Number(10))),
                     ),
                     Box::new(Statement::Block(vec![
                         StatementExpression::Statement(Statement::Reassignment(
@@ -1557,7 +1737,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("y".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             )),
                         )),
                         StatementExpression::Statement(Statement::Continue),
@@ -1566,7 +1746,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             )),
                         )),
                     ])),
@@ -1576,7 +1756,7 @@ mod tests {
             ])))),
         ]);
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3.0));
-        assert_eq!(symbols.get("y").unwrap(), &Value::Number(10.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
+        assert_eq!(symbols.get("y").unwrap(), &Value::Number(10));
     }
 }
