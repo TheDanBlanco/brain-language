@@ -139,6 +139,7 @@ impl Lexer {
             Some('<') => Token::Less,
             Some('>') => Token::Greater,
             Some(';') => Token::Semicolon,
+            Some(':') => Token::Colon,
             Some(',') => Token::Comma,
             Some('{') => Token::LeftBrace,
             Some('}') => Token::RightBrace,

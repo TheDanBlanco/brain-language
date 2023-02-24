@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::lang::parser::{Accessor, LogicalOperator, MathematicalOperator};
 
@@ -73,8 +73,8 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
                         LogicalOperator::Or => Value::Boolean(!lhs.is_empty() || !rhs.is_empty()),
                     }
                     (Value::Number(lhs), Value::Number(rhs)) => match op {
-                        LogicalOperator::And => Value::Boolean(lhs != 0.0 && rhs != 0.0),
-                        LogicalOperator::Or => Value::Boolean(lhs != 0.0 || rhs != 0.0),
+                        LogicalOperator::And => Value::Boolean(lhs != 0 && rhs != 0),
+                        LogicalOperator::Or => Value::Boolean(lhs != 0 || rhs != 0),
                     }
                     _ => panic!("cannot perform logical operator on type Function or Null")
                 }
@@ -122,11 +122,21 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
 
             return Value::Collection(values);
         }
+        Expression::Map(map) => {
+            let mut values = BTreeMap::new();
+            for (key, value) in map {
+                let key = parse_expression(key, symbols);
+                let value = parse_expression(value, symbols);
+                values.insert(key, value);
+            }
+
+            return Value::Map(values);
+        }
         Expression::Accessor(item, accessor) => {
             let item = parse_expression(*item, symbols);
             let accessor = match accessor {
                 Accessor::Index(expression) => parse_expression(*expression, symbols),
-                Accessor::Property(_) => panic!("property accessors are not yet implemented"),
+                Accessor::Property(val) => val,
             };
 
             if let Value::Collection(collection) = &item {
@@ -135,9 +145,17 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
                         return Value::to_owned(val);
                     }
                 }
+
+                panic!("could not find index {accessor} in collection");
             }
 
-            panic!("could not access item {item} with accessor {accessor}");
+            if let Value::Map(map) = &item {
+                if let Some(val) = map.get(&accessor) {
+                    return Value::to_owned(val);
+                }
+
+                panic!("could not find key {accessor} in map");
+            }
         }
         _ => println!("couldn't parse expression"),
     }
@@ -298,9 +316,9 @@ mod tests {
     #[test]
     fn test_parse_expression_number_literal() {
         let mut symbols = HashMap::new();
-        let expression = Expression::Literal(Value::Number(1.0));
+        let expression = Expression::Literal(Value::Number(1));
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(1.0));
+        assert_eq!(value, Value::Number(1));
     }
 
     #[test]
@@ -345,48 +363,48 @@ mod tests {
     fn test_parse_expression_binary_operator_add_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::MathematicalOperator(MathematicalOperator::Plus),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(3.0));
+        assert_eq!(value, Value::Number(3));
     }
 
     #[test]
     fn test_parse_expression_binary_operator_subtract_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::MathematicalOperator(MathematicalOperator::Minus),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(-1.0));
+        assert_eq!(value, Value::Number(-1));
     }
 
     #[test]
     fn test_parse_expression_binary_operator_multiply_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::MathematicalOperator(MathematicalOperator::Times),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(2.0));
+        assert_eq!(value, Value::Number(2));
     }
 
     #[test]
     fn test_parse_expression_binary_operator_divide_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
             Operator::MathematicalOperator(MathematicalOperator::Divide),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(0.5));
+        assert_eq!(value, Value::Number(1));
     }
 
     #[test]
@@ -407,7 +425,7 @@ mod tests {
         let expression = Expression::Binary(
             Box::new(Expression::Literal(Value::String("hello".to_string()))),
             Operator::MathematicalOperator(MathematicalOperator::Plus),
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::String("hello1".to_string()));
@@ -417,7 +435,7 @@ mod tests {
     fn test_parse_expression_binary_operator_add_number_and_string() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::MathematicalOperator(MathematicalOperator::Plus),
             Box::new(Expression::Literal(Value::String("hello".to_string()))),
         );
@@ -430,13 +448,13 @@ mod tests {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
             Box::new(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
                 Operator::MathematicalOperator(MathematicalOperator::Plus),
                 Box::new(Expression::Literal(Value::String("hello".to_string()))),
             )),
             Operator::MathematicalOperator(MathematicalOperator::Plus),
             Box::new(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(2.0))),
+                Box::new(Expression::Literal(Value::Number(2))),
                 Operator::MathematicalOperator(MathematicalOperator::Plus),
                 Box::new(Expression::Literal(Value::String("world".to_string()))),
             )),
@@ -449,9 +467,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_equal_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::Equal),
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -461,9 +479,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_equal_numbers_false() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::Equal),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(false));
@@ -473,9 +491,9 @@ mod tests {
     fn test_parsep_expression_comparison_operator_greater_than_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
             Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -485,9 +503,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_greater_than_numbers_false() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(false));
@@ -497,9 +515,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_greater_than_or_equal_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
             Operator::ComparisonOperator(ComparisonOperator::GreatherThanEqual),
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -509,9 +527,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_greater_than_or_equal_numbers_false() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::GreatherThanEqual),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(false));
@@ -521,9 +539,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_greater_than_or_equal_numbers_equal() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::GreatherThanEqual),
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -533,9 +551,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_less_than_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::LessThan),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -545,9 +563,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_less_than_numbers_false() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
             Operator::ComparisonOperator(ComparisonOperator::LessThan),
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(false));
@@ -557,9 +575,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_less_than_or_equal_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::LessThanEqual),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -569,9 +587,9 @@ mod tests {
     fn test_parse_expression_comparison_operator_not_equal_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::NotEqual),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -798,15 +816,15 @@ mod tests {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
             Box::new(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
                 Operator::ComparisonOperator(ComparisonOperator::Equal),
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
             )),
             Operator::LogicalOperator(LogicalOperator::And),
             Box::new(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(2.0))),
+                Box::new(Expression::Literal(Value::Number(2))),
                 Operator::ComparisonOperator(ComparisonOperator::Equal),
-                Box::new(Expression::Literal(Value::Number(2.0))),
+                Box::new(Expression::Literal(Value::Number(2))),
             )),
         );
         let value = parse_expression(expression, &mut symbols);
@@ -818,15 +836,15 @@ mod tests {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
             Box::new(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
                 Operator::ComparisonOperator(ComparisonOperator::Equal),
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
             )),
             Operator::LogicalOperator(LogicalOperator::And),
             Box::new(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(2.0))),
+                Box::new(Expression::Literal(Value::Number(2))),
                 Operator::ComparisonOperator(ComparisonOperator::Equal),
-                Box::new(Expression::Literal(Value::Number(3.0))),
+                Box::new(Expression::Literal(Value::Number(3))),
             )),
         );
         let value = parse_expression(expression, &mut symbols);
@@ -885,9 +903,9 @@ mod tests {
     fn test_parse_expression_logical_operator_numbers() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::LogicalOperator(LogicalOperator::And),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -897,9 +915,9 @@ mod tests {
     fn test_parse_expression_logical_operator_numbers_false() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(0.0))),
+            Box::new(Expression::Literal(Value::Number(0))),
             Operator::LogicalOperator(LogicalOperator::And),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(false));
@@ -909,9 +927,9 @@ mod tests {
     fn test_parse_expression_logical_operator_numbers_or() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(0.0))),
+            Box::new(Expression::Literal(Value::Number(0))),
             Operator::LogicalOperator(LogicalOperator::Or),
-            Box::new(Expression::Literal(Value::Number(2.0))),
+            Box::new(Expression::Literal(Value::Number(2))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(true));
@@ -921,9 +939,9 @@ mod tests {
     fn test_parse_expression_logical_operator_numbers_or_false() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(0.0))),
+            Box::new(Expression::Literal(Value::Number(0))),
             Operator::LogicalOperator(LogicalOperator::Or),
-            Box::new(Expression::Literal(Value::Number(0.0))),
+            Box::new(Expression::Literal(Value::Number(0))),
         );
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(value, Value::Boolean(false));
@@ -934,7 +952,7 @@ mod tests {
     fn test_parse_expression_comparison_operator_equal_numbers_and_strings_unsupported() {
         let mut symbols = HashMap::new();
         let expression = Expression::Binary(
-            Box::new(Expression::Literal(Value::Number(1.0))),
+            Box::new(Expression::Literal(Value::Number(1))),
             Operator::ComparisonOperator(ComparisonOperator::Equal),
             Box::new(Expression::Literal(Value::String("1".to_string()))),
         );
@@ -956,10 +974,10 @@ mod tests {
     #[test]
     fn test_parse_identifier() {
         let mut symbols = HashMap::new();
-        symbols.insert("a".into(), Value::Number(1.0));
+        symbols.insert("a".into(), Value::Number(1));
         let expression = Expression::Identifier("a".into());
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(1.0));
+        assert_eq!(value, Value::Number(1));
     }
 
     #[test]
@@ -973,47 +991,39 @@ mod tests {
     #[test]
     fn test_parse_statement_assignment() {
         let mut symbols = HashMap::new();
-        let statement = Statement::Assignment(
-            "a".into(),
-            Box::new(Expression::Literal(Value::Number(1.0))),
-        );
+        let statement =
+            Statement::Assignment("a".into(), Box::new(Expression::Literal(Value::Number(1))));
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("a").unwrap(), &Value::Number(1.0));
+        assert_eq!(symbols.get("a").unwrap(), &Value::Number(1));
     }
 
     #[test]
     #[should_panic(expected = "identifier a already exists")]
     fn test_parse_statement_assignment_identifier_already_exists() {
         let mut symbols = HashMap::new();
-        symbols.insert("a".into(), Value::Number(1.0));
-        let statement = Statement::Assignment(
-            "a".into(),
-            Box::new(Expression::Literal(Value::Number(2.0))),
-        );
+        symbols.insert("a".into(), Value::Number(1));
+        let statement =
+            Statement::Assignment("a".into(), Box::new(Expression::Literal(Value::Number(2))));
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("a").unwrap(), &Value::Number(2.0));
+        assert_eq!(symbols.get("a").unwrap(), &Value::Number(2));
     }
 
     #[test]
     fn test_parse_statement_reassignment() {
         let mut symbols = HashMap::new();
-        symbols.insert("a".into(), Value::Number(1.0));
-        let statement = Statement::Reassignment(
-            "a".into(),
-            Box::new(Expression::Literal(Value::Number(2.0))),
-        );
+        symbols.insert("a".into(), Value::Number(1));
+        let statement =
+            Statement::Reassignment("a".into(), Box::new(Expression::Literal(Value::Number(2))));
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("a").unwrap(), &Value::Number(2.0));
+        assert_eq!(symbols.get("a").unwrap(), &Value::Number(2));
     }
 
     #[test]
     #[should_panic(expected = "could not find identifier a")]
     fn test_parse_statement_reassignment_identifier_not_found() {
         let mut symbols = HashMap::new();
-        let statement = Statement::Reassignment(
-            "a".into(),
-            Box::new(Expression::Literal(Value::Number(2.0))),
-        );
+        let statement =
+            Statement::Reassignment("a".into(), Box::new(Expression::Literal(Value::Number(2))));
         parse_statement(statement, &mut symbols);
     }
 
@@ -1053,15 +1063,12 @@ mod tests {
         let statement = Statement::Conditional(
             Expression::Literal(Value::Boolean(true)),
             Box::new(Statement::Block(vec![StatementExpression::Statement(
-                Statement::Assignment(
-                    "a".into(),
-                    Box::new(Expression::Literal(Value::Number(1.0))),
-                ),
+                Statement::Assignment("a".into(), Box::new(Expression::Literal(Value::Number(1)))),
             )])),
             Box::new(None),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("a").unwrap(), &Value::Number(1.0));
+        assert_eq!(symbols.get("a").unwrap(), &Value::Number(1));
     }
 
     #[test]
@@ -1070,20 +1077,17 @@ mod tests {
         let statement = Statement::Conditional(
             Expression::Literal(Value::Boolean(false)),
             Box::new(Statement::Block(vec![StatementExpression::Statement(
-                Statement::Assignment(
-                    "a".into(),
-                    Box::new(Expression::Literal(Value::Number(1.0))),
-                ),
+                Statement::Assignment("a".into(), Box::new(Expression::Literal(Value::Number(1)))),
             )])),
             Box::new(Some(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Assignment(
                     "a".into(),
-                    Box::new(Expression::Literal(Value::Number(2.0))),
+                    Box::new(Expression::Literal(Value::Number(2))),
                 )),
             ]))),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("a").unwrap(), &Value::Number(2.0));
+        assert_eq!(symbols.get("a").unwrap(), &Value::Number(2));
     }
 
     #[test]
@@ -1092,21 +1096,21 @@ mod tests {
         let block = Statement::Block(vec![
             StatementExpression::Statement(Statement::Assignment(
                 "a".into(),
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
             )),
             StatementExpression::Statement(Statement::Assignment(
                 "b".into(),
-                Box::new(Expression::Literal(Value::Number(2.0))),
+                Box::new(Expression::Literal(Value::Number(2))),
             )),
             StatementExpression::Statement(Statement::Assignment(
                 "c".into(),
-                Box::new(Expression::Literal(Value::Number(3.0))),
+                Box::new(Expression::Literal(Value::Number(3))),
             )),
         ]);
         parse_block(Box::new(block), &mut symbols);
-        assert_eq!(symbols.get("a").unwrap(), &Value::Number(1.0));
-        assert_eq!(symbols.get("b").unwrap(), &Value::Number(2.0));
-        assert_eq!(symbols.get("c").unwrap(), &Value::Number(3.0));
+        assert_eq!(symbols.get("a").unwrap(), &Value::Number(1));
+        assert_eq!(symbols.get("b").unwrap(), &Value::Number(2));
+        assert_eq!(symbols.get("c").unwrap(), &Value::Number(3));
     }
 
     #[test]
@@ -1128,12 +1132,12 @@ mod tests {
         let expression = Expression::FunctionCall(
             Box::new(Expression::Identifier("adder".into())),
             vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2)),
             ],
         );
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(3.0));
+        assert_eq!(value, Value::Number(3));
     }
 
     #[test]
@@ -1151,12 +1155,12 @@ mod tests {
                 )])),
             ))),
             vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2)),
             ],
         );
         let value = parse_expression(expression, &mut symbols);
-        assert_eq!(value, Value::Number(3.0));
+        assert_eq!(value, Value::Number(3));
     }
 
     #[test]
@@ -1166,8 +1170,8 @@ mod tests {
         let expression = Expression::FunctionCall(
             Box::new(Expression::Identifier("adder".into())),
             vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2)),
             ],
         );
         let value = parse_expression(expression, &mut symbols);
@@ -1178,18 +1182,14 @@ mod tests {
     fn test_parse_collection() {
         let mut symbols = HashMap::new();
         let expression = Expression::Collection(vec![
-            Expression::Literal(Value::Number(1.0)),
-            Expression::Literal(Value::Number(2.0)),
-            Expression::Literal(Value::Number(3.0)),
+            Expression::Literal(Value::Number(1)),
+            Expression::Literal(Value::Number(2)),
+            Expression::Literal(Value::Number(3)),
         ]);
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(
             value,
-            Value::Collection(vec![
-                Value::Number(1.0),
-                Value::Number(2.0),
-                Value::Number(3.0),
-            ])
+            Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3),])
         );
     }
 
@@ -1198,40 +1198,28 @@ mod tests {
         let mut symbols = HashMap::new();
         let expression = Expression::Collection(vec![
             Expression::Collection(vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
-                Expression::Literal(Value::Number(3.0)),
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2)),
+                Expression::Literal(Value::Number(3)),
             ]),
             Expression::Collection(vec![
-                Expression::Literal(Value::Number(4.0)),
-                Expression::Literal(Value::Number(5.0)),
-                Expression::Literal(Value::Number(6.0)),
+                Expression::Literal(Value::Number(4)),
+                Expression::Literal(Value::Number(5)),
+                Expression::Literal(Value::Number(6)),
             ]),
             Expression::Collection(vec![
-                Expression::Literal(Value::Number(7.0)),
-                Expression::Literal(Value::Number(8.0)),
-                Expression::Literal(Value::Number(9.0)),
+                Expression::Literal(Value::Number(7)),
+                Expression::Literal(Value::Number(8)),
+                Expression::Literal(Value::Number(9)),
             ]),
         ]);
         let value = parse_expression(expression, &mut symbols);
         assert_eq!(
             value,
             Value::Collection(vec![
-                Value::Collection(vec![
-                    Value::Number(1.0),
-                    Value::Number(2.0),
-                    Value::Number(3.0),
-                ]),
-                Value::Collection(vec![
-                    Value::Number(4.0),
-                    Value::Number(5.0),
-                    Value::Number(6.0),
-                ]),
-                Value::Collection(vec![
-                    Value::Number(7.0),
-                    Value::Number(8.0),
-                    Value::Number(9.0),
-                ]),
+                Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3),]),
+                Value::Collection(vec![Value::Number(4), Value::Number(5), Value::Number(6),]),
+                Value::Collection(vec![Value::Number(7), Value::Number(8), Value::Number(9),]),
             ])
         );
     }
@@ -1239,13 +1227,13 @@ mod tests {
     #[test]
     fn test_parse_for() {
         let mut symbols = HashMap::new();
-        symbols.insert("x".into(), Value::Number(0.0));
+        symbols.insert("x".into(), Value::Number(0));
         let statement = Statement::For(
             "item".into(),
             Box::new(Expression::Collection(vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
-                Expression::Literal(Value::Number(3.0)),
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2)),
+                Expression::Literal(Value::Number(3)),
             ])),
             Box::new(Statement::Block(vec![StatementExpression::Statement(
                 Statement::Reassignment(
@@ -1259,30 +1247,30 @@ mod tests {
             )])),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(6.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(6));
     }
 
     #[test]
     fn test_parse_for_with_nested_collection() {
         let mut symbols = HashMap::new();
-        symbols.insert("x".into(), Value::Number(0.0));
+        symbols.insert("x".into(), Value::Number(0));
         let statement = Statement::For(
             "collection".into(),
             Box::new(Expression::Collection(vec![
                 Expression::Collection(vec![
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Literal(Value::Number(2.0)),
-                    Expression::Literal(Value::Number(3.0)),
+                    Expression::Literal(Value::Number(1)),
+                    Expression::Literal(Value::Number(2)),
+                    Expression::Literal(Value::Number(3)),
                 ]),
                 Expression::Collection(vec![
-                    Expression::Literal(Value::Number(4.0)),
-                    Expression::Literal(Value::Number(5.0)),
-                    Expression::Literal(Value::Number(6.0)),
+                    Expression::Literal(Value::Number(4)),
+                    Expression::Literal(Value::Number(5)),
+                    Expression::Literal(Value::Number(6)),
                 ]),
                 Expression::Collection(vec![
-                    Expression::Literal(Value::Number(7.0)),
-                    Expression::Literal(Value::Number(8.0)),
-                    Expression::Literal(Value::Number(9.0)),
+                    Expression::Literal(Value::Number(7)),
+                    Expression::Literal(Value::Number(8)),
+                    Expression::Literal(Value::Number(9)),
                 ]),
             ])),
             Box::new(Statement::Block(vec![StatementExpression::Statement(
@@ -1303,19 +1291,19 @@ mod tests {
             )])),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(45.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(45));
     }
 
     #[test]
     fn test_for_loop_with_break() {
         let mut symbols = HashMap::new();
-        symbols.insert("x".into(), Value::Number(0.0));
+        symbols.insert("x".into(), Value::Number(0));
         let statement = Statement::For(
             "item".into(),
             Box::new(Expression::Collection(vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0)),
-                Expression::Literal(Value::Number(3.0)),
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2)),
+                Expression::Literal(Value::Number(3)),
             ])),
             Box::new(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Reassignment(
@@ -1330,7 +1318,7 @@ mod tests {
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-                        Box::new(Expression::Literal(Value::Number(2.0))),
+                        Box::new(Expression::Literal(Value::Number(2))),
                     ),
                     Box::new(Statement::Block(vec![StatementExpression::Statement(
                         Statement::Break,
@@ -1340,7 +1328,7 @@ mod tests {
             ])),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
     }
 
     #[test]
@@ -1349,7 +1337,7 @@ mod tests {
         let statement = Statement::Block(vec![
             StatementExpression::Statement(Statement::Assignment(
                 "x".into(),
-                Box::new(Expression::Literal(Value::Number(0.0))),
+                Box::new(Expression::Literal(Value::Number(0))),
             )),
             StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Reassignment(
@@ -1357,14 +1345,14 @@ mod tests {
                     Box::new(Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::MathematicalOperator(MathematicalOperator::Plus),
-                        Box::new(Expression::Literal(Value::Number(1.0))),
+                        Box::new(Expression::Literal(Value::Number(1))),
                     )),
                 )),
                 StatementExpression::Statement(Statement::Conditional(
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::Equal),
-                        Box::new(Expression::Literal(Value::Number(10.0))),
+                        Box::new(Expression::Literal(Value::Number(10))),
                     ),
                     Box::new(Statement::Block(vec![StatementExpression::Statement(
                         Statement::Break,
@@ -1374,7 +1362,7 @@ mod tests {
             ])))),
         ]);
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10));
     }
 
     #[test]
@@ -1383,14 +1371,14 @@ mod tests {
         let statement = Statement::Block(vec![
             StatementExpression::Statement(Statement::Assignment(
                 "x".into(),
-                Box::new(Expression::Literal(Value::Number(3.0))),
+                Box::new(Expression::Literal(Value::Number(3))),
             )),
             StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Conditional(
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0))),
+                        Box::new(Expression::Literal(Value::Number(10))),
                     ),
                     Box::new(Statement::Block(vec![StatementExpression::Statement(
                         Statement::Reassignment(
@@ -1398,7 +1386,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             )),
                         ),
                     )])),
@@ -1409,7 +1397,7 @@ mod tests {
             ])))),
         ]);
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(10));
     }
 
     #[test]
@@ -1418,14 +1406,14 @@ mod tests {
         let statement = Statement::Block(vec![
             StatementExpression::Statement(Statement::Assignment(
                 "x".into(),
-                Box::new(Expression::Literal(Value::Number(15.0))),
+                Box::new(Expression::Literal(Value::Number(15))),
             )),
             StatementExpression::Statement(Statement::Loop(Box::new(Statement::Block(vec![
                 StatementExpression::Statement(Statement::Conditional(
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0))),
+                        Box::new(Expression::Literal(Value::Number(10))),
                     ),
                     Box::new(Statement::Block(vec![StatementExpression::Statement(
                         Statement::Reassignment(
@@ -1433,7 +1421,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             )),
                         ),
                     )])),
@@ -1444,7 +1432,7 @@ mod tests {
             ])))),
         ]);
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(15.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(15));
     }
 
     #[test]
@@ -1452,21 +1440,17 @@ mod tests {
         let mut symbols = HashMap::new();
         symbols.insert(
             "x".into(),
-            Value::Collection(vec![
-                Value::Number(1.0),
-                Value::Number(2.0),
-                Value::Number(3.0),
-            ]),
+            Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3)]),
         );
         let statement = Statement::Reassignment(
             "x".into(),
             Box::new(Expression::Accessor(
                 Box::new(Expression::Identifier("x".into())),
-                Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(1)))),
             )),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(2.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(2));
     }
 
     #[test]
@@ -1475,21 +1459,9 @@ mod tests {
         symbols.insert(
             "x".into(),
             Value::Collection(vec![
-                Value::Collection(vec![
-                    Value::Number(1.0),
-                    Value::Number(2.0),
-                    Value::Number(3.0),
-                ]),
-                Value::Collection(vec![
-                    Value::Number(4.0),
-                    Value::Number(5.0),
-                    Value::Number(6.0),
-                ]),
-                Value::Collection(vec![
-                    Value::Number(7.0),
-                    Value::Number(8.0),
-                    Value::Number(9.0),
-                ]),
+                Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3)]),
+                Value::Collection(vec![Value::Number(4), Value::Number(5), Value::Number(6)]),
+                Value::Collection(vec![Value::Number(7), Value::Number(8), Value::Number(9)]),
             ]),
         );
         let statement = Statement::Reassignment(
@@ -1497,13 +1469,13 @@ mod tests {
             Box::new(Expression::Accessor(
                 Box::new(Expression::Accessor(
                     Box::new(Expression::Identifier("x".into())),
-                    Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                    Accessor::Index(Box::new(Expression::Literal(Value::Number(1)))),
                 )),
-                Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(1)))),
             )),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(5.0),);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(5),);
     }
 
     #[test]
@@ -1512,11 +1484,7 @@ mod tests {
         let mut symbols = HashMap::new();
         symbols.insert(
             "x".into(),
-            Value::Collection(vec![
-                Value::Number(1.0),
-                Value::Number(2.0),
-                Value::Number(3.0),
-            ]),
+            Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3)]),
         );
         let statement = Statement::Reassignment(
             "x".into(),
@@ -1526,7 +1494,7 @@ mod tests {
             )),
         );
         parse_statement(statement, &mut symbols);
-        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3.0));
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
     }
 
     #[test]

@@ -1,0 +1,9 @@
+let map = {
+    "a": 1,
+    "b": "bee",
+    "c": [1, 2, 3],
+}
+
+print(map.a);
+print(map["b"]);
+print(map.c[2]);
