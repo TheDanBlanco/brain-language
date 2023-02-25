@@ -414,7 +414,10 @@ impl Parser {
         self.expect(Token::LeftBrace);
         let mut entries = vec![];
         while !self.check(Token::RightBrace) {
-            let key = self.parse_expression();
+            let mut key = self.parse_expression();
+            if let Expression::Identifier(identifier) = key {
+                key = Expression::Literal(Value::String(identifier));
+            }
             self.expect(Token::Colon);
             let value = self.parse_expression();
             self.check_and_skip(Token::Comma);
@@ -746,7 +749,7 @@ mod tests {
             Token::Colon,
             Token::Number("2".to_string()),
             Token::Comma,
-            Token::Number("3".to_string()),
+            Token::Identifier("3".to_string()),
             Token::Colon,
             Token::Number("4".to_string()),
             Token::RightBrace,
@@ -764,7 +767,7 @@ mod tests {
                         Expression::Literal(Value::Number(2))
                     ),
                     (
-                        Expression::Literal(Value::Number(3)),
+                        Expression::Literal(Value::String("3".to_string())),
                         Expression::Literal(Value::Number(4))
                     )
                 ]))

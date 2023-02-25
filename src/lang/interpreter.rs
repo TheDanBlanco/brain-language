@@ -1678,6 +1678,48 @@ mod tests {
     }
 
     #[test]
+    fn test_property_accessor_call_function_in_map() {
+        let mut symbols = HashMap::new();
+        symbols.insert(
+            "x".into(),
+            Value::Map(BTreeMap::from_iter(vec![(
+                Value::String("adder".into()),
+                Value::Function(
+                    vec!["a".into(), "b".into()],
+                    Box::new(Statement::Block(vec![StatementExpression::Statement(
+                        Statement::Return(Box::new(Expression::Binary(
+                            Box::new(Expression::Identifier("a".into())),
+                            Operator::MathematicalOperator(MathematicalOperator::Plus),
+                            Box::new(Expression::Identifier("b".into())),
+                        ))),
+                    )])),
+                ),
+            )])),
+        );
+        let statement = Statement::Reassignment(
+            "x".into(),
+            Box::new(Expression::Accessor(
+                Box::new(Expression::Identifier("x".into())),
+                Accessor::Property(Value::String("adder".into())),
+            )),
+        );
+        parse_statement(statement, &mut symbols);
+        assert_eq!(
+            symbols.get("x").unwrap(),
+            &Value::Function(
+                vec!["a".into(), "b".into()],
+                Box::new(Statement::Block(vec![StatementExpression::Statement(
+                    Statement::Return(Box::new(Expression::Binary(
+                        Box::new(Expression::Identifier("a".into())),
+                        Operator::MathematicalOperator(MathematicalOperator::Plus),
+                        Box::new(Expression::Identifier("b".into())),
+                    ))),
+                )])),
+            )
+        );
+    }
+
+    #[test]
     fn test_parse_statement_loop_with_continue() {
         let mut symbols = HashMap::new();
         let statement = Statement::Block(vec![
