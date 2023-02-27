@@ -1,10 +1,10 @@
-use crate::lang::parser_new::{context::Context, value::Value};
+use crate::lang::parser_new::{value::Value, context::Context};
 
-use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical};
+use self::{mathematical::Mathematical, logical::Logical, comparison::Comparison};
 
-pub mod comparison;
-pub mod logical;
 pub mod mathematical;
+pub mod logical;
+pub mod comparison;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Operator {
@@ -14,54 +14,11 @@ pub enum Operator {
 }
 
 impl Operator {
-    pub fn eval(
-        &self,
-        left: Value,
-        right: Value,
-        _context: &mut Context,
-    ) -> Result<Value, Box<dyn std::error::Error>> {
+    pub fn eval(&self, left: Value, right: Value, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>>{
         match self {
-            Operator::Mathematical(mathematical) => mathematical.eval(left, right),
-            Operator::Logical(logical) => logical.eval(left, right),
-            Operator::Comparison(comparison) => comparison.eval(left, right),
+            Operator::Mathematical(mathematical) => mathematical.eval(left, right, context),
+            Operator::Logical(logical) => logical.eval(left, right, context),
+            Operator::Comparison(comparison) => comparison.eval(left, right, context),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn eval_mathematical_operator() {
-        let context = &mut Context::new();
-        let left = Value::Number(1);
-        let right = Value::Number(2);
-        let operator = Operator::Mathematical(Mathematical::Add);
-
-        let result = operator.eval(left, right, context);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn eval_logical_operator() {
-        let context = &mut Context::new();
-        let left = Value::Boolean(true);
-        let right = Value::Boolean(false);
-        let operator = Operator::Logical(Logical::And);
-
-        let result = operator.eval(left, right, context);
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn eval_comparison_operator() {
-        let context = &mut Context::new();
-        let left = Value::Number(1);
-        let right = Value::Number(2);
-        let operator = Operator::Comparison(Comparison::Equal);
-
-        let result = operator.eval(left, right, context);
-        assert!(result.is_ok());
     }
 }

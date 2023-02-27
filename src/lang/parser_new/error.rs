@@ -17,30 +17,26 @@ pub enum ErrorKind {
     UnknownIdentifier,
     InvalidMapKey,
     InvalidLogicalOperation,
-    InvalidMathematicalOperation,
-    InvalidComparisonOperation,
 }
 
 impl fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ErrorKind::KeyNotFound => write!(f, "KeyNotFound"),
-            ErrorKind::InvalidType => write!(f, "InvalidType"),
-            ErrorKind::IndexOutOfBounds => write!(f, "IndexOutOfBounds"),
-            ErrorKind::InvalidOperator => write!(f, "InvalidOperator"),
-            ErrorKind::InvalidFunction => write!(f, "InvalidFunction"),
-            ErrorKind::InvalidArgument => write!(f, "InvalidArgument"),
-            ErrorKind::InvalidExpression => write!(f, "InvalidExpression"),
-            ErrorKind::InvalidStatement => write!(f, "InvalidStatement"),
-            ErrorKind::InvalidIdentifier => write!(f, "InvalidIdentifier"),
-            ErrorKind::InvalidAssignment => write!(f, "InvalidAssignment"),
-            ErrorKind::InvalidVariable => write!(f, "InvalidVariable"),
-            ErrorKind::InvalidFunctionCall => write!(f, "InvalidFunctionCall"),
-            ErrorKind::UnknownIdentifier => write!(f, "UnknownIdentifier"),
-            ErrorKind::InvalidMapKey => write!(f, "InvalidMapKey"),
-            ErrorKind::InvalidLogicalOperation => write!(f, "InvalidLogicalOperation"),
-            ErrorKind::InvalidMathematicalOperation => write!(f, "InvalidMathematicalOperation"),
-            ErrorKind::InvalidComparisonOperation => write!(f, "InvalidComparisonOperation"),
+            ErrorKind::KeyNotFound => write!(f, "Key not found"),
+            ErrorKind::InvalidType => write!(f, "Invalid type"),
+            ErrorKind::IndexOutOfBounds => write!(f, "Index out of bounds"),
+            ErrorKind::InvalidOperator => write!(f, "Invalid operator"),
+            ErrorKind::InvalidFunction => write!(f, "Invalid function"),
+            ErrorKind::InvalidArgument => write!(f, "Invalid argument"),
+            ErrorKind::InvalidExpression => write!(f, "Invalid expression"),
+            ErrorKind::InvalidStatement => write!(f, "Invalid statement"),
+            ErrorKind::InvalidIdentifier => write!(f, "Invalid identifier"),
+            ErrorKind::InvalidAssignment => write!(f, "Invalid assignment"),
+            ErrorKind::InvalidVariable => write!(f, "Invalid variable"),
+            ErrorKind::InvalidFunctionCall => write!(f, "Invalid function call"),
+            ErrorKind::UnknownIdentifier => write!(f, "Unknown identifier"),
+            ErrorKind::InvalidMapKey => write!(f, "Invalid map key"),
+            ErrorKind::InvalidLogicalOperation => write!(f, "Invalid logical operation"),
         }
     }
 }
@@ -59,7 +55,7 @@ impl Error {
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "[{}]: {}", self.kind, self.message)
+        write!(f, "{}: {}", self.kind, self.message)
     }
 }
 
