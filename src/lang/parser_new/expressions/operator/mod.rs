@@ -14,7 +14,7 @@ pub enum Operator {
 }
 
 impl Operator {
-    pub fn eval(&self, left: Value, right: Value, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>>{
+    pub fn eval(&self, left: &Value, right: &Value, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>>{
         match self {
             Operator::Mathematical(mathematical) => mathematical.eval(left, right, context),
             Operator::Logical(logical) => logical.eval(left, right, context),

@@ -20,7 +20,7 @@ impl Binary {
 }
 
 impl Evaluatable for Binary {
-    fn eval<'a, 'b>(&'a self, context: &'b mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+    fn eval<'a, 'b>(&'a self, context: &'b mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
         let left = self.lhs.eval(context)?;
         let right = self.rhs.eval(context)?;
 

@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use crate::lang::parser_new::{value::Value, context::Context};
 
 use super::expression::Evaluatable;
@@ -14,7 +16,7 @@ impl Literal {
 }
 
 impl Evaluatable for Literal {
-    fn eval<'a>(&'a self, _context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
-        Ok(self.value.clone())
+    fn eval<'a>(&'a self, _context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+        Ok(&self.value.clone())
     }
 }

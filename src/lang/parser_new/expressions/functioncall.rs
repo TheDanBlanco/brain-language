@@ -18,14 +18,14 @@ impl FunctionCall {
 }
 
 impl Evaluatable for FunctionCall {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
         let unboxed_name = &self.name;
         let name = unboxed_name.eval(context)?;
 
         let function = match name {
             Value::Function(function, args) => Value::Function(function.clone(), args.clone()),
             Value::String(identifier) => {
-                match context.symbols.get(&identifier) {
+                match context.symbols.get(identifier) {
                     Some(Value::Function(function, args)) => Value::Function(function.clone(), args.clone()),
                     Some(_) => return Err(Error::new(
                         ErrorKind::InvalidType,
@@ -50,6 +50,6 @@ impl Evaluatable for FunctionCall {
             )),
         };
     
-        return Ok(function)
+        return Ok(&function.clone())
     }
 }

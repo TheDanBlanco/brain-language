@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap};
+use std::collections::{HashMap, BTreeMap};
 
 use super::value::Value;
 
