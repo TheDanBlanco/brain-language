@@ -24,13 +24,16 @@ impl fmt::Display for Value {
             Value::Function(_, _) => write!(f, "[function]"),
             Value::Map(map) => {
                 let mut output = String::new();
-                if map.len() == 0 {
-                    return write!(f, "{{empty map}}");
+                for (i, (key, value)) in map.iter().enumerate() {
+                    output.push_str(&format!("{key}: {value}"));
+                    if i != map.len() - 1 {
+                        output.push_str(", ");
+                    }
                 }
-                for (_i, (key, value)) in map.iter().enumerate() {
-                    output.push_str(&format!("{key}: {value}\n"));
+                if output.is_empty() {
+                    return write!(f, "{{}}");
                 }
-                write!(f, "{{\n{output}}}")
+                write!(f, "{{ {output} }}")
             }
             Value::Collection(collection) => {
                 let mut output = String::new();
@@ -43,36 +46,5 @@ impl fmt::Display for Value {
                 write!(f, "[{}]", output)
             }
         }
-    }
-}
-
-impl Value {
-    pub fn new_number(number: i64) -> Self {
-        Value::Number(number)
-    }
-
-    pub fn new_string(string: String) -> Self {
-        Value::String(string)
-    }
-
-    pub fn new_boolean(bool: bool) -> Self {
-        Value::Boolean(bool)
-    }
-
-
-    pub fn new_collection(collection: Vec<Value>) -> Self {
-        Value::Collection(collection)
-    }
-
-    pub fn new_function(expression: Expression, args: Vec<String>) -> Self {
-        Value::Function(Box::new(expression), args)
-    }
-
-    pub fn new_map(map: BTreeMap<Value, Value>) -> Self {
-        Value::Map(map)
-    }
-
-    pub fn new_null() -> Self {
-        Value::Null
     }
 }

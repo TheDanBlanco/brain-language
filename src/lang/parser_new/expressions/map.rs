@@ -1,6 +1,10 @@
-use std::{collections::BTreeMap};
+use std::collections::BTreeMap;
 
-use crate::lang::parser_new::{value::Value, context::Context, error::{ErrorKind, Error}};
+use crate::lang::parser_new::{
+    context::Context,
+    error::{Error, ErrorKind},
+    value::Value,
+};
 
 use super::expression::{Evaluatable, Expression};
 
@@ -16,20 +20,15 @@ impl Map {
 }
 
 impl Evaluatable for Map {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let mut map = BTreeMap::new();
 
         for (key, value) in &self.pairs {
             let key = key.eval(context)?;
-            //only accept number, strings, or bools as keys.
+
             match key {
                 Value::Number(_) | Value::String(_) | Value::Boolean(_) => {}
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::InvalidMapKey,
-                        format!("Invalid map key: {key}",),
-                    ))
-                }
+                _ => return Err(Error::new(ErrorKind::InvalidMapKey, format!("{key}"))),
             }
 
             let value = value.eval(context)?;
@@ -37,5 +36,139 @@ impl Evaluatable for Map {
         }
 
         Ok(Value::Map(map))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lang::parser_new::{expressions::expression::Expression, value::Value};
+
+    #[test]
+    fn create_new_map() {
+        let pairs = vec![(
+            Expression::new_literal(Value::String("a".to_string())),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        assert_eq!(map.pairs.len(), 1);
+        assert_eq!(
+            map.pairs[0].0,
+            Expression::new_literal(Value::String("a".to_string()))
+        );
+    }
+
+    #[test]
+    fn eval_map_string_key() {
+        let mut tree = BTreeMap::new();
+        tree.insert(Value::String("a".to_string()), Value::Number(2));
+
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::String("a".to_string())),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Map(tree));
+    }
+
+    #[test]
+    fn eval_map_number_key() {
+        let mut tree = BTreeMap::new();
+        tree.insert(Value::Number(1), Value::Number(2));
+
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Number(1)),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Map(tree));
+    }
+
+    #[test]
+    fn eval_map_boolean_key() {
+        let mut tree = BTreeMap::new();
+        tree.insert(Value::Boolean(true), Value::Number(2));
+
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Boolean(true)),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Map(tree));
+    }
+
+    #[test]
+    fn eval_map_with_invalid_key_collection() {
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Collection(vec![])),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: []",);
+    }
+
+    #[test]
+    fn eval_map_with_invalid_key_function() {
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Function(
+                Box::new(Expression::new_literal(Value::String("foo".to_string()))),
+                vec![],
+            )),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "[InvalidMapKey]: [function]",
+        );
+    }
+
+    #[test]
+    fn eval_map_with_invalid_key_null() {
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Null),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: null",);
+    }
+
+    #[test]
+    fn eval_map_with_invalid_key_map() {
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Map(BTreeMap::new())),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.eval(context);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: {}",);
     }
 }
