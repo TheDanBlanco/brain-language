@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::lang::parser_new::{value::Value, context::Context};
 
 use super::expression::{Evaluatable, Expression};
@@ -16,15 +14,14 @@ impl Collection {
 }
 
 impl Evaluatable for Collection {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let mut values = Vec::new();
 
         for element in &self.elements {
-            let cloned = context.clone();
-            let value = element.eval(&mut cloned)?;
+            let value = element.eval(context)?;
             values.push(value.clone());
         }
 
-        Ok(&Value::Collection(values))
+        Ok(Value::Collection(values))
     }
 }

@@ -14,9 +14,9 @@ impl Identifier {
 }
 
 impl Evaluatable for Identifier {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         if let Some(value) = context.symbols.get(&self.name) {
-            return Ok(value);
+            return Ok(value.clone());
         }
 
         return Err(Error::new(

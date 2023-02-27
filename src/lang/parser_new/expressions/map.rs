@@ -16,7 +16,7 @@ impl Map {
 }
 
 impl Evaluatable for Map {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let mut map = BTreeMap::new();
 
         for (key, value) in &self.pairs {
@@ -36,6 +36,6 @@ impl Evaluatable for Map {
             map.insert(key.clone(), value.clone());
         }
 
-        Ok(&Value::Map(map))
+        Ok(Value::Map(map))
     }
 }

@@ -15,7 +15,7 @@ impl Index {
 }
 
 impl Evaluatable for Index {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let target = self.target.eval(context)?;
 
         match target {
@@ -24,21 +24,21 @@ impl Evaluatable for Index {
 
                 match index {
                     Value::Number(index) => {
-                        if index < &0 {
+                        if index < 0 {
                             return Err(Error::new(
                                 ErrorKind::IndexOutOfBounds,
                                 format!("Index {} is out of bounds", index),
                             ));
                         }
 
-                        if index >= &(collection.len() as i64) {
+                        if index >= (collection.len() as i64) {
                             return Err(Error::new(
                                 ErrorKind::IndexOutOfBounds,
                                 format!("Index {} is out of bounds", index),
                             ));
                         }
 
-                        Ok(&collection[*index as usize])
+                        Ok(collection[index as usize].clone())
                     }
                     _ => Err(Error::new(
                         ErrorKind::InvalidType,
@@ -49,8 +49,8 @@ impl Evaluatable for Index {
             Value::Map(map) => {
                 let key = self.index.eval(context)?;
 
-                match map.get(key) {
-                    Some(value) => Ok(&value),
+                match map.get(&key) {
+                    Some(value) => Ok(value.clone()),
                     None => Err(Error::new(
                         ErrorKind::KeyNotFound,
                         format!("Key {} not found", key),
@@ -62,21 +62,21 @@ impl Evaluatable for Index {
 
                 match index {
                     Value::Number(index) => {
-                        if index < &0 {
+                        if index < 0 {
                             return Err(Error::new(
                                 ErrorKind::IndexOutOfBounds,
                                 format!("Index {} is out of bounds", index),
                             ));
                         }
 
-                        if index >= &(string.len() as i64) {
+                        if index >= (string.len() as i64) {
                             return Err(Error::new(
                                 ErrorKind::IndexOutOfBounds,
                                 format!("Index {} is out of bounds", index),
                             ));
                         }
 
-                        Ok(&Value::String(string.chars().nth(*index as usize).unwrap().to_string()))
+                        Ok(Value::String(string.chars().nth(index as usize).unwrap().to_string()))
                     }
                     _ => Err(Error::new(
                         ErrorKind::InvalidType,

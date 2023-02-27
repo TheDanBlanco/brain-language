@@ -16,13 +16,13 @@ impl Field {
 }
 
 impl Evaluatable for Field {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let target = self.target.eval(context)?;
 
         match target {
             Value::Map(map) => {
                 match map.get(&Value::String(self.field.clone())) {
-                    Some(value) => Ok(&value),
+                    Some(value) => Ok(value.clone()),
                     None => Err(Error::new(
                         ErrorKind::KeyNotFound,
                         format!("Key {} not found", self.field),

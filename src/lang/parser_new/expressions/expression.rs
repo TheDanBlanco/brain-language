@@ -3,7 +3,7 @@ use crate::lang::{parser_new::{value::Value, context::Context}};
 use super::{binary::Binary, collection::Collection, map::Map, functioncall::FunctionCall, identifier::Identifier, literal::Literal, operator::Operator};
 
 pub trait Evaluatable {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>>;
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -43,7 +43,7 @@ impl Expression {
 }
 
 impl Evaluatable for Expression {
-    fn eval<'a>(&'a self, context: &mut Context) -> Result<&Value, Box<dyn std::error::Error>> {
+    fn eval<'a>(&'a self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         match self {
             Expression::Binary(binary) => binary.eval(context),
             Expression::Collection(collection) => collection.eval(context),
