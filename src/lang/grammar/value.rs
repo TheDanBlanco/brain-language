@@ -1,7 +1,7 @@
 use core::fmt;
 use std::collections::BTreeMap;
 
-use super::expressions::expression::Expression;
+use super::statements::Statement;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Value {
@@ -9,7 +9,7 @@ pub enum Value {
     String(String),
     Boolean(bool),
     Collection(Vec<Value>),
-    Function(Box<Expression>, Vec<String>),
+    Function(Vec<String>, Box<Statement>),
     Map(BTreeMap<Value, Value>),
     Null,
 }

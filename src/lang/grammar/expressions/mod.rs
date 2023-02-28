@@ -1,9 +1,18 @@
-use crate::lang::parser_new::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value};
 
-use super::{
+use self::{
     binary::Binary, collection::Collection, functioncall::FunctionCall, identifier::Identifier,
     literal::Literal, map::Map, operator::Operator,
 };
+
+pub mod accessors;
+pub mod binary;
+pub mod collection;
+pub mod functioncall;
+pub mod identifier;
+pub mod literal;
+pub mod map;
+pub mod operator;
 
 pub trait Evaluatable {
     fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>>;
@@ -20,8 +29,8 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn new_binary(lhs: Expression, rhs: Expression, operator: Operator) -> Self {
-        Expression::Binary(Binary::new(lhs, rhs, operator))
+    pub fn new_binary(lhs: Expression, operator: Operator, rhs: Expression) -> Self {
+        Expression::Binary(Binary::new(lhs, operator, rhs))
     }
 
     pub fn new_collection(elements: Vec<Expression>) -> Self {
@@ -32,8 +41,8 @@ impl Expression {
         Expression::Literal(Literal::new(value))
     }
 
-    pub fn new_identifier(identifier: Identifier) -> Self {
-        Expression::Identifier(identifier)
+    pub fn new_identifier(identifier: String) -> Self {
+        Expression::Identifier(Identifier::new(identifier))
     }
 
     pub fn new_function_call(name: Expression, args: Vec<Expression>) -> Self {
@@ -60,7 +69,9 @@ impl Evaluatable for Expression {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::parser_new::expressions::operator::mathematical::Mathematical;
+    use crate::lang::grammar::{
+        expressions::operator::mathematical::Mathematical, statements::Statement,
+    };
 
     use super::*;
 
@@ -84,7 +95,7 @@ mod tests {
 
     #[test]
     fn new_expression_identifier() {
-        let expression = Expression::new_identifier(Identifier::new("foo".to_string()));
+        let expression = Expression::new_identifier("foo".to_string());
         assert_eq!(
             expression,
             Expression::Identifier(Identifier::new("foo".to_string()))
@@ -95,7 +106,7 @@ mod tests {
     fn eval_expression_identifier() {
         let context = &mut Context::new();
         context.symbols.insert("foo".to_string(), Value::Number(1));
-        let expression = Expression::new_identifier(Identifier::new("foo".to_string()));
+        let expression = Expression::new_identifier("foo".to_string());
 
         let result = expression.eval(context);
         assert!(result.is_ok());
@@ -104,13 +115,13 @@ mod tests {
     #[test]
     fn new_expression_function_call() {
         let expression = Expression::new_function_call(
-            Expression::new_identifier(Identifier::new("foo".to_string())),
+            Expression::new_identifier("foo".to_string()),
             vec![Expression::new_literal(Value::Number(1))],
         );
         assert_eq!(
             expression,
             Expression::FunctionCall(FunctionCall::new(
-                Expression::new_identifier(Identifier::new("foo".to_string())),
+                Expression::new_identifier("foo".to_string()),
                 vec![Expression::new_literal(Value::Number(1))]
             ))
         );
@@ -121,13 +132,10 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "foo".to_string(),
-            Value::Function(
-                Box::new(Expression::new_literal(Value::String("bar".to_string()))),
-                vec![],
-            ),
+            Value::Function(vec![], Box::new(Statement::new_break())),
         );
         let expression = Expression::new_function_call(
-            Expression::new_identifier(Identifier::new("foo".to_string())),
+            Expression::new_identifier("foo".to_string()),
             vec![Expression::new_literal(Value::Number(1))],
         );
 
@@ -139,15 +147,15 @@ mod tests {
     fn new_expression_binary() {
         let expression = Expression::new_binary(
             Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
             Operator::Mathematical(Mathematical::Add),
+            Expression::new_literal(Value::Number(2)),
         );
         assert_eq!(
             expression,
             Expression::Binary(Binary::new(
                 Expression::new_literal(Value::Number(1)),
+                Operator::Mathematical(Mathematical::Add),
                 Expression::new_literal(Value::Number(2)),
-                Operator::Mathematical(Mathematical::Add)
             ))
         );
     }
@@ -157,8 +165,8 @@ mod tests {
         let context = &mut Context::new();
         let expression = Expression::new_binary(
             Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
             Operator::Mathematical(Mathematical::Add),
+            Expression::new_literal(Value::Number(2)),
         );
 
         let result = expression.eval(context);

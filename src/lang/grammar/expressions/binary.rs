@@ -1,9 +1,6 @@
-use crate::lang::parser_new::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value};
 
-use super::{
-    expression::{Evaluatable, Expression},
-    operator::Operator,
-};
+use super::{operator::Operator, Evaluatable, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Binary {
@@ -13,7 +10,7 @@ pub struct Binary {
 }
 
 impl Binary {
-    pub fn new(lhs: Expression, rhs: Expression, operator: Operator) -> Self {
+    pub fn new(lhs: Expression, operator: Operator, rhs: Expression) -> Self {
         Binary {
             lhs: Box::new(lhs),
             rhs: Box::new(rhs),
@@ -33,7 +30,7 @@ impl Evaluatable for Binary {
 
 #[cfg(test)]
 mod test {
-    use crate::lang::parser_new::expressions::operator::mathematical::Mathematical;
+    use crate::lang::grammar::expressions::operator::mathematical::Mathematical;
 
     use super::*;
 
@@ -43,7 +40,7 @@ mod test {
         let rhs = Expression::new_literal(Value::Number(2));
         let operator = Operator::Mathematical(Mathematical::Add);
 
-        let binary = Binary::new(lhs, rhs, operator);
+        let binary = Binary::new(lhs, operator, rhs);
         assert_eq!(
             binary.lhs,
             Box::new(Expression::new_literal(Value::Number(1)))
@@ -61,7 +58,7 @@ mod test {
         let lhs = Expression::new_literal(Value::Number(1));
         let rhs = Expression::new_literal(Value::Number(2));
         let operator = Operator::Mathematical(Mathematical::Add);
-        let binary = Binary::new(lhs, rhs, operator);
+        let binary = Binary::new(lhs, operator, rhs);
 
         let result = binary.eval(context);
 

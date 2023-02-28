@@ -1,6 +1,6 @@
-use crate::lang::parser_new::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value};
 
-use super::expression::{Evaluatable, Expression};
+use super::{Evaluatable, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Collection {
@@ -29,7 +29,6 @@ impl Evaluatable for Collection {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::parser_new::{expressions::expression::Expression, value::Value};
 
     #[test]
     fn create_new_collection() {

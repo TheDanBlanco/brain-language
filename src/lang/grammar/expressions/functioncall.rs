@@ -1,10 +1,10 @@
-use crate::lang::parser_new::{
+use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
     value::Value,
 };
 
-use super::expression::{Evaluatable, Expression};
+use super::{Evaluatable, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
@@ -58,8 +58,9 @@ impl Evaluatable for FunctionCall {
 
 #[cfg(test)]
 mod tests {
+    use crate::lang::grammar::statements::Statement;
+
     use super::*;
-    use crate::lang::parser_new::{expressions::expression::Expression, value::Value};
 
     #[test]
     fn create_new_function_call() {
@@ -82,10 +83,7 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "foo".to_string(),
-            Value::Function(
-                Box::new(Expression::new_literal(Value::String("bar".to_string()))),
-                vec![],
-            ),
+            Value::Function(vec![], Box::new(Statement::new_break())),
         );
 
         let function_call = FunctionCall::new(
@@ -97,10 +95,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Function(
-                Box::new(Expression::new_literal(Value::String("bar".to_string()))),
-                vec![]
-            )
+            Value::Function(vec![], Box::new(Statement::new_break()))
         );
     }
 
@@ -108,10 +103,7 @@ mod tests {
     fn eval_function_call_identifier_is_function() {
         let context = &mut Context::new();
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::Function(
-                Box::new(Expression::new_literal(Value::String("foo".to_string()))),
-                vec![],
-            )),
+            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break()))),
             vec![Expression::new_literal(Value::Number(1))],
         );
 
@@ -119,10 +111,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Function(
-                Box::new(Expression::new_literal(Value::String("foo".to_string()))),
-                vec![]
-            )
+            Value::Function(vec![], Box::new(Statement::new_break()))
         );
     }
 

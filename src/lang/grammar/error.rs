@@ -5,20 +5,12 @@ pub enum ErrorKind {
     KeyNotFound,
     InvalidType,
     IndexOutOfBounds,
-    InvalidOperator,
-    InvalidFunction,
-    InvalidArgument,
-    InvalidExpression,
-    InvalidStatement,
-    InvalidIdentifier,
-    InvalidAssignment,
-    InvalidVariable,
-    InvalidFunctionCall,
     UnknownIdentifier,
     InvalidMapKey,
     InvalidLogicalOperation,
     InvalidMathematicalOperation,
     InvalidComparisonOperation,
+    IdentifierAlreadyExists,
 }
 
 impl fmt::Display for ErrorKind {
@@ -27,20 +19,12 @@ impl fmt::Display for ErrorKind {
             ErrorKind::KeyNotFound => write!(f, "KeyNotFound"),
             ErrorKind::InvalidType => write!(f, "InvalidType"),
             ErrorKind::IndexOutOfBounds => write!(f, "IndexOutOfBounds"),
-            ErrorKind::InvalidOperator => write!(f, "InvalidOperator"),
-            ErrorKind::InvalidFunction => write!(f, "InvalidFunction"),
-            ErrorKind::InvalidArgument => write!(f, "InvalidArgument"),
-            ErrorKind::InvalidExpression => write!(f, "InvalidExpression"),
-            ErrorKind::InvalidStatement => write!(f, "InvalidStatement"),
-            ErrorKind::InvalidIdentifier => write!(f, "InvalidIdentifier"),
-            ErrorKind::InvalidAssignment => write!(f, "InvalidAssignment"),
-            ErrorKind::InvalidVariable => write!(f, "InvalidVariable"),
-            ErrorKind::InvalidFunctionCall => write!(f, "InvalidFunctionCall"),
             ErrorKind::UnknownIdentifier => write!(f, "UnknownIdentifier"),
             ErrorKind::InvalidMapKey => write!(f, "InvalidMapKey"),
             ErrorKind::InvalidLogicalOperation => write!(f, "InvalidLogicalOperation"),
             ErrorKind::InvalidMathematicalOperation => write!(f, "InvalidMathematicalOperation"),
             ErrorKind::InvalidComparisonOperation => write!(f, "InvalidComparisonOperation"),
+            ErrorKind::IdentifierAlreadyExists => write!(f, "IdentifierAlreadyExists"),
         }
     }
 }

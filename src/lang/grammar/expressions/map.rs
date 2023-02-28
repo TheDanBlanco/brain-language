@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 
-use crate::lang::parser_new::{
+use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
     value::Value,
 };
 
-use super::expression::{Evaluatable, Expression};
+use super::{Evaluatable, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Map {
@@ -42,7 +42,7 @@ impl Evaluatable for Map {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::parser_new::{expressions::expression::Expression, value::Value};
+    use crate::lang::grammar::{statements::Statement, value::Value};
 
     #[test]
     fn create_new_map() {
@@ -128,10 +128,7 @@ mod tests {
     fn eval_map_with_invalid_key_function() {
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Function(
-                Box::new(Expression::new_literal(Value::String("foo".to_string()))),
-                vec![],
-            )),
+            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break()))),
             Expression::new_literal(Value::Number(2)),
         )];
         let map = Map::new(pairs);

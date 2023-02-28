@@ -1,8 +1,8 @@
-use crate::lang::parser_new::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value};
 
 use self::{field::Field, index::Index};
 
-use super::expression::Evaluatable;
+use super::Evaluatable;
 
 pub mod field;
 pub mod index;
@@ -23,7 +23,7 @@ impl Evaluatable for Accessor {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::parser_new::expressions::{expression::Expression, map::Map};
+    use crate::lang::grammar::expressions::{map::Map, Expression};
 
     use super::*;
 

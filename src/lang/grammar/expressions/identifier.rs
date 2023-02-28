@@ -1,10 +1,10 @@
-use crate::lang::parser_new::{
+use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
     value::Value,
 };
 
-use super::expression::Evaluatable;
+use super::Evaluatable;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Identifier {
@@ -34,7 +34,7 @@ impl Evaluatable for Identifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::parser_new::value::Value;
+    use crate::lang::grammar::value::Value;
 
     #[test]
     fn create_new_identifier() {

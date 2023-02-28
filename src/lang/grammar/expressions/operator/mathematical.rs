@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::lang::parser_new::{
+use crate::lang::grammar::{
     error::{Error, ErrorKind},
     value::Value,
 };
@@ -61,7 +61,7 @@ impl Mathematical {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::parser_new::value::Value;
+    use crate::lang::grammar::value::Value;
 
     #[test]
     fn add_numbers() {

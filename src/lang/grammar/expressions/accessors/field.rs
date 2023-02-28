@@ -1,7 +1,7 @@
-use crate::lang::parser_new::{
+use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
-    expressions::expression::{Evaluatable, Expression},
+    expressions::{Evaluatable, Expression},
     value::Value,
 };
 
@@ -51,7 +51,7 @@ impl Evaluatable for Field {
 mod tests {
     use std::collections::BTreeMap;
 
-    use crate::lang::parser_new::expressions::map::Map;
+    use crate::lang::grammar::expressions::map::Map;
 
     use super::*;
 

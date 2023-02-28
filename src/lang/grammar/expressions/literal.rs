@@ -1,6 +1,6 @@
-use crate::lang::parser_new::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value};
 
-use super::expression::Evaluatable;
+use super::Evaluatable;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Literal {
@@ -23,7 +23,7 @@ impl Evaluatable for Literal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::parser_new::{expressions::expression::Expression, value::Value};
+    use crate::lang::grammar::{statements::Statement, value::Value};
 
     #[test]
     fn create_new_number_literal() {
@@ -105,34 +105,22 @@ mod tests {
 
     #[test]
     fn create_new_function_literal() {
-        let literal = Literal::new(Value::Function(
-            Box::new(Expression::new_literal(Value::String("x".to_string()))),
-            vec![],
-        ));
+        let literal = Literal::new(Value::Function(vec![], Box::new(Statement::new_break())));
         assert_eq!(
             literal.value,
-            Value::Function(
-                Box::new(Expression::new_literal(Value::String("x".to_string()))),
-                vec![]
-            )
+            Value::Function(vec![], Box::new(Statement::new_break()))
         );
     }
 
     #[test]
     fn eval_function_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::Function(
-            Box::new(Expression::new_literal(Value::String("x".to_string()))),
-            vec![],
-        ));
+        let literal = Literal::new(Value::Function(vec![], Box::new(Statement::new_break())));
         let result = literal.eval(context);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Function(
-                Box::new(Expression::new_literal(Value::String("x".to_string()))),
-                vec![]
-            )
+            Value::Function(vec![], Box::new(Statement::new_break()))
         );
     }
 }

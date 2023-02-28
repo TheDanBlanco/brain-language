@@ -1,4 +1,4 @@
-use crate::lang::parser_new::{
+use crate::lang::grammar::{
     error::{Error, ErrorKind},
     value::Value,
 };
