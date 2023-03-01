@@ -42,11 +42,19 @@ impl Statement {
         Self::Reassignment(Reassignment::new(target, value))
     }
 
-    pub fn new_conditional(expression: Expression, consequence: Statement, alternative: Option<Statement>) -> Self {
+    pub fn new_conditional(
+        expression: Expression,
+        consequence: Statement,
+        alternative: Option<Statement>,
+    ) -> Self {
         Self::Conditional(Conditional::new(expression, consequence, alternative))
     }
 
-    pub fn new_function_definition(identifier: String, arguments: Vec<String>, block: Statement) -> Self {
+    pub fn new_function_definition(
+        identifier: String,
+        arguments: Vec<String>,
+        block: Statement,
+    ) -> Self {
         Self::FunctionDefinition(FunctionDefinition::new(identifier, arguments, block))
     }
 
@@ -94,24 +102,29 @@ impl Resolveable for Statement {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{value::Value, expressions::operator::{mathematical::Mathematical, Operator}};
+    use crate::lang::grammar::{expressions::operator::Operator, value::Value};
 
     use super::*;
 
     #[test]
     fn new_statement_assignment() {
-        let statement = Statement::new_assignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
+        let statement =
+            Statement::new_assignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
 
         assert_eq!(
             statement,
-            Statement::Assignment(Assignment::new("foo".to_string(), Expression::new_literal(Value::Number(0))))
+            Statement::Assignment(Assignment::new(
+                "foo".to_string(),
+                Expression::new_literal(Value::Number(0))
+            ))
         );
     }
 
     #[test]
     fn eval_statement_assignment() {
         let context = &mut Context::new();
-        let statement = Statement::new_assignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
+        let statement =
+            Statement::new_assignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
         let result = statement.resolve(context);
 
         assert!(result.is_ok())
@@ -119,11 +132,17 @@ mod tests {
 
     #[test]
     fn new_statement_reassignment() {
-        let statement = Statement::new_reassignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
+        let statement = Statement::new_reassignment(
+            "foo".to_string(),
+            Expression::new_literal(Value::Number(0)),
+        );
 
         assert_eq!(
             statement,
-            Statement::Reassignment(Reassignment::new("foo".to_string(), Expression::new_literal(Value::Number(0))))
+            Statement::Reassignment(Reassignment::new(
+                "foo".to_string(),
+                Expression::new_literal(Value::Number(0))
+            ))
         );
     }
 
@@ -132,7 +151,10 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert("foo".to_string(), Value::Number(1));
 
-        let statement = Statement::new_reassignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
+        let statement = Statement::new_reassignment(
+            "foo".to_string(),
+            Expression::new_literal(Value::Number(0)),
+        );
         let result = statement.resolve(context);
 
         assert!(result.is_ok())
@@ -143,18 +165,16 @@ mod tests {
         let statement = Statement::new_conditional(
             Expression::new_literal(Value::Boolean(true)),
             Statement::new_break(),
-            Some(Statement::new_break())
+            Some(Statement::new_break()),
         );
 
         assert_eq!(
             statement,
-            Statement::Conditional(
-                Conditional::new(
-                    Expression::new_literal(Value::Boolean(true)),
-                    Statement::new_break(),
-                    Some(Statement::new_break())
-                )
-            )
+            Statement::Conditional(Conditional::new(
+                Expression::new_literal(Value::Boolean(true)),
+                Statement::new_break(),
+                Some(Statement::new_break())
+            ))
         );
     }
 
@@ -165,7 +185,7 @@ mod tests {
         let statement = Statement::new_conditional(
             Expression::new_literal(Value::Boolean(true)),
             Statement::new_break(),
-            Some(Statement::new_break())
+            Some(Statement::new_break()),
         );
 
         let result = statement.resolve(context);
@@ -178,30 +198,24 @@ mod tests {
         let statement = Statement::new_function_definition(
             "adder".into(),
             vec!["a".into(), "b".into()],
-            Statement::new_return(
-                Expression::new_binary(
-                    Expression::new_identifier("a".to_string()), 
-                    Operator::Mathematical(Mathematical::Add), 
-                    Expression::new_identifier("b".to_string()), 
-                )
-            )
+            Statement::new_return(Expression::new_binary(
+                Expression::new_identifier("a".to_string()),
+                Operator::new_addition(),
+                Expression::new_identifier("b".to_string()),
+            )),
         );
 
         assert_eq!(
             statement,
-            Statement::FunctionDefinition(
-                FunctionDefinition::new(
-                    "adder".into(),
-                    vec!["a".into(), "b".into()],
-                    Statement::new_return(
-                        Expression::new_binary(
-                            Expression::new_identifier("a".to_string()), 
-                            Operator::Mathematical(Mathematical::Add), 
-                            Expression::new_identifier("b".to_string()), 
-                        )
-                    )
-                )
-            )
+            Statement::FunctionDefinition(FunctionDefinition::new(
+                "adder".into(),
+                vec!["a".into(), "b".into()],
+                Statement::new_return(Expression::new_binary(
+                    Expression::new_identifier("a".to_string()),
+                    Operator::new_addition(),
+                    Expression::new_identifier("b".to_string()),
+                ))
+            ))
         );
     }
 
@@ -212,13 +226,11 @@ mod tests {
         let statement = Statement::new_function_definition(
             "adder".into(),
             vec!["a".into(), "b".into()],
-            Statement::new_return(
-                Expression::new_binary(
-                    Expression::new_identifier("a".to_string()), 
-                    Operator::Mathematical(Mathematical::Add), 
-                    Expression::new_identifier("b".to_string()), 
-                )
-            )
+            Statement::new_return(Expression::new_binary(
+                Expression::new_identifier("a".to_string()),
+                Operator::new_addition(),
+                Expression::new_identifier("b".to_string()),
+            )),
         );
 
         let result = statement.resolve(context);
@@ -228,17 +240,11 @@ mod tests {
 
     #[test]
     fn new_statement_return() {
-        let statement = Statement::new_return(
-            Expression::new_literal(Value::Number(0))
-        );
+        let statement = Statement::new_return(Expression::new_literal(Value::Number(0)));
 
         assert_eq!(
             statement,
-            Statement::Return(
-                Return::new(
-                    Expression::new_literal(Value::Number(0))
-                )
-            )
+            Statement::Return(Return::new(Expression::new_literal(Value::Number(0))))
         );
     }
 
@@ -246,9 +252,7 @@ mod tests {
     fn eval_statement_return() {
         let context = &mut Context::new();
 
-        let statement = Statement::new_return(
-            Expression::new_literal(Value::Number(0))
-        );
+        let statement = Statement::new_return(Expression::new_literal(Value::Number(0)));
 
         let result = statement.resolve(context);
 
@@ -259,12 +263,7 @@ mod tests {
     fn new_statement_break() {
         let statement = Statement::new_break();
 
-        assert_eq!(
-            statement,
-            Statement::Break(
-                Break{}
-            )
-        );
+        assert_eq!(statement, Statement::Break(Break {}));
     }
 
     #[test]
@@ -282,12 +281,7 @@ mod tests {
     fn new_statement_continue() {
         let statement = Statement::new_continue();
 
-        assert_eq!(
-            statement,
-            Statement::Continue(
-                Continue{}
-            )
-        );
+        assert_eq!(statement, Statement::Continue(Continue {}));
     }
 
     #[test]
@@ -303,17 +297,11 @@ mod tests {
 
     #[test]
     fn new_statement_loop() {
-        let statement = Statement::new_loop(
-            Statement::new_break(),
-        );
+        let statement = Statement::new_loop(Statement::new_break());
 
         assert_eq!(
             statement,
-            Statement::Loop(
-                Loop::new(
-                    Statement::new_break()
-                )
-            )
+            Statement::Loop(Loop::new(Statement::new_break()))
         );
     }
 
@@ -321,9 +309,7 @@ mod tests {
     fn eval_statement_loop() {
         let context = &mut Context::new();
 
-        let statement = Statement::new_loop(
-            Statement::new_break(),
-        );
+        let statement = Statement::new_loop(Statement::new_break());
 
         let result = statement.resolve(context);
 
@@ -340,13 +326,11 @@ mod tests {
 
         assert_eq!(
             statement,
-            Statement::For(
-                For::new(
-                    "item".into(),
-                    Expression::new_literal(Value::Collection(vec![])),
-                    Statement::new_break(),
-                )
-            )
+            Statement::For(For::new(
+                "item".into(),
+                Expression::new_literal(Value::Collection(vec![])),
+                Statement::new_break(),
+            ))
         );
     }
 
@@ -367,25 +351,13 @@ mod tests {
 
     #[test]
     fn new_statement_block() {
-        let statement = Statement::new_block(
-            vec![
-                Node::from_statement(
-                    Statement::new_break(),
-                )
-            ]
-        );
+        let statement = Statement::new_block(vec![Node::from_statement(Statement::new_break())]);
 
         assert_eq!(
             statement,
-            Statement::Block(
-                Block::new(
-                    vec![
-                        Node::from_statement(
-                            Statement::new_break(),
-                        )
-                    ]
-                )
-            )
+            Statement::Block(Block::new(vec![Node::from_statement(
+                Statement::new_break(),
+            )]))
         );
     }
 
@@ -393,13 +365,7 @@ mod tests {
     fn eval_statement_block() {
         let context = &mut Context::new();
 
-        let statement = Statement::new_block(
-            vec![
-                Node::from_statement(
-                    Statement::new_break(),
-                )
-            ]
-        );
+        let statement = Statement::new_block(vec![Node::from_statement(Statement::new_break())]);
 
         let result = statement.resolve(context);
 

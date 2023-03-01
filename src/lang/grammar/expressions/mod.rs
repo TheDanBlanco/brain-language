@@ -69,9 +69,7 @@ impl Evaluatable for Expression {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{
-        expressions::operator::mathematical::Mathematical, statements::Statement,
-    };
+    use crate::lang::grammar::statements::Statement;
 
     use super::*;
 
@@ -132,7 +130,7 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "foo".to_string(),
-            Value::Function(vec![], Box::new(Statement::new_break())),
+            Value::new_function(vec![], Statement::new_break()),
         );
         let expression = Expression::new_function_call(
             Expression::new_identifier("foo".to_string()),
@@ -147,14 +145,14 @@ mod tests {
     fn new_expression_binary() {
         let expression = Expression::new_binary(
             Expression::new_literal(Value::Number(1)),
-            Operator::Mathematical(Mathematical::Add),
+            Operator::new_addition(),
             Expression::new_literal(Value::Number(2)),
         );
         assert_eq!(
             expression,
             Expression::Binary(Binary::new(
                 Expression::new_literal(Value::Number(1)),
-                Operator::Mathematical(Mathematical::Add),
+                Operator::new_addition(),
                 Expression::new_literal(Value::Number(2)),
             ))
         );
@@ -165,7 +163,7 @@ mod tests {
         let context = &mut Context::new();
         let expression = Expression::new_binary(
             Expression::new_literal(Value::Number(1)),
-            Operator::Mathematical(Mathematical::Add),
+            Operator::new_addition(),
             Expression::new_literal(Value::Number(2)),
         );
 

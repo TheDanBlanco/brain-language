@@ -10,7 +10,7 @@ pub enum Comparison {
     Equal,
     NotEqual,
     GreaterThan,
-    GreatherThanEqual,
+    GreaterThanEqual,
     LessThan,
     LessThanEqual,
 }
@@ -21,7 +21,7 @@ impl fmt::Display for Comparison {
             Comparison::Equal => write!(f, "equal"),
             Comparison::NotEqual => write!(f, "not equal"),
             Comparison::GreaterThan => write!(f, "greater than"),
-            Comparison::GreatherThanEqual => write!(f, "greater than or equal to"),
+            Comparison::GreaterThanEqual => write!(f, "greater than or equal to"),
             Comparison::LessThan => write!(f, "less than"),
             Comparison::LessThanEqual => write!(f, "less than or equal to"),
         }
@@ -40,7 +40,7 @@ impl Comparison {
             (Comparison::GreaterThan, Value::Number(left), Value::Number(right)) => {
                 Ok(Value::Boolean(left > right))
             }
-            (Comparison::GreatherThanEqual, Value::Number(left), Value::Number(right)) => {
+            (Comparison::GreaterThanEqual, Value::Number(left), Value::Number(right)) => {
                 Ok(Value::Boolean(left >= right))
             }
             (Comparison::LessThan, Value::Number(left), Value::Number(right)) => {
@@ -58,7 +58,7 @@ impl Comparison {
             (Comparison::GreaterThan, Value::String(left), Value::String(right)) => {
                 Ok(Value::Boolean(left > right))
             }
-            (Comparison::GreatherThanEqual, Value::String(left), Value::String(right)) => {
+            (Comparison::GreaterThanEqual, Value::String(left), Value::String(right)) => {
                 Ok(Value::Boolean(left >= right))
             }
             (Comparison::LessThan, Value::String(left), Value::String(right)) => {
@@ -108,7 +108,7 @@ mod tests {
 
     #[test]
     fn greater_than_or_equal_to_numbers() {
-        let result = Comparison::GreatherThanEqual.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::GreaterThanEqual.eval(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn greater_than_equal_to_string() {
-        let result = Comparison::GreatherThanEqual.eval(
+        let result = Comparison::GreaterThanEqual.eval(
             Value::String("b".to_string()),
             Value::String("b".to_string()),
         );

@@ -65,10 +65,7 @@ impl Resolveable for Conditional {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{
-        expressions::operator::{mathematical::Mathematical, Operator},
-        Node,
-    };
+    use crate::lang::grammar::{expressions::operator::Operator, Node};
 
     use super::*;
 
@@ -80,7 +77,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -105,7 +102,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -115,7 +112,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Subtract),
+                    Operator::new_subtraction(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -147,7 +144,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -157,7 +154,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Subtract),
+                    Operator::new_subtraction(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -184,7 +181,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -211,7 +208,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -238,7 +235,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -248,7 +245,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Subtract),
+                    Operator::new_subtraction(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -275,7 +272,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -285,7 +282,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Subtract),
+                    Operator::new_subtraction(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -312,7 +309,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -339,7 +336,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -349,7 +346,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Subtract),
+                    Operator::new_subtraction(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -376,7 +373,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -403,7 +400,7 @@ mod tests {
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
-                    Operator::Mathematical(Mathematical::Add),
+                    Operator::new_addition(),
                     Expression::new_literal(Value::Number(1)),
                 ),
             ))]);
@@ -455,7 +452,7 @@ mod tests {
     fn resolve_conditional_invalid_conditional_function() {
         let context = &mut Context::new();
         let condition =
-            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break())));
+            Expression::new_literal(Value::new_function(vec![], Statement::new_break()));
         let consequence = Statement::new_block(vec![]);
 
         let conditional = Conditional::new(condition, consequence, None);

@@ -83,7 +83,7 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "foo".to_string(),
-            Value::Function(vec![], Box::new(Statement::new_break())),
+            Value::new_function(vec![], Statement::new_break()),
         );
 
         let function_call = FunctionCall::new(
@@ -95,7 +95,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Function(vec![], Box::new(Statement::new_break()))
+            Value::new_function(vec![], Statement::new_break()),
         );
     }
 
@@ -103,7 +103,7 @@ mod tests {
     fn eval_function_call_identifier_is_function() {
         let context = &mut Context::new();
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break()))),
+            Expression::new_literal(Value::new_function(vec![], Statement::new_break())),
             vec![Expression::new_literal(Value::Number(1))],
         );
 
@@ -111,7 +111,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Function(vec![], Box::new(Statement::new_break()))
+            Value::new_function(vec![], Statement::new_break()),
         );
     }
 

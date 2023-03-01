@@ -105,22 +105,22 @@ mod tests {
 
     #[test]
     fn create_new_function_literal() {
-        let literal = Literal::new(Value::Function(vec![], Box::new(Statement::new_break())));
+        let literal = Literal::new(Value::new_function(vec![], Statement::new_break()));
         assert_eq!(
             literal.value,
-            Value::Function(vec![], Box::new(Statement::new_break()))
+            Value::new_function(vec![], Statement::new_break()),
         );
     }
 
     #[test]
     fn eval_function_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::Function(vec![], Box::new(Statement::new_break())));
+        let literal = Literal::new(Value::new_function(vec![], Statement::new_break()));
         let result = literal.eval(context);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Function(vec![], Box::new(Statement::new_break()))
+            Value::new_function(vec![], Statement::new_break()),
         );
     }
 }

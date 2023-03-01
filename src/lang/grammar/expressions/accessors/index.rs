@@ -5,6 +5,7 @@ use crate::lang::grammar::{
     value::Value,
 };
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index {
     index: Box<Expression>,
     target: Box<Expression>,

@@ -5,6 +5,7 @@ use crate::lang::grammar::{
     value::Value,
 };
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Field {
     field: Value,
     target: Box<Expression>,

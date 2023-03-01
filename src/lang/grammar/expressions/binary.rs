@@ -30,15 +30,13 @@ impl Evaluatable for Binary {
 
 #[cfg(test)]
 mod test {
-    use crate::lang::grammar::expressions::operator::mathematical::Mathematical;
-
     use super::*;
 
     #[test]
     fn new_binary() {
         let lhs = Expression::new_literal(Value::Number(1));
         let rhs = Expression::new_literal(Value::Number(2));
-        let operator = Operator::Mathematical(Mathematical::Add);
+        let operator = Operator::new_addition();
 
         let binary = Binary::new(lhs, operator, rhs);
         assert_eq!(
@@ -49,7 +47,7 @@ mod test {
             binary.rhs,
             Box::new(Expression::new_literal(Value::Number(2)))
         );
-        assert_eq!(binary.operator, Operator::Mathematical(Mathematical::Add));
+        assert_eq!(binary.operator, Operator::new_addition());
     }
 
     #[test]
@@ -57,7 +55,7 @@ mod test {
         let context = &mut Context::new();
         let lhs = Expression::new_literal(Value::Number(1));
         let rhs = Expression::new_literal(Value::Number(2));
-        let operator = Operator::Mathematical(Mathematical::Add);
+        let operator = Operator::new_addition();
         let binary = Binary::new(lhs, operator, rhs);
 
         let result = binary.eval(context);

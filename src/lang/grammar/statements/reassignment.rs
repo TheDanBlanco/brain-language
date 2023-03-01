@@ -147,7 +147,7 @@ mod tests {
 
         let target = "foo".to_string();
         let value =
-            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break())));
+            Expression::new_literal(Value::new_function(vec![], Statement::new_break()));
 
         let assignment = Reassignment::new(target, value);
         let result = assignment.resolve(context);
@@ -155,7 +155,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("foo").unwrap(),
-            &Value::Function(vec![], Box::new(Statement::new_break()))
+            &Value::new_function(vec![], Statement::new_break())
         );
     }
 

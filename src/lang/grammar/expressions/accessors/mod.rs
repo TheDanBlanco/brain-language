@@ -2,14 +2,25 @@ use crate::lang::grammar::{context::Context, value::Value};
 
 use self::{field::Field, index::Index};
 
-use super::Evaluatable;
+use super::{Evaluatable, Expression};
 
 pub mod field;
 pub mod index;
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Accessor {
     Index(Index),
     Field(Field),
+}
+
+impl Accessor {
+    pub fn new_index(index: Expression, target: Expression) -> Self {
+        Accessor::Index(Index::new(index, target))
+    }
+
+    pub fn new_field(field: Value, target: Expression) -> Self {
+        Accessor::Field(Field::new(field, target))
+    }
 }
 
 impl Evaluatable for Accessor {
@@ -26,6 +37,32 @@ mod tests {
     use crate::lang::grammar::expressions::{map::Map, Expression};
 
     use super::*;
+
+    #[test]
+    fn new_index() {
+        let index = Expression::new_literal(Value::Number(0));
+        let target = Expression::new_collection(vec![]);
+
+        let accessor = Accessor::new_index(index.clone(), target.clone());
+
+        assert_eq!(
+            accessor,
+            Accessor::Index(Index::new(index, target))
+        );
+    }
+
+    #[test]
+    fn new_field() {
+        let field= Value::Number(0);
+        let target = Expression::new_collection(vec![]);
+
+        let accessor = Accessor::new_field(field.clone(), target.clone());
+
+        assert_eq!(
+            accessor,
+            Accessor::Field(Field::new(field, target))
+        );
+    }
 
     #[test]
     fn eval_index_accessor() {

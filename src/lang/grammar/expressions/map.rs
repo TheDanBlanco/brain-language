@@ -128,7 +128,7 @@ mod tests {
     fn eval_map_with_invalid_key_function() {
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break()))),
+            Expression::new_literal(Value::new_function(vec![], Statement::new_break())),
             Expression::new_literal(Value::Number(2)),
         )];
         let map = Map::new(pairs);

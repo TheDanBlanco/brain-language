@@ -1,4 +1,4 @@
-use crate::lang::grammar::{output::Output, value::Value, Resolveable};
+use crate::lang::grammar::{output::Output, value::Value, Resolveable, context::Context};
 
 use super::Statement;
 
@@ -22,11 +22,11 @@ impl FunctionDefinition {
 impl Resolveable for FunctionDefinition {
     fn resolve(
         &self,
-        context: &mut crate::lang::grammar::context::Context,
-    ) -> Result<crate::lang::grammar::output::Output, Box<dyn std::error::Error>> {
+        context: &mut Context,
+    ) -> Result<Output, Box<dyn std::error::Error>> {
         context.symbols.insert(
             self.identifier.clone(),
-            Value::Function(self.arguments.clone(), self.block.clone()),
+            Value::new_function(self.arguments.clone(), *self.block.clone())
         );
 
         Ok(Output::None)
@@ -37,10 +37,7 @@ impl Resolveable for FunctionDefinition {
 mod tests {
     use crate::lang::grammar::{
         context::Context,
-        expressions::{
-            operator::{mathematical::Mathematical, Operator},
-            Expression,
-        },
+        expressions::{operator::Operator, Expression},
         statements::{r#return::Return, Statement},
         value::Value,
         Node, Resolveable,
@@ -55,7 +52,7 @@ mod tests {
         let block = Statement::new_block(vec![Node::from_statement(Statement::Return(
             Return::new(Expression::new_binary(
                 Expression::new_identifier("a".to_string()),
-                Operator::Mathematical(Mathematical::Add),
+                Operator::new_addition(),
                 Expression::new_identifier("b".to_string()),
             )),
         ))]);
@@ -81,7 +78,7 @@ mod tests {
         let block = Statement::new_block(vec![Node::from_statement(Statement::Return(
             Return::new(Expression::new_binary(
                 Expression::new_identifier("a".to_string()),
-                Operator::Mathematical(Mathematical::Add),
+                Operator::new_addition(),
                 Expression::new_identifier("b".to_string()),
             )),
         ))]);

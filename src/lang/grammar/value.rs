@@ -14,6 +14,12 @@ pub enum Value {
     Null,
 }
 
+impl Value {
+    pub fn new_function(arguments: Vec<String>, block: Statement) -> Self {
+        Value::Function(arguments, Box::new(block))
+    }
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
