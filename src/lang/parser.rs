@@ -1458,6 +1458,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn test_loop_with_continue() {
         let tokens = vec![
             Token::Loop,
