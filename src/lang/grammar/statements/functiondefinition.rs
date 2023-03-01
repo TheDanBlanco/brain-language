@@ -1,4 +1,4 @@
-use crate::lang::grammar::{output::Output, value::Value, Resolveable, context::Context};
+use crate::lang::grammar::{context::Context, output::Output, value::Value, Resolveable};
 
 use super::Statement;
 
@@ -20,13 +20,10 @@ impl FunctionDefinition {
 }
 
 impl Resolveable for FunctionDefinition {
-    fn resolve(
-        &self,
-        context: &mut Context,
-    ) -> Result<Output, Box<dyn std::error::Error>> {
+    fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         context.symbols.insert(
             self.identifier.clone(),
-            Value::new_function(self.arguments.clone(), *self.block.clone())
+            Value::new_function(self.arguments.clone(), *self.block.clone()),
         );
 
         Ok(Output::None)

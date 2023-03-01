@@ -45,23 +45,17 @@ mod tests {
 
         let accessor = Accessor::new_index(index.clone(), target.clone());
 
-        assert_eq!(
-            accessor,
-            Accessor::Index(Index::new(index, target))
-        );
+        assert_eq!(accessor, Accessor::Index(Index::new(index, target)));
     }
 
     #[test]
     fn new_field() {
-        let field= Value::Number(0);
+        let field = Value::Number(0);
         let target = Expression::new_collection(vec![]);
 
         let accessor = Accessor::new_field(field.clone(), target.clone());
 
-        assert_eq!(
-            accessor,
-            Accessor::Field(Field::new(field, target))
-        );
+        assert_eq!(accessor, Accessor::Field(Field::new(field, target)));
     }
 
     #[test]

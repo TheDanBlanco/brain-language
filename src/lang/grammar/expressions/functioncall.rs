@@ -1,7 +1,9 @@
 use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
+    output::Output,
     value::Value,
+    Resolveable,
 };
 
 use super::{Evaluatable, Expression};
@@ -9,14 +11,14 @@ use super::{Evaluatable, Expression};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
     pub identifier: Box<Expression>,
-    pub args: Vec<Expression>,
+    pub arguments: Vec<Expression>,
 }
 
 impl FunctionCall {
-    pub fn new(identifier: Expression, args: Vec<Expression>) -> Self {
+    pub fn new(identifier: Expression, arguments: Vec<Expression>) -> Self {
         FunctionCall {
             identifier: Box::new(identifier),
-            args,
+            arguments,
         }
     }
 }
@@ -25,14 +27,11 @@ impl Evaluatable for FunctionCall {
     fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let identifier = self.identifier.eval(context)?;
 
-        if let Value::Function(function, args) = identifier {
-            return Ok(Value::Function(function.clone(), args.clone()));
-        }
-
-        if let Value::String(fn_identifier) = identifier {
-            match context.symbols.get(&fn_identifier) {
+        let function = match identifier.clone() {
+            Value::Function(_, _) => identifier,
+            Value::String(fn_identifier) => match context.symbols.get(&fn_identifier) {
                 Some(Value::Function(function, args)) => {
-                    return Ok(Value::Function(function.clone(), args.clone()));
+                    Value::Function(function.clone(), args.clone())
                 }
                 Some(_) => {
                     return Err(Error::new(
@@ -46,13 +45,25 @@ impl Evaluatable for FunctionCall {
                         format!("'{fn_identifier}'"),
                     ))
                 }
-            };
+            },
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::InvalidType,
+                    format!("'{identifier}' is not a neither a function nor an identifier"),
+                ));
+            }
+        };
+
+        if let Value::Function(function_arguments, block) = function {
+            let mut zipped_arguments = function_arguments.iter().zip(self.arguments.clone());
+            let local_context = &mut context.clone_and_merge_symbols(&mut zipped_arguments)?;
+
+            if let Output::Value(value) = block.resolve(local_context)? {
+                return Ok(value);
+            }
         }
 
-        return Err(Error::new(
-            ErrorKind::InvalidType,
-            format!("'{identifier}' is not a neither a function nor an identifier"),
-        ));
+        Ok(Value::Null)
     }
 }
 
@@ -73,7 +84,7 @@ mod tests {
             Box::new(Expression::new_literal(Value::String("foo".to_string())))
         );
         assert_eq!(
-            function_call.args,
+            function_call.arguments,
             vec![Expression::new_literal(Value::Number(1))]
         );
     }
@@ -87,32 +98,50 @@ mod tests {
         );
 
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::String("foo".to_string())),
+            Expression::new_literal(Value::new_function(
+                vec![],
+                Statement::new_return(Expression::new_literal(Value::Number(0))),
+            )),
             vec![],
         );
 
         let result = function_call.eval(context);
         assert!(result.is_ok());
-        assert_eq!(
-            result.unwrap(),
+        assert_eq!(result.unwrap(), Value::Number(0),);
+    }
+
+    #[test]
+    fn eval_function_call_no_return_value() {
+        let context = &mut Context::new();
+        context.symbols.insert(
+            "foo".to_string(),
             Value::new_function(vec![], Statement::new_break()),
         );
+
+        let function_call = FunctionCall::new(
+            Expression::new_literal(Value::new_function(vec![], Statement::new_break())),
+            vec![],
+        );
+
+        let result = function_call.eval(context);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Value::Null,);
     }
 
     #[test]
     fn eval_function_call_identifier_is_function() {
         let context = &mut Context::new();
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::new_function(vec![], Statement::new_break())),
+            Expression::new_literal(Value::new_function(
+                vec![],
+                Statement::new_return(Expression::new_literal(Value::Number(0))),
+            )),
             vec![Expression::new_literal(Value::Number(1))],
         );
 
         let result = function_call.eval(context);
         assert!(result.is_ok());
-        assert_eq!(
-            result.unwrap(),
-            Value::new_function(vec![], Statement::new_break()),
-        );
+        assert_eq!(result.unwrap(), Value::Number(0),);
     }
 
     #[test]

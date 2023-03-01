@@ -146,8 +146,7 @@ mod tests {
         context.symbols.insert("foo".to_string(), Value::Null);
 
         let target = "foo".to_string();
-        let value =
-            Expression::new_literal(Value::new_function(vec![], Statement::new_break()));
+        let value = Expression::new_literal(Value::new_function(vec![], Statement::new_break()));
 
         let assignment = Reassignment::new(target, value);
         let result = assignment.resolve(context);
