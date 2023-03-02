@@ -3,5 +3,19 @@
 version = 3
 
 [[package]]
-name = "lang"
+name = "brain"
 version = "0.1.0"
+dependencies = [
+ "brain_attribute",
+]
+
+[[package]]
+name = "brain_attribute"
+version = "0.1.0"
+
+[[package]]
+name = "tests"
+version = "0.1.0"
+dependencies = [
+ "brain_attribute",
+]
