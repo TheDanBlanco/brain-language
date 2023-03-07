@@ -12,6 +12,7 @@ pub enum Token {
     Dot,
     Minus,
     Plus,
+    Colon,
     Semicolon,
     Divide,
     Times,

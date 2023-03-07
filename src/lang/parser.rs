@@ -1,8 +1,11 @@
-use std::fmt::{self, Debug};
+use std::{
+    collections::BTreeMap,
+    fmt::{self, Debug},
+};
 
 use super::token::Token;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum MathematicalOperator {
     Plus,
     Minus,
@@ -11,7 +14,7 @@ pub enum MathematicalOperator {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum ComparisonOperator {
     Equal,
     NotEqual,
@@ -21,19 +24,20 @@ pub enum ComparisonOperator {
     LessThanEqual,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum LogicalOperator {
     And,
     Or,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash, PartialOrd, Ord)]
 pub enum Value {
     String(String),
-    Number(f64),
+    Number(i64),
     Boolean(bool),
     Function(Vec<String>, Box<Statement>),
     Collection(Vec<Value>),
+    Map(BTreeMap<Value, Value>),
     Null,
 }
 
@@ -47,6 +51,9 @@ impl fmt::Display for Value {
             Value::Function(_, _) => write!(f, "[function]"),
             Value::Collection(collection) => {
                 let mut output = String::new();
+                if collection.len() == 0 {
+                    return write!(f, "[empty collection]");
+                }
                 for (i, value) in collection.iter().enumerate() {
                     output.push_str(&value.to_string());
                     if i != collection.len() - 1 {
@@ -55,24 +62,35 @@ impl fmt::Display for Value {
                 }
                 write!(f, "[{}]", output)
             }
+            Value::Map(map) => {
+                let mut output = String::new();
+                if map.len() == 0 {
+                    return write!(f, "{{empty map}}");
+                }
+                for (_i, (key, value)) in map.iter().enumerate() {
+                    output.push_str(&format!("{key}: {value}\n"));
+                }
+                write!(f, "{{\n{output}}}")
+            }
         }
     }
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum Expression {
     Binary(Box<Expression>, Operator, Box<Expression>),
     Unary(Operator, Box<Expression>),
     Literal(Value),
     Collection(Vec<Expression>),
+    Map(Vec<(Expression, Expression)>),
     Identifier(String),
     FunctionCall(Box<Expression>, Vec<Expression>),
     Accessor(Box<Expression>, Accessor),
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum Statement {
     Assignment(String, Box<Expression>),
     Reassignment(String, Box<Expression>),
@@ -87,19 +105,19 @@ pub enum Statement {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum Accessor {
     Index(Box<Expression>),
     Property(Value),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum StatementExpression {
     Statement(Statement),
     Expression(Expression),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum Operator {
     MathematicalOperator(MathematicalOperator),
     LogicalOperator(LogicalOperator),
@@ -304,6 +322,7 @@ impl Parser {
                 expression
             }
             Token::LeftBracket => self.parse_possible_accessor(None),
+            Token::LeftBrace => self.parse_map(),
             _ => panic!("Unexpected token {:?}", self.peek()),
         };
 
@@ -389,6 +408,23 @@ impl Parser {
         self.expect(Token::RightBracket);
         self.check_and_skip(Token::Semicolon);
         Expression::Collection(values)
+    }
+
+    fn parse_map(&mut self) -> Expression {
+        self.expect(Token::LeftBrace);
+        let mut entries = vec![];
+        while !self.check(Token::RightBrace) {
+            let mut key = self.parse_expression();
+            if let Expression::Identifier(identifier) = key {
+                key = Expression::Literal(Value::String(identifier));
+            }
+            self.expect(Token::Colon);
+            let value = self.parse_expression();
+            self.check_and_skip(Token::Comma);
+            entries.push((key, value));
+        }
+        self.expect(Token::RightBrace);
+        Expression::Map(entries)
     }
 
     fn parse_mathematical_operator(&mut self, initial: Expression) -> Expression {
@@ -575,7 +611,7 @@ mod tests {
         let node = parser.parse();
         assert_eq!(
             node,
-            StatementExpression::Expression(Expression::Literal(Value::Number(1.0)))
+            StatementExpression::Expression(Expression::Literal(Value::Number(1)))
         );
     }
 
@@ -594,7 +630,7 @@ mod tests {
             node,
             StatementExpression::Statement(Statement::Assignment(
                 "x".to_string(),
-                Box::new(Expression::Literal(Value::Number(1.0)))
+                Box::new(Expression::Literal(Value::Number(1)))
             ))
         );
     }
@@ -613,7 +649,7 @@ mod tests {
             node,
             StatementExpression::Statement(Statement::Reassignment(
                 "x".to_string(),
-                Box::new(Expression::Literal(Value::Number(1.0)))
+                Box::new(Expression::Literal(Value::Number(1)))
             ))
         );
     }
@@ -633,8 +669,8 @@ mod tests {
         assert_eq!(
             node,
             StatementExpression::Expression(Expression::Collection(vec![
-                Expression::Literal(Value::Number(1.0)),
-                Expression::Literal(Value::Number(2.0))
+                Expression::Literal(Value::Number(1)),
+                Expression::Literal(Value::Number(2))
             ]))
         );
     }
@@ -658,10 +694,10 @@ mod tests {
         assert_eq!(
             node,
             StatementExpression::Expression(Expression::Collection(vec![
-                Expression::Literal(Value::Number(1.0)),
+                Expression::Literal(Value::Number(1)),
                 Expression::Collection(vec![
-                    Expression::Literal(Value::Number(2.0)),
-                    Expression::Literal(Value::Number(3.0))
+                    Expression::Literal(Value::Number(2)),
+                    Expression::Literal(Value::Number(3))
                 ])
             ]))
         );
@@ -691,14 +727,160 @@ mod tests {
             node,
             StatementExpression::Expression(Expression::Collection(vec![
                 Expression::Collection(vec![
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Literal(Value::Number(2.0))
+                    Expression::Literal(Value::Number(1)),
+                    Expression::Literal(Value::Number(2))
                 ]),
                 Expression::Collection(vec![
-                    Expression::Literal(Value::Number(3.0)),
-                    Expression::Literal(Value::Number(4.0))
+                    Expression::Literal(Value::Number(3)),
+                    Expression::Literal(Value::Number(4))
                 ])
             ]))
+        );
+    }
+
+    #[test]
+    fn parse_map() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::LeftBrace,
+            Token::Number("1".to_string()),
+            Token::Colon,
+            Token::Number("2".to_string()),
+            Token::Comma,
+            Token::Identifier("3".to_string()),
+            Token::Colon,
+            Token::Number("4".to_string()),
+            Token::RightBrace,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Map(vec![
+                    (
+                        Expression::Literal(Value::Number(1)),
+                        Expression::Literal(Value::Number(2))
+                    ),
+                    (
+                        Expression::Literal(Value::String("3".to_string())),
+                        Expression::Literal(Value::Number(4))
+                    )
+                ]))
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_nested_map() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::LeftBrace,
+            Token::Number("1".to_string()),
+            Token::Colon,
+            Token::LeftBrace,
+            Token::Number("2".to_string()),
+            Token::Colon,
+            Token::Number("3".to_string()),
+            Token::RightBrace,
+            Token::Comma,
+            Token::Number("4".to_string()),
+            Token::Colon,
+            Token::Number("5".to_string()),
+            Token::RightBrace,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Map(vec![
+                    (
+                        Expression::Literal(Value::Number(1)),
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(2)),
+                            Expression::Literal(Value::Number(3))
+                        )])
+                    ),
+                    (
+                        Expression::Literal(Value::Number(4)),
+                        Expression::Literal(Value::Number(5))
+                    )
+                ]))
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_map_of_maps() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".to_string()),
+            Token::Assign,
+            Token::LeftBrace,
+            Token::LeftBrace,
+            Token::Number("1".to_string()),
+            Token::Colon,
+            Token::Number("2".to_string()),
+            Token::RightBrace,
+            Token::Colon,
+            Token::LeftBrace,
+            Token::Number("3".to_string()),
+            Token::Colon,
+            Token::Number("4".to_string()),
+            Token::RightBrace,
+            Token::Comma,
+            Token::LeftBrace,
+            Token::Number("5".to_string()),
+            Token::Colon,
+            Token::Number("6".to_string()),
+            Token::RightBrace,
+            Token::Colon,
+            Token::LeftBrace,
+            Token::Number("7".to_string()),
+            Token::Colon,
+            Token::Number("8".to_string()),
+            Token::RightBrace,
+            Token::RightBrace,
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Map(vec![
+                    (
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(1)),
+                            Expression::Literal(Value::Number(2))
+                        )]),
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(3)),
+                            Expression::Literal(Value::Number(4))
+                        )])
+                    ),
+                    (
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(5)),
+                            Expression::Literal(Value::Number(6))
+                        )]),
+                        Expression::Map(vec![(
+                            Expression::Literal(Value::Number(7)),
+                            Expression::Literal(Value::Number(8))
+                        )])
+                    )
+                ]))
+            ))
         );
     }
 
@@ -829,9 +1011,9 @@ mod tests {
         assert_eq!(
             node,
             StatementExpression::Expression(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                Box::new(Expression::Literal(Value::Number(2.0)))
+                Box::new(Expression::Literal(Value::Number(2)))
             ))
         );
     }
@@ -848,9 +1030,9 @@ mod tests {
         assert_eq!(
             node,
             StatementExpression::Expression(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
                 Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-                Box::new(Expression::Literal(Value::Number(2.0)))
+                Box::new(Expression::Literal(Value::Number(2)))
             ))
         );
     }
@@ -867,9 +1049,9 @@ mod tests {
         assert_eq!(
             node,
             StatementExpression::Expression(Expression::Binary(
-                Box::new(Expression::Literal(Value::Number(1.0))),
+                Box::new(Expression::Literal(Value::Number(1))),
                 Operator::LogicalOperator(LogicalOperator::And),
-                Box::new(Expression::Literal(Value::Number(2.0)))
+                Box::new(Expression::Literal(Value::Number(2)))
             ))
         );
     }
@@ -897,7 +1079,7 @@ mod tests {
                     Box::new(Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::MathematicalOperator(MathematicalOperator::Plus),
-                        Box::new(Expression::Literal(Value::Number(1.0)))
+                        Box::new(Expression::Literal(Value::Number(1)))
                     ))
                 )
             )]))
@@ -933,7 +1115,7 @@ mod tests {
                     Box::new(Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::MathematicalOperator(MathematicalOperator::Plus),
-                        Box::new(Expression::Literal(Value::Number(1.0)))
+                        Box::new(Expression::Literal(Value::Number(1)))
                     ))
                 )),
                 StatementExpression::Statement(Statement::Reassignment(
@@ -941,7 +1123,7 @@ mod tests {
                     Box::new(Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::MathematicalOperator(MathematicalOperator::Minus),
-                        Box::new(Expression::Literal(Value::Number(1.0)))
+                        Box::new(Expression::Literal(Value::Number(1)))
                     ))
                 ))
             ]))
@@ -965,8 +1147,8 @@ mod tests {
             StatementExpression::Expression(Expression::FunctionCall(
                 Box::new(Expression::Identifier("foo".to_string())),
                 vec![
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Literal(Value::Number(2.0)),
+                    Expression::Literal(Value::Number(1)),
+                    Expression::Literal(Value::Number(2)),
                 ],
             ))
         );
@@ -991,7 +1173,7 @@ mod tests {
                     Box::new(Expression::Identifier("curried".to_string())),
                     vec![]
                 )),
-                vec![Expression::Literal(Value::Number(1.0))],
+                vec![Expression::Literal(Value::Number(1))],
             ))
         );
     }
@@ -1052,8 +1234,8 @@ mod tests {
             StatementExpression::Expression(Expression::FunctionCall(
                 Box::new(Expression::Identifier("foo".to_string())),
                 vec![
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Literal(Value::Number(2.0)),
+                    Expression::Literal(Value::Number(1)),
+                    Expression::Literal(Value::Number(2)),
                 ],
             ))
         );
@@ -1082,8 +1264,8 @@ mod tests {
                 vec![Expression::FunctionCall(
                     Box::new(Expression::Identifier("bar".to_string())),
                     vec![
-                        Expression::Literal(Value::Number(1.0)),
-                        Expression::Literal(Value::Number(2.0)),
+                        Expression::Literal(Value::Number(1)),
+                        Expression::Literal(Value::Number(2)),
                     ],
                 ),],
             ))
@@ -1113,15 +1295,15 @@ mod tests {
             StatementExpression::Expression(Expression::FunctionCall(
                 Box::new(Expression::Identifier("foo".to_string())),
                 vec![Expression::Binary(
-                    Box::new(Expression::Literal(Value::Number(1.0))),
+                    Box::new(Expression::Literal(Value::Number(1))),
                     Operator::MathematicalOperator(MathematicalOperator::Plus),
                     Box::new(Expression::Binary(
-                        Box::new(Expression::Literal(Value::Number(2.0))),
+                        Box::new(Expression::Literal(Value::Number(2))),
                         Operator::MathematicalOperator(MathematicalOperator::Plus),
                         Box::new(Expression::Binary(
-                            Box::new(Expression::Literal(Value::Number(3.0))),
+                            Box::new(Expression::Literal(Value::Number(3))),
                             Operator::MathematicalOperator(MathematicalOperator::Minus),
-                            Box::new(Expression::Literal(Value::Number(4.0)))
+                            Box::new(Expression::Literal(Value::Number(4)))
                         ))
                     ))
                 )],
@@ -1160,16 +1342,16 @@ mod tests {
                     Box::new(Expression::FunctionCall(
                         Box::new(Expression::Identifier("bar".to_string())),
                         vec![
-                            Expression::Literal(Value::Number(1.0)),
-                            Expression::Literal(Value::Number(2.0)),
+                            Expression::Literal(Value::Number(1)),
+                            Expression::Literal(Value::Number(2)),
                         ],
                     )),
                     Operator::MathematicalOperator(MathematicalOperator::Plus),
                     Box::new(Expression::FunctionCall(
                         Box::new(Expression::Identifier("baz".to_string())),
                         vec![
-                            Expression::Literal(Value::Number(3.0)),
-                            Expression::Literal(Value::Number(4.0)),
+                            Expression::Literal(Value::Number(3)),
+                            Expression::Literal(Value::Number(4)),
                         ],
                     )),
                 )],
@@ -1206,9 +1388,9 @@ mod tests {
             StatementExpression::Statement(Statement::For(
                 "i".into(),
                 Box::new(Expression::Collection(vec![
-                    Expression::Literal(Value::Number(0.0)),
-                    Expression::Literal(Value::Number(1.0)),
-                    Expression::Literal(Value::Number(2.0)),
+                    Expression::Literal(Value::Number(0)),
+                    Expression::Literal(Value::Number(1)),
+                    Expression::Literal(Value::Number(2)),
                 ])),
                 Box::new(Statement::Block(vec![StatementExpression::Expression(
                     Expression::FunctionCall(
@@ -1244,7 +1426,7 @@ mod tests {
                 Expression::Binary(
                     Box::new(Expression::Identifier("x".into())),
                     Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-                    Box::new(Expression::Literal(Value::Number(5.0)))
+                    Box::new(Expression::Literal(Value::Number(5)))
                 ),
                 Box::new(Statement::Block(vec![StatementExpression::Statement(
                     Statement::Reassignment(
@@ -1252,7 +1434,7 @@ mod tests {
                         Box::new(Expression::Binary(
                             Box::new(Expression::Identifier("x".into())),
                             Operator::MathematicalOperator(MathematicalOperator::Plus),
-                            Box::new(Expression::Literal(Value::Number(1.0))),
+                            Box::new(Expression::Literal(Value::Number(1))),
                         ))
                     )
                 )])),
@@ -1287,7 +1469,7 @@ mod tests {
                         Box::new(Expression::Binary(
                             Box::new(Expression::Identifier("x".into())),
                             Operator::MathematicalOperator(MathematicalOperator::Plus),
-                            Box::new(Expression::Literal(Value::Number(1.0))),
+                            Box::new(Expression::Literal(Value::Number(1))),
                         ))
                     )
                 )])),
@@ -1329,7 +1511,7 @@ mod tests {
                 Expression::Binary(
                     Box::new(Expression::Identifier("x".into())),
                     Operator::ComparisonOperator(ComparisonOperator::GreaterThan),
-                    Box::new(Expression::Literal(Value::Number(5.0)))
+                    Box::new(Expression::Literal(Value::Number(5)))
                 ),
                 Box::new(Statement::Block(vec![StatementExpression::Statement(
                     Statement::Reassignment(
@@ -1337,7 +1519,7 @@ mod tests {
                         Box::new(Expression::Binary(
                             Box::new(Expression::Identifier("x".into())),
                             Operator::MathematicalOperator(MathematicalOperator::Plus),
-                            Box::new(Expression::Literal(Value::Number(1.0))),
+                            Box::new(Expression::Literal(Value::Number(1))),
                         ))
                     )
                 )])),
@@ -1347,7 +1529,7 @@ mod tests {
                         Box::new(Expression::Binary(
                             Box::new(Expression::Identifier("x".into())),
                             Operator::MathematicalOperator(MathematicalOperator::Minus),
-                            Box::new(Expression::Literal(Value::Number(1.0))),
+                            Box::new(Expression::Literal(Value::Number(1))),
                         ))
                     ))
                 ])))
@@ -1378,7 +1560,7 @@ mod tests {
                     Box::new(Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::MathematicalOperator(MathematicalOperator::Plus),
-                        Box::new(Expression::Literal(Value::Number(1.0))),
+                        Box::new(Expression::Literal(Value::Number(1))),
                     ))
                 ))
             ]))))
@@ -1418,7 +1600,7 @@ mod tests {
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0)))
+                        Box::new(Expression::Literal(Value::Number(10)))
                     ),
                     Box::new(Statement::Block(vec![StatementExpression::Statement(
                         Statement::Reassignment(
@@ -1426,7 +1608,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             ))
                         )
                     )])),
@@ -1453,7 +1635,7 @@ mod tests {
             node,
             StatementExpression::Expression(Expression::Accessor(
                 Box::new(Expression::Identifier("x".into())),
-                Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(1)))),
             ))
         );
     }
@@ -1490,7 +1672,7 @@ mod tests {
                     Expression::Binary(
                         Box::new(Expression::Identifier("x".into())),
                         Operator::ComparisonOperator(ComparisonOperator::LessThan),
-                        Box::new(Expression::Literal(Value::Number(10.0)))
+                        Box::new(Expression::Literal(Value::Number(10)))
                     ),
                     Box::new(Statement::Block(vec![
                         StatementExpression::Statement(Statement::Reassignment(
@@ -1498,7 +1680,7 @@ mod tests {
                             Box::new(Expression::Binary(
                                 Box::new(Expression::Identifier("x".into())),
                                 Operator::MathematicalOperator(MathematicalOperator::Plus),
-                                Box::new(Expression::Literal(Value::Number(1.0))),
+                                Box::new(Expression::Literal(Value::Number(1))),
                             ))
                         )),
                         StatementExpression::Statement(Statement::Continue)
@@ -1529,9 +1711,9 @@ mod tests {
             StatementExpression::Expression(Expression::Accessor(
                 Box::new(Expression::Accessor(
                     Box::new(Expression::Identifier("x".into())),
-                    Accessor::Index(Box::new(Expression::Literal(Value::Number(1.0)))),
+                    Accessor::Index(Box::new(Expression::Literal(Value::Number(1)))),
                 )),
-                Accessor::Index(Box::new(Expression::Literal(Value::Number(2.0)))),
+                Accessor::Index(Box::new(Expression::Literal(Value::Number(2)))),
             ))
         );
     }
