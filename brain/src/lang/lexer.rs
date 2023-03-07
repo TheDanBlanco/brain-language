@@ -139,6 +139,7 @@ impl Lexer {
             Some('<') => Token::Less,
             Some('>') => Token::Greater,
             Some(';') => Token::Semicolon,
+            Some(':') => Token::Colon,
             Some(',') => Token::Comma,
             Some('{') => Token::LeftBrace,
             Some('}') => Token::RightBrace,
@@ -393,6 +394,44 @@ mod tests {
         assert_eq!(l.next_token(), Token::Comma);
         assert_eq!(l.next_token(), Token::Char("b".into()));
         assert_eq!(l.next_token(), Token::RightBracket);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn assign_map_to_identifier() {
+        let input = "let a = {\"foo\": 1, \"bar\": 2};";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::String("foo".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::String("bar".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::Number("2".into()));
+        assert_eq!(l.next_token(), Token::RightBrace);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn assign_mixed_map_to_identifier() {
+        let input = "let a = {\"foo\": 1, \"bar\": \"baz\"};";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::LeftBrace);
+        assert_eq!(l.next_token(), Token::String("foo".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Comma);
+        assert_eq!(l.next_token(), Token::String("bar".into()));
+        assert_eq!(l.next_token(), Token::Colon);
+        assert_eq!(l.next_token(), Token::String("baz".into()));
+        assert_eq!(l.next_token(), Token::RightBrace);
         assert_eq!(l.next_token(), Token::Semicolon);
     }
 
