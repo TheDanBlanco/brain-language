@@ -1,9 +1,12 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    expressions::{Evaluatable, Expression},
-    output::Output,
-    Resolveable,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        expressions::Expression,
+        output::Output,
+        Evaluate, Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -21,9 +24,9 @@ impl Assignment {
     }
 }
 
-impl Resolveable for Assignment {
+impl Resolve for Assignment {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
-        let value = self.value.eval(context)?;
+        let value = self.value.evaluate(context)?;
 
         if context.symbols.get(&self.target).is_some() {
             return Err(Error::new(
@@ -35,6 +38,25 @@ impl Resolveable for Assignment {
         context.symbols.insert(self.target.clone(), value);
 
         return Ok(Output::None);
+    }
+}
+
+impl Parse for Assignment {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::Let)?;
+
+        let next = stream.next();
+        let identifer = next.unwrap().token.get_identifier()?;
+
+        stream.expect(TokenKind::Assign)?;
+
+        let expression = Expression::parse(stream)?;
+
+        stream.skip_if(TokenKind::Semicolon);
+
+        let assignment = Self::new(identifer, expression);
+
+        Ok(assignment)
     }
 }
 

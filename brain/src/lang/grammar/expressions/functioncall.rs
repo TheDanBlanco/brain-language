@@ -3,10 +3,10 @@ use crate::lang::grammar::{
     error::{Error, ErrorKind},
     output::Output,
     value::Value,
-    Resolveable,
+    Evaluate, Resolve,
 };
 
-use super::{Evaluatable, Expression};
+use super::Expression;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
@@ -23,9 +23,9 @@ impl FunctionCall {
     }
 }
 
-impl Evaluatable for FunctionCall {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
-        let identifier = self.identifier.eval(context)?;
+impl Evaluate for FunctionCall {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+        let identifier = self.identifier.evaluate(context)?;
 
         let function = match identifier.clone() {
             Value::Function(_, _) => identifier,
@@ -105,7 +105,7 @@ mod tests {
             vec![],
         );
 
-        let result = function_call.eval(context);
+        let result = function_call.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(0),);
     }
@@ -123,7 +123,7 @@ mod tests {
             vec![],
         );
 
-        let result = function_call.eval(context);
+        let result = function_call.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Null,);
     }
@@ -139,7 +139,7 @@ mod tests {
             vec![Expression::new_literal(Value::Number(1))],
         );
 
-        let result = function_call.eval(context);
+        let result = function_call.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(0),);
     }
@@ -152,7 +152,7 @@ mod tests {
             vec![Expression::new_literal(Value::Number(1))],
         );
 
-        let result = function_call.eval(context);
+        let result = function_call.evaluate(context);
 
         assert!(result.is_err());
         assert_eq!(
@@ -169,7 +169,7 @@ mod tests {
             vec![Expression::new_literal(Value::Number(1))],
         );
 
-        let result = function_call.eval(context);
+        let result = function_call.evaluate(context);
 
         assert!(result.is_err());
         assert_eq!(
@@ -187,7 +187,7 @@ mod tests {
             vec![Expression::new_literal(Value::Number(1))],
         );
 
-        let result = function_call.eval(context);
+        let result = function_call.evaluate(context);
 
         assert!(result.is_err());
         assert_eq!(

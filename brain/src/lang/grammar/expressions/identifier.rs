@@ -2,9 +2,8 @@ use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
     value::Value,
+    Evaluate,
 };
-
-use super::Evaluatable;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Identifier {
@@ -17,8 +16,8 @@ impl Identifier {
     }
 }
 
-impl Evaluatable for Identifier {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Evaluate for Identifier {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         if let Some(value) = context.symbols.get(&self.name) {
             return Ok(value.clone());
         }
@@ -49,7 +48,7 @@ mod tests {
             .symbols
             .insert("hello".to_string(), Value::Number(1));
         let identifier = Identifier::new("hello".to_string());
-        let result = identifier.eval(&mut context);
+        let result = identifier.evaluate(&mut context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -58,7 +57,7 @@ mod tests {
     fn eval_identifier_not_found() {
         let mut context = Context::new();
         let identifier = Identifier::new("hello".to_string());
-        let result = identifier.eval(&mut context);
+        let result = identifier.evaluate(&mut context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

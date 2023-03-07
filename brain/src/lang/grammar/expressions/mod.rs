@@ -1,9 +1,14 @@
-use crate::lang::grammar::{context::Context, value::Value};
+use crate::lang::{
+    grammar::{context::Context, value::Value},
+    tokens::stream::TokenStream,
+};
 
 use self::{
     binary::Binary, collection::Collection, functioncall::FunctionCall, identifier::Identifier,
     literal::Literal, map::Map, operator::Operator,
 };
+
+use super::{Evaluate, Parse};
 
 pub mod accessors;
 pub mod binary;
@@ -13,10 +18,6 @@ pub mod identifier;
 pub mod literal;
 pub mod map;
 pub mod operator;
-
-pub trait Evaluatable {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>>;
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Expression {
@@ -54,16 +55,22 @@ impl Expression {
     }
 }
 
-impl Evaluatable for Expression {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Evaluate for Expression {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         match self {
-            Expression::Binary(binary) => binary.eval(context),
-            Expression::Collection(collection) => collection.eval(context),
-            Expression::Literal(literal) => literal.eval(context),
-            Expression::FunctionCall(function_call) => function_call.eval(context),
-            Expression::Identifier(identifier) => identifier.eval(context),
-            Expression::Map(map) => map.eval(context),
+            Expression::Binary(binary) => binary.evaluate(context),
+            Expression::Collection(collection) => collection.evaluate(context),
+            Expression::Literal(literal) => literal.evaluate(context),
+            Expression::FunctionCall(function_call) => function_call.evaluate(context),
+            Expression::Identifier(identifier) => identifier.evaluate(context),
+            Expression::Map(map) => map.evaluate(context),
         }
+    }
+}
+
+impl Parse for Expression {
+    fn parse(_stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        todo!()
     }
 }
 
@@ -87,7 +94,7 @@ mod tests {
         let context = &mut Context::new();
         let expression = Expression::new_literal(Value::Number(1));
 
-        let result = expression.eval(context);
+        let result = expression.evaluate(context);
         assert!(result.is_ok());
     }
 
@@ -106,7 +113,7 @@ mod tests {
         context.symbols.insert("foo".to_string(), Value::Number(1));
         let expression = Expression::new_identifier("foo".to_string());
 
-        let result = expression.eval(context);
+        let result = expression.evaluate(context);
         assert!(result.is_ok());
     }
 
@@ -137,7 +144,7 @@ mod tests {
             vec![Expression::new_literal(Value::Number(1))],
         );
 
-        let result = expression.eval(context);
+        let result = expression.evaluate(context);
         assert!(result.is_ok());
     }
 
@@ -167,7 +174,7 @@ mod tests {
             Expression::new_literal(Value::Number(2)),
         );
 
-        let result = expression.eval(context);
+        let result = expression.evaluate(context);
         assert!(result.is_ok());
     }
 
@@ -194,7 +201,7 @@ mod tests {
             Expression::new_literal(Value::Number(2)),
         ]);
 
-        let result = expression.eval(context);
+        let result = expression.evaluate(context);
         assert!(result.is_ok());
     }
 
@@ -239,7 +246,7 @@ mod tests {
             ),
         ]);
 
-        let result = expression.eval(context);
+        let result = expression.evaluate(context);
         assert!(result.is_ok());
     }
 }

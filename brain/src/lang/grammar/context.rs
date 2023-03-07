@@ -1,9 +1,6 @@
 use std::collections::BTreeMap;
 
-use super::{
-    expressions::{Evaluatable, Expression},
-    value::Value,
-};
+use super::{expressions::Expression, value::Value, Evaluate};
 
 type Symbols = BTreeMap<String, Value>;
 
@@ -26,7 +23,7 @@ impl Context {
         let mut cloned_symbols = self.symbols.clone();
 
         for (identifier, value) in arguments {
-            let val = value.eval(self)?;
+            let val = value.evaluate(self)?;
             cloned_symbols.insert(identifier.to_string(), val);
         }
 

@@ -4,9 +4,10 @@ use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
     value::Value,
+    Evaluate,
 };
 
-use super::{Evaluatable, Expression};
+use super::Expression;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Map {
@@ -19,19 +20,19 @@ impl Map {
     }
 }
 
-impl Evaluatable for Map {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Evaluate for Map {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let mut map = BTreeMap::new();
 
         for (key, value) in &self.pairs {
-            let key = key.eval(context)?;
+            let key = key.evaluate(context)?;
 
             match key {
                 Value::Number(_) | Value::String(_) | Value::Boolean(_) => {}
                 _ => return Err(Error::new(ErrorKind::InvalidMapKey, format!("{key}"))),
             }
 
-            let value = value.eval(context)?;
+            let value = value.evaluate(context)?;
             map.insert(key.clone(), value.clone());
         }
 
@@ -71,7 +72,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Map(tree));
     }
@@ -88,7 +89,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Map(tree));
     }
@@ -105,7 +106,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Map(tree));
     }
@@ -119,7 +120,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: []",);
     }
@@ -133,7 +134,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -150,7 +151,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: null",);
     }
@@ -164,7 +165,7 @@ mod tests {
         )];
         let map = Map::new(pairs);
 
-        let result = map.eval(context);
+        let result = map.evaluate(context);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: {}",);
     }

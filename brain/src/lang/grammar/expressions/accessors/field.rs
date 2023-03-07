@@ -1,8 +1,9 @@
 use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
-    expressions::{Evaluatable, Expression},
+    expressions::Expression,
     value::Value,
+    Evaluate,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,9 +21,9 @@ impl Field {
     }
 }
 
-impl Evaluatable for Field {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
-        let target = self.target.eval(context)?;
+impl Evaluate for Field {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+        let target = self.target.evaluate(context)?;
 
         if let Value::String(_) = &self.field {
         } else {
@@ -86,7 +87,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -102,7 +103,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -118,7 +119,7 @@ mod tests {
             Expression::new_literal(Value::Number(1)),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -137,7 +138,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -156,7 +157,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -175,7 +176,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -194,7 +195,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -213,7 +214,7 @@ mod tests {
             )])),
         );
 
-        let result = field.eval(context);
+        let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

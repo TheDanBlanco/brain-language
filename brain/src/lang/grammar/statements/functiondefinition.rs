@@ -1,4 +1,13 @@
-use crate::lang::grammar::{context::Context, output::Output, value::Value, Resolveable};
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        output::Output,
+        value::Value,
+        Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 use super::Statement;
 
@@ -19,7 +28,7 @@ impl FunctionDefinition {
     }
 }
 
-impl Resolveable for FunctionDefinition {
+impl Resolve for FunctionDefinition {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         context.symbols.insert(
             self.identifier.clone(),
@@ -30,6 +39,45 @@ impl Resolveable for FunctionDefinition {
     }
 }
 
+impl Parse for FunctionDefinition {
+    // TODO (danb) parse identifier
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::Function)?;
+
+        let next = stream.next();
+        let identifier = next.unwrap().token.get_identifier()?;
+
+        stream.expect(TokenKind::LeftParen)?;
+
+        let mut arguments = vec![];
+
+        while stream.check(TokenKind::RightParen) {
+            let next = stream.next();
+
+            if next.is_none() {
+                return Err(Error::new(
+                    ErrorKind::UnexpectedToken,
+                    "Expected function argument, found End of File".to_string(),
+                ));
+            }
+
+            let argument = next.unwrap().token.get_identifier()?;
+            arguments.push(argument.to_string());
+            stream.skip_if(TokenKind::Comma);
+        }
+
+        stream.expect(TokenKind::RightParen)?;
+
+        let block = Statement::parse(stream)?;
+
+        let definition = Self::new(identifier, arguments, block);
+
+        stream.skip_if(TokenKind::Semicolon);
+
+        Ok(definition)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::lang::grammar::{
@@ -37,7 +85,7 @@ mod tests {
         expressions::{operator::Operator, Expression},
         statements::{r#return::Return, Statement},
         value::Value,
-        Node, Resolveable,
+        Node, Resolve,
     };
 
     use super::FunctionDefinition;

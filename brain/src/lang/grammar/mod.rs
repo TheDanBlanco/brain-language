@@ -1,9 +1,8 @@
 use self::{
-    context::Context,
-    expressions::{Evaluatable, Expression},
-    output::Output,
-    statements::Statement,
+    context::Context, expressions::Expression, output::Output, statements::Statement, value::Value,
 };
+
+use super::tokens::stream::TokenStream;
 
 pub mod context;
 pub mod error;
@@ -12,8 +11,19 @@ pub mod output;
 pub mod statements;
 pub mod value;
 
-pub trait Resolveable {
+pub trait Resolve {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>>;
+}
+
+pub trait Evaluate {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>>;
+}
+
+pub trait Parse
+where
+    Self: Sized,
+{
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -32,11 +42,17 @@ impl Node {
     }
 }
 
-impl Resolveable for Node {
+impl Parse for Node {
+    fn parse(_stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        todo!()
+    }
+}
+
+impl Resolve for Node {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         match self {
             Node::Expression(expression) => {
-                expression.eval(context)?;
+                expression.evaluate(context)?;
 
                 return Ok(Output::None);
             }

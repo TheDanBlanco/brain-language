@@ -1,4 +1,7 @@
-use crate::lang::grammar::{context::Context, output::Output, Resolveable};
+use crate::lang::{
+    grammar::{context::Context, output::Output, Parse, Resolve},
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 use super::Statement;
 
@@ -15,7 +18,7 @@ impl Loop {
     }
 }
 
-impl Resolveable for Loop {
+impl Resolve for Loop {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         loop {
             let out = self.statement.resolve(context)?;
@@ -24,6 +27,16 @@ impl Resolveable for Loop {
                 break Ok(out);
             }
         }
+    }
+}
+
+impl Parse for Loop {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::Loop)?;
+
+        let block = Statement::parse(stream)?;
+
+        Ok(Self::new(block))
     }
 }
 

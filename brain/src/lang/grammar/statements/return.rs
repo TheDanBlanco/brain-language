@@ -1,8 +1,8 @@
-use crate::lang::grammar::{
-    context::Context,
-    expressions::{Evaluatable, Expression},
-    output::Output,
-    Resolveable,
+use crate::lang::{
+    grammar::{
+        context::Context, expressions::Expression, output::Output, Evaluate, Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -16,9 +16,19 @@ impl Return {
     }
 }
 
-impl Resolveable for Return {
+impl Resolve for Return {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
-        Ok(Output::Value(self.value.eval(context)?))
+        Ok(Output::Value(self.value.evaluate(context)?))
+    }
+}
+
+impl Parse for Return {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::Return)?;
+
+        let expression = Expression::parse(stream)?;
+
+        Ok(Self::new(expression))
     }
 }
 

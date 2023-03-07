@@ -1,11 +1,23 @@
-use crate::lang::grammar::{context::Context, output::Output, Resolveable};
+use crate::lang::{
+    grammar::{context::Context, output::Output, Parse, Resolve},
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Continue;
 
-impl Resolveable for Continue {
+impl Resolve for Continue {
     fn resolve(&self, _context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         Ok(Output::Continue)
+    }
+}
+
+impl Parse for Continue {
+    fn parse(stream: &mut TokenStream) -> Result<Continue, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::Continue)?;
+        stream.skip_if(TokenKind::Semicolon);
+
+        Ok(Self)
     }
 }
 

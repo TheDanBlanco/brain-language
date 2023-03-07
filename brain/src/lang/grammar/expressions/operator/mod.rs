@@ -66,16 +66,16 @@ impl Operator {
         Operator::Comparison(Comparison::LessThanEqual)
     }
 
-    pub fn eval(
+    pub fn evaluate(
         &self,
         left: Value,
         right: Value,
         _context: &mut Context,
     ) -> Result<Value, Box<dyn std::error::Error>> {
         match self {
-            Operator::Mathematical(mathematical) => mathematical.eval(left, right),
-            Operator::Logical(logical) => logical.eval(left, right),
-            Operator::Comparison(comparison) => comparison.eval(left, right),
+            Operator::Mathematical(mathematical) => mathematical.evaluate(left, right),
+            Operator::Logical(logical) => logical.evaluate(left, right),
+            Operator::Comparison(comparison) => comparison.evaluate(left, right),
         }
     }
 }
@@ -182,7 +182,7 @@ mod tests {
         let right = Value::Number(2);
         let operator = Operator::new_addition();
 
-        let result = operator.eval(left, right, context);
+        let result = operator.evaluate(left, right, context);
         assert!(result.is_ok());
     }
 
@@ -193,7 +193,7 @@ mod tests {
         let right = Value::Boolean(false);
         let operator = Operator::Logical(Logical::And);
 
-        let result = operator.eval(left, right, context);
+        let result = operator.evaluate(left, right, context);
         assert!(result.is_ok());
     }
 
@@ -204,7 +204,7 @@ mod tests {
         let right = Value::Number(2);
         let operator = Operator::Comparison(Comparison::Equal);
 
-        let result = operator.eval(left, right, context);
+        let result = operator.evaluate(left, right, context);
         assert!(result.is_ok());
     }
 }

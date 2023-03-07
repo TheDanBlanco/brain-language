@@ -1,4 +1,7 @@
-use crate::lang::grammar::{context::Context, output::Output, Node, Nodes, Resolveable};
+use crate::lang::{
+    grammar::{context::Context, output::Output, Node, Nodes, Parse, Resolve},
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Block {
@@ -13,7 +16,7 @@ impl Block {
     }
 }
 
-impl Resolveable for Block {
+impl Resolve for Block {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         for node in &self.block.nodes {
             let out = node.resolve(context)?;
@@ -23,6 +26,29 @@ impl Resolveable for Block {
             }
         }
         return Ok(Output::None);
+    }
+}
+
+impl Parse for Block {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let mut nodes = vec![];
+
+        stream.expect(TokenKind::LeftBrace)?;
+
+        loop {
+            let node = Node::parse(stream)?;
+            nodes.push(node);
+
+            if stream.check(TokenKind::RightBrace) {
+                break;
+            }
+
+            break;
+        }
+
+        stream.expect(TokenKind::RightBrace)?;
+
+        Ok(Self::new(nodes))
     }
 }
 

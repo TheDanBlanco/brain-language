@@ -11,6 +11,8 @@ pub enum ErrorKind {
     InvalidMathematicalOperation,
     InvalidComparisonOperation,
     IdentifierAlreadyExists,
+    UnexpectedToken,
+    UnexpectedEndOfFile,
 }
 
 impl fmt::Display for ErrorKind {
@@ -25,6 +27,8 @@ impl fmt::Display for ErrorKind {
             ErrorKind::InvalidMathematicalOperation => write!(f, "InvalidMathematicalOperation"),
             ErrorKind::InvalidComparisonOperation => write!(f, "InvalidComparisonOperation"),
             ErrorKind::IdentifierAlreadyExists => write!(f, "IdentifierAlreadyExists"),
+            ErrorKind::UnexpectedToken => write!(f, "UnexpectedToken"),
+            ErrorKind::UnexpectedEndOfFile => write!(f, "UnexpectedEndOfFile"),
         }
     }
 }

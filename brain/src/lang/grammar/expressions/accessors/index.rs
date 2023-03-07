@@ -1,8 +1,9 @@
 use crate::lang::grammar::{
     context::Context,
     error::{Error, ErrorKind},
-    expressions::{Evaluatable, Expression},
+    expressions::Expression,
     value::Value,
+    Evaluate,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,13 +21,13 @@ impl Index {
     }
 }
 
-impl Evaluatable for Index {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
-        let target = self.target.eval(context)?;
+impl Evaluate for Index {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+        let target = self.target.evaluate(context)?;
 
         match &target {
             Value::Collection(collection) => {
-                let index = self.index.eval(context)?;
+                let index = self.index.evaluate(context)?;
 
                 match index {
                     Value::Number(index) => {
@@ -61,7 +62,7 @@ impl Evaluatable for Index {
                 }
             }
             Value::Map(map) => {
-                let key = self.index.eval(context)?;
+                let key = self.index.evaluate(context)?;
 
                 match map.get(&key) {
                     Some(value) => Ok(value.clone()),
@@ -72,7 +73,7 @@ impl Evaluatable for Index {
                 }
             }
             Value::String(string) => {
-                let index = self.index.eval(context)?;
+                let index = self.index.evaluate(context)?;
 
                 match index {
                     Value::Number(index) => {
@@ -151,7 +152,7 @@ mod tests {
             Expression::new_literal(Value::Collection(vec![Value::Number(1), Value::Number(2)])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -164,7 +165,7 @@ mod tests {
             Expression::new_literal(Value::Collection(vec![Value::Number(1), Value::Number(2)])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -180,7 +181,7 @@ mod tests {
             Expression::new_literal(Value::Collection(vec![Value::Number(1), Value::Number(2)])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -199,7 +200,7 @@ mod tests {
             ])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -224,7 +225,7 @@ mod tests {
             ])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -246,7 +247,7 @@ mod tests {
             ])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -268,7 +269,7 @@ mod tests {
             ])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -290,7 +291,7 @@ mod tests {
             ])),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -306,7 +307,7 @@ mod tests {
             Expression::new_literal(Value::String("abc".to_string())),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::String("a".to_string()));
     }
@@ -319,7 +320,7 @@ mod tests {
             Expression::new_literal(Value::String("abc".to_string())),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -335,7 +336,7 @@ mod tests {
             Expression::new_literal(Value::String("abc".to_string())),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -351,7 +352,7 @@ mod tests {
             Expression::new_literal(Value::String("abc".to_string())),
         );
 
-        let result = index.eval(context);
+        let result = index.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

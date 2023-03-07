@@ -1,9 +1,12 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    expressions::{Evaluatable, Expression},
-    output::Output,
-    Resolveable,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        expressions::Expression,
+        output::Output,
+        Evaluate, Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -21,9 +24,9 @@ impl Reassignment {
     }
 }
 
-impl Resolveable for Reassignment {
+impl Resolve for Reassignment {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
-        let value = self.value.eval(context)?;
+        let value = self.value.evaluate(context)?;
 
         if !context.symbols.get(&self.target).is_some() {
             return Err(Error::new(
@@ -35,6 +38,31 @@ impl Resolveable for Reassignment {
         context.symbols.insert(self.target.clone(), value);
 
         return Ok(Output::None);
+    }
+}
+
+impl Parse for Reassignment {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.next();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedToken,
+                "Expected identifier, found End of File".to_string(),
+            ));
+        }
+
+        let identifier = next.unwrap().token.get_identifier()?;
+
+        stream.expect(TokenKind::Assign)?;
+
+        let expression = Expression::parse(stream)?;
+
+        let reassignment = Self::new(identifier, expression);
+
+        stream.skip_if(TokenKind::Semicolon);
+
+        Ok(reassignment)
     }
 }
 

@@ -1,5 +1,6 @@
-use crate::lang::grammar::{
-    context::Context, expressions::Expression, output::Output, Node, Resolveable,
+use crate::lang::{
+    grammar::{context::Context, expressions::Expression, output::Output, Node, Resolve},
+    tokens::stream::TokenStream,
 };
 
 use self::{
@@ -7,6 +8,8 @@ use self::{
     functiondefinition::FunctionDefinition, r#break::Break, r#continue::Continue, r#for::For,
     r#loop::Loop, r#return::Return, reassignment::Reassignment,
 };
+
+use super::Parse;
 
 pub mod assignment;
 pub mod block;
@@ -83,7 +86,7 @@ impl Statement {
     }
 }
 
-impl Resolveable for Statement {
+impl Resolve for Statement {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         match self {
             Statement::Assignment(assignment) => assignment.resolve(context),
@@ -97,6 +100,12 @@ impl Resolveable for Statement {
             Statement::Conditional(conditional) => r#conditional.resolve(context),
             Statement::FunctionDefinition(definition) => definition.resolve(context),
         }
+    }
+}
+
+impl Parse for Statement {
+    fn parse(_stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        todo!()
     }
 }
 

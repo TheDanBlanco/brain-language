@@ -1,6 +1,6 @@
-use crate::lang::grammar::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value, Evaluate};
 
-use super::{Evaluatable, Expression};
+use super::Expression;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Collection {
@@ -13,12 +13,12 @@ impl Collection {
     }
 }
 
-impl Evaluatable for Collection {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Evaluate for Collection {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let mut values = Vec::new();
 
         for element in &self.elements {
-            let value = element.eval(context)?;
+            let value = element.evaluate(context)?;
             values.push(value.clone());
         }
 
@@ -56,7 +56,7 @@ mod tests {
             Expression::new_literal(Value::Number(3)),
         ]);
 
-        let result = collection.eval(context);
+        let result = collection.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),

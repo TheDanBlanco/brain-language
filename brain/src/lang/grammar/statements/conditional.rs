@@ -1,13 +1,16 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    expressions::{Evaluatable, Expression},
-    output::Output,
-    value::Value,
-    Resolveable,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        expressions::Expression,
+        output::Output,
+        value::Value,
+        Evaluate, Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
-use super::Statement;
+use super::{block::Block, Statement};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Conditional {
@@ -30,9 +33,9 @@ impl Conditional {
     }
 }
 
-impl Resolveable for Conditional {
+impl Resolve for Conditional {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
-        let condition = self.condition.eval(context)?;
+        let condition = self.condition.evaluate(context)?;
 
         if !matches!(
             condition,
@@ -60,6 +63,26 @@ impl Resolveable for Conditional {
         }
 
         Ok(Output::None)
+    }
+}
+
+impl Parse for Conditional {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::If)?;
+
+        let condition = Expression::parse(stream)?;
+
+        let consequence = Statement::parse(stream)?;
+
+        let alternative = {
+            if stream.check(TokenKind::Else) {
+                Block::parse(stream)?;
+            }
+
+            None
+        };
+
+        Ok(Self::new(condition, consequence, alternative))
     }
 }
 

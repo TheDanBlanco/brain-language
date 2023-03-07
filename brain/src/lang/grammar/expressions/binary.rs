@@ -1,6 +1,6 @@
-use crate::lang::grammar::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value, Evaluate};
 
-use super::{operator::Operator, Evaluatable, Expression};
+use super::{operator::Operator, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Binary {
@@ -19,12 +19,12 @@ impl Binary {
     }
 }
 
-impl Evaluatable for Binary {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
-        let left = self.lhs.eval(context)?;
-        let right = self.rhs.eval(context)?;
+impl Evaluate for Binary {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+        let left = self.lhs.evaluate(context)?;
+        let right = self.rhs.evaluate(context)?;
 
-        self.operator.eval(left, right, context)
+        self.operator.evaluate(left, right, context)
     }
 }
 
@@ -58,7 +58,7 @@ mod test {
         let operator = Operator::new_addition();
         let binary = Binary::new(lhs, operator, rhs);
 
-        let result = binary.eval(context);
+        let result = binary.evaluate(context);
 
         assert!(result.is_ok());
     }

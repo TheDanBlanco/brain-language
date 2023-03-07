@@ -1,9 +1,13 @@
-use crate::lang::grammar::{
-    context::Context,
-    expressions::{Evaluatable, Expression},
-    output::Output,
-    value::Value,
-    Resolveable,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        expressions::Expression,
+        output::Output,
+        value::Value,
+        Evaluate, Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 use super::Statement;
@@ -25,9 +29,9 @@ impl For {
     }
 }
 
-impl Resolveable for For {
+impl Resolve for For {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
-        let iterable = self.iterable.eval(context)?;
+        let iterable = self.iterable.evaluate(context)?;
 
         if let Value::Collection(collection) = iterable {
             for value in collection {
@@ -41,6 +45,31 @@ impl Resolveable for For {
         }
 
         Ok(Output::None)
+    }
+}
+
+impl Parse for For {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::For)?;
+
+        let next = stream.next();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedToken,
+                "Expected identifier, found End of File".to_string(),
+            ));
+        }
+
+        let identifier = next.unwrap().token.get_identifier()?;
+
+        stream.expect(TokenKind::In)?;
+
+        let collection = Expression::parse(stream)?;
+
+        let block = Statement::parse(stream)?;
+
+        Ok(Self::new(identifier, collection, block))
     }
 }
 

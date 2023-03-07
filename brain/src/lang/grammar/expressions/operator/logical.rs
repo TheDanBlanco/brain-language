@@ -10,7 +10,7 @@ pub enum Logical {
 }
 
 impl Logical {
-    pub fn eval(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
+    pub fn evaluate(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
         match (self, left.clone(), right.clone()) {
             (Logical::And, Value::Boolean(left), Value::Boolean(right)) => {
                 Ok(Value::Boolean(left && right))
@@ -33,35 +33,35 @@ mod tests {
 
     #[test]
     fn evaluate_and() {
-        let result = Logical::And.eval(Value::Boolean(true), Value::Boolean(true));
+        let result = Logical::And.evaluate(Value::Boolean(true), Value::Boolean(true));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn evaluate_or() {
-        let result = Logical::Or.eval(Value::Boolean(true), Value::Boolean(false));
+        let result = Logical::Or.evaluate(Value::Boolean(true), Value::Boolean(false));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn evaluate_or_both_false() {
-        let result = Logical::Or.eval(Value::Boolean(false), Value::Boolean(false));
+        let result = Logical::Or.evaluate(Value::Boolean(false), Value::Boolean(false));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(false));
     }
 
     #[test]
     fn evaluate_or_both_true() {
-        let result = Logical::Or.eval(Value::Boolean(true), Value::Boolean(true));
+        let result = Logical::Or.evaluate(Value::Boolean(true), Value::Boolean(true));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn evaluate_with_invalid_value() {
-        let result = Logical::Or.eval(Value::Number(1), Value::Boolean(true));
+        let result = Logical::Or.evaluate(Value::Number(1), Value::Boolean(true));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

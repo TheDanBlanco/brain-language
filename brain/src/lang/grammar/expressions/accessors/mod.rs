@@ -1,8 +1,8 @@
-use crate::lang::grammar::{context::Context, value::Value};
+use crate::lang::grammar::{context::Context, value::Value, Evaluate};
 
 use self::{field::Field, index::Index};
 
-use super::{Evaluatable, Expression};
+use super::Expression;
 
 pub mod field;
 pub mod index;
@@ -23,11 +23,11 @@ impl Accessor {
     }
 }
 
-impl Evaluatable for Accessor {
-    fn eval(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Evaluate for Accessor {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         match self {
-            Accessor::Index(index) => index.eval(context),
-            Accessor::Field(field) => field.eval(context),
+            Accessor::Index(index) => index.evaluate(context),
+            Accessor::Field(field) => field.evaluate(context),
         }
     }
 }
@@ -66,7 +66,7 @@ mod tests {
             Expression::new_literal(Value::Collection(vec![Value::Number(1), Value::Number(2)])),
         ));
 
-        let result = accessor.eval(context);
+        let result = accessor.evaluate(context);
         assert!(result.is_ok());
     }
 
@@ -81,7 +81,7 @@ mod tests {
             )])),
         ));
 
-        let result = accessor.eval(context);
+        let result = accessor.evaluate(context);
 
         assert!(result.is_ok());
     }

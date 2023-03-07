@@ -1,6 +1,4 @@
-use crate::lang::grammar::{context::Context, value::Value};
-
-use super::Evaluatable;
+use crate::lang::grammar::{context::Context, value::Value, Evaluate};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Literal {
@@ -13,8 +11,8 @@ impl Literal {
     }
 }
 
-impl Evaluatable for Literal {
-    fn eval(&self, _context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Evaluate for Literal {
+    fn evaluate(&self, _context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         Ok(self.value.clone())
     }
 }
@@ -35,7 +33,7 @@ mod tests {
     fn eval_number_literal() {
         let context = &mut Context::new();
         let literal = Literal::new(Value::Number(1));
-        let result = literal.eval(context);
+        let result = literal.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Number(1));
     }
@@ -50,7 +48,7 @@ mod tests {
     fn eval_string_literal() {
         let context = &mut Context::new();
         let literal = Literal::new(Value::String("hello".to_string()));
-        let result = literal.eval(context);
+        let result = literal.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::String("hello".to_string()));
     }
@@ -65,7 +63,7 @@ mod tests {
     fn eval_boolean_literal() {
         let context = &mut Context::new();
         let literal = Literal::new(Value::Boolean(true));
-        let result = literal.eval(context);
+        let result = literal.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
@@ -80,7 +78,7 @@ mod tests {
     fn eval_map_literal() {
         let context = &mut Context::new();
         let literal = Literal::new(Value::Map(std::collections::BTreeMap::new()));
-        let result = literal.eval(context);
+        let result = literal.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
@@ -98,7 +96,7 @@ mod tests {
     fn eval_collection_literal() {
         let context = &mut Context::new();
         let literal = Literal::new(Value::Collection(vec![]));
-        let result = literal.eval(context);
+        let result = literal.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Collection(vec![]));
     }
@@ -116,7 +114,7 @@ mod tests {
     fn eval_function_literal() {
         let context = &mut Context::new();
         let literal = Literal::new(Value::new_function(vec![], Statement::new_break()));
-        let result = literal.eval(context);
+        let result = literal.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),

@@ -29,7 +29,7 @@ impl fmt::Display for Comparison {
 }
 
 impl Comparison {
-    pub fn eval(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
+    pub fn evaluate(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
         match (self, left.clone(), right.clone()) {
             (Comparison::Equal, Value::Number(left), Value::Number(right)) => {
                 Ok(Value::Boolean(left == right))
@@ -87,49 +87,49 @@ mod tests {
 
     #[test]
     fn equal_numbers() {
-        let result = Comparison::Equal.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::Equal.evaluate(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn not_equal_numbers() {
-        let result = Comparison::NotEqual.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::NotEqual.evaluate(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(false));
     }
 
     #[test]
     fn greater_than_numbers() {
-        let result = Comparison::GreaterThan.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::GreaterThan.evaluate(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(false));
     }
 
     #[test]
     fn greater_than_or_equal_to_numbers() {
-        let result = Comparison::GreaterThanEqual.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::GreaterThanEqual.evaluate(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn less_than_numbers() {
-        let result = Comparison::LessThan.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::LessThan.evaluate(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(false));
     }
 
     #[test]
     fn less_than_or_equal_to_numbers() {
-        let result = Comparison::LessThanEqual.eval(Value::Number(1), Value::Number(1));
+        let result = Comparison::LessThanEqual.evaluate(Value::Number(1), Value::Number(1));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn equal_strings() {
-        let result = Comparison::Equal.eval(
+        let result = Comparison::Equal.evaluate(
             Value::String("a".to_string()),
             Value::String("a".to_string()),
         );
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn not_equal_strings() {
-        let result = Comparison::NotEqual.eval(
+        let result = Comparison::NotEqual.evaluate(
             Value::String("a".to_string()),
             Value::String("a".to_string()),
         );
@@ -149,7 +149,7 @@ mod tests {
 
     #[test]
     fn greater_than_strings() {
-        let result = Comparison::GreaterThan.eval(
+        let result = Comparison::GreaterThan.evaluate(
             Value::String("b".to_string()),
             Value::String("a".to_string()),
         );
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn greater_than_equal_to_string() {
-        let result = Comparison::GreaterThanEqual.eval(
+        let result = Comparison::GreaterThanEqual.evaluate(
             Value::String("b".to_string()),
             Value::String("b".to_string()),
         );
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn less_than_strings() {
-        let result = Comparison::LessThan.eval(
+        let result = Comparison::LessThan.evaluate(
             Value::String("a".to_string()),
             Value::String("b".to_string()),
         );
@@ -179,7 +179,7 @@ mod tests {
 
     #[test]
     fn less_than_equal_to_strings() {
-        let result = Comparison::LessThanEqual.eval(
+        let result = Comparison::LessThanEqual.evaluate(
             Value::String("b".to_string()),
             Value::String("b".to_string()),
         );
@@ -189,21 +189,21 @@ mod tests {
 
     #[test]
     fn equal_booleans() {
-        let result = Comparison::Equal.eval(Value::Boolean(true), Value::Boolean(true));
+        let result = Comparison::Equal.evaluate(Value::Boolean(true), Value::Boolean(true));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(true));
     }
 
     #[test]
     fn not_equal_booleans() {
-        let result = Comparison::NotEqual.eval(Value::Boolean(true), Value::Boolean(true));
+        let result = Comparison::NotEqual.evaluate(Value::Boolean(true), Value::Boolean(true));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Value::Boolean(false));
     }
 
     #[test]
     fn invalid_comparison() {
-        let result = Comparison::Equal.eval(Value::Boolean(true), Value::Number(1));
+        let result = Comparison::Equal.evaluate(Value::Boolean(true), Value::Number(1));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
