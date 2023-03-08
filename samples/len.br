@@ -20,5 +20,3 @@ let map = {
 
 print("length of map: ", len(map));
 
-let num = 6;
-len(6);
