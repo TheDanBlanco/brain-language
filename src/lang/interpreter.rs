@@ -1887,4 +1887,34 @@ mod tests {
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(7));
     }
+
+    #[test]
+    #[should_panic]
+    fn test_builtin_len_function_with_number_panics() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![Expression::Literal(Value::Number(1))],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_builtin_len_function_with_bool_panics() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![Expression::Literal(Value::Boolean(true))],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+    }
 }
