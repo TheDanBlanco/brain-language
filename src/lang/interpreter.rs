@@ -315,20 +315,24 @@ fn check_builtin_functions(
             }
             "len" => {
                 let mut out = 0;
-                for argument in arguments {
-                    let value = parse_expression(argument, symbols);
-                    match value {
-                        Value::Collection(c) => {
-                            out += c.len() as i64;
-                        }
-                        Value::String(s) => {
-                            out += s.chars().count() as i64;
-                        }
-                        Value::Map(m) => {
-                            out += m.len() as i64;
-                        }
-                        _ => panic!("invalid type for `len`"),
+                if arguments.len() != 1 {
+                    panic!("incorrect number of arguments to len(). expected: 1");
+                }
+
+                let argument = arguments.first().unwrap();
+                let value = parse_expression(argument.to_owned(), symbols);
+
+                match value {
+                    Value::Collection(c) => {
+                        out += c.len() as i64;
                     }
+                    Value::String(s) => {
+                        out += s.chars().count() as i64;
+                    }
+                    Value::Map(m) => {
+                        out += m.len() as i64;
+                    }
+                    _ => panic!("invalid type for `len`"),
                 }
 
                 return Some(Value::Number(out));
@@ -1913,6 +1917,39 @@ mod tests {
                 Box::new(Expression::FunctionCall(
                     Box::new(Expression::Identifier("len".into())),
                     vec![Expression::Literal(Value::Boolean(true))],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_builtin_len_function_with_0_arguments_panics() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_builtin_len_function_with_multiple_arguments_panics() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![
+                        Expression::Literal(Value::String("one".into())),
+                        Expression::Literal(Value::String("two".into())),
+                    ],
                 )),
             ))]);
         parse_statement(statement, &mut symbols);
