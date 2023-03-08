@@ -2,7 +2,7 @@ use self::{
     context::Context, expressions::Expression, output::Output, statements::Statement, value::Value,
 };
 
-use super::tokens::stream::TokenStream;
+use super::tokens::{stream::TokenStream, tokenkind::TokenKind};
 
 pub mod context;
 pub mod error;
@@ -24,6 +24,10 @@ where
     Self: Sized,
 {
     fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>>;
+}
+
+pub trait Match {
+    fn matches(token: &TokenKind) -> bool;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

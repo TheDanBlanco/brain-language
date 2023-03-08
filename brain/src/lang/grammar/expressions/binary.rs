@@ -1,4 +1,7 @@
-use crate::lang::grammar::{context::Context, value::Value, Evaluate};
+use crate::lang::{
+    grammar::{context::Context, value::Value, Evaluate, Parse},
+    tokens::stream::TokenStream,
+};
 
 use super::{operator::Operator, Expression};
 
@@ -16,6 +19,16 @@ impl Binary {
             rhs: Box::new(rhs),
             operator,
         }
+    }
+
+    pub fn parse(
+        stream: &mut TokenStream,
+        lhs: Expression,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let operator = Operator::parse(stream)?;
+        let rhs = Expression::parse(stream)?;
+
+        Ok(Self::new(lhs, operator, rhs))
     }
 }
 

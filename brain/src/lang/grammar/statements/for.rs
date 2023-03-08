@@ -56,7 +56,7 @@ impl Parse for For {
 
         if next.is_none() {
             return Err(Error::new(
-                ErrorKind::UnexpectedToken,
+                ErrorKind::UnexpectedEndOfFile,
                 "Expected identifier, found End of File".to_string(),
             ));
         }

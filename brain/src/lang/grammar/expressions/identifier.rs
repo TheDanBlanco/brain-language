@@ -1,13 +1,16 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    value::Value,
-    Evaluate,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        value::Value,
+        Evaluate, Parse,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Identifier {
-    name: String,
+    pub name: String,
 }
 
 impl Identifier {
@@ -25,6 +28,28 @@ impl Evaluate for Identifier {
         return Err(Error::new(
             ErrorKind::UnknownIdentifier,
             format!("'{}'", self.name),
+        ));
+    }
+}
+
+impl Parse for Identifier {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.next();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                format!("Expected identifier, found End of File"),
+            ));
+        }
+
+        if let TokenKind::Identifier(string) = &next.unwrap().token {
+            return Ok(Self::new(string.to_string()));
+        }
+
+        return Err(Error::new(
+            ErrorKind::UnexpectedExpression,
+            format!("Expected identifier, found {next:#?}"),
         ));
     }
 }

@@ -1,14 +1,17 @@
 use crate::lang::{
     grammar::{context::Context, value::Value},
-    tokens::stream::TokenStream,
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 use self::{
-    binary::Binary, collection::Collection, functioncall::FunctionCall, identifier::Identifier,
-    literal::Literal, map::Map, operator::Operator,
+    accessors::Accessor, binary::Binary, collection::Collection, functioncall::FunctionCall,
+    identifier::Identifier, literal::Literal, map::Map, operator::Operator,
 };
 
-use super::{Evaluate, Parse};
+use super::{
+    error::{Error, ErrorKind},
+    Evaluate, Match, Parse,
+};
 
 pub mod accessors;
 pub mod binary;
@@ -26,6 +29,7 @@ pub enum Expression {
     Literal(Literal),
     Identifier(Identifier),
     FunctionCall(FunctionCall),
+    Accessor(Accessor),
     Map(Map),
 }
 
@@ -64,13 +68,63 @@ impl Evaluate for Expression {
             Expression::FunctionCall(function_call) => function_call.evaluate(context),
             Expression::Identifier(identifier) => identifier.evaluate(context),
             Expression::Map(map) => map.evaluate(context),
+            Expression::Accessor(accessor) => accessor.evaluate(context),
         }
     }
 }
 
 impl Parse for Expression {
-    fn parse(_stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        todo!()
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.peek();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected literal, identifier, left brace, or left bracket, found End of File"
+                    .to_string(),
+            ));
+        }
+
+        let token = &next.unwrap().token;
+
+        if let TokenKind::Identifier(identifier) = token {
+            let identifier = Self::Identifier(Identifier::new(identifier.to_string()));
+
+            if next.is_some() && Operator::matches(&next.unwrap().token) {
+                return Ok(Self::Binary(Binary::parse(stream, identifier)?));
+            }
+
+            if next.is_some() && Accessor::matches(&&next.unwrap().token) {
+                return Ok(Accessor::parse(stream, Some(identifier))?);
+            }
+
+            return Ok(identifier);
+        }
+
+        if Literal::matches(&token) {
+            let literal = Self::Literal(Literal::parse(stream)?);
+
+            let next = stream.peek();
+
+            if next.is_some() && !Operator::matches(&next.unwrap().token) {
+                return Ok(Self::Binary(Binary::parse(stream, literal)?));
+            }
+
+            return Ok(literal);
+        }
+
+        if &TokenKind::LeftBracket == token {
+            return Ok(Accessor::parse(stream, None)?);
+        }
+
+        if &TokenKind::LeftBrace == token {
+            return Ok(Self::Map(Map::parse(stream)?));
+        }
+
+        return Err(Error::new(
+            ErrorKind::UnexpectedToken,
+            format!("Unexpected token {token}"),
+        ));
     }
 }
 

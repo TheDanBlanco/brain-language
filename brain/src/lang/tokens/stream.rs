@@ -21,6 +21,10 @@ impl TokenStream {
         self.stream.get(self.position)
     }
 
+    pub fn skip(&mut self) {
+        self.next();
+    }
+
     pub fn peek(&self) -> Option<&Token> {
         self.stream.get(self.position + 1)
     }

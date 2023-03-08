@@ -1,10 +1,13 @@
 use std::collections::BTreeMap;
 
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    value::Value,
-    Evaluate,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        value::Value,
+        Evaluate, Parse,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 use super::Expression;
@@ -37,6 +40,40 @@ impl Evaluate for Map {
         }
 
         Ok(Value::Map(map))
+    }
+}
+
+impl Parse for Map {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::LeftBrace)?;
+
+        let mut entries = vec![];
+
+        while !stream.check(TokenKind::RightBrace) {
+            let mut key = Expression::parse(stream)?;
+
+            if let Expression::Identifier(identifier) = key {
+                key = Expression::new_literal(Value::String(identifier.name));
+            } else {
+                return Err(Error::new(
+                    ErrorKind::UnexpectedExpression,
+                    format!("Expected identifier, found {key:#?}"),
+                ));
+            }
+
+            stream.expect(TokenKind::Colon)?;
+
+            let value = Expression::parse(stream)?;
+
+            stream.expect(TokenKind::Comma)?;
+
+            entries.push((key, value));
+        }
+
+        stream.expect(TokenKind::RightBrace)?;
+        stream.skip_if(TokenKind::Semicolon);
+
+        Ok(Self::new(entries))
     }
 }
 

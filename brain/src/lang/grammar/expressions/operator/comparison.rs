@@ -1,8 +1,12 @@
 use core::fmt;
 
-use crate::lang::grammar::{
-    error::{Error, ErrorKind},
-    value::Value,
+use crate::lang::{
+    grammar::{
+        error::{Error, ErrorKind},
+        value::Value,
+        Match,
+    },
+    tokens::tokenkind::TokenKind,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -78,6 +82,32 @@ impl Comparison {
                 format!("Cannot do {self} comparison on {left} and {right}"),
             )),
         }
+    }
+
+    pub fn parse(token: &TokenKind) -> Self {
+        match token {
+            TokenKind::Equal => Comparison::Equal,
+            TokenKind::NotEqual => Comparison::NotEqual,
+            TokenKind::GreaterThan => Comparison::GreaterThan,
+            TokenKind::GreaterThanEqual => Comparison::GreaterThanEqual,
+            TokenKind::LessThan => Comparison::LessThan,
+            TokenKind::LessThanEqual => Comparison::LessThanEqual,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Match for Comparison {
+    fn matches(token: &TokenKind) -> bool {
+        matches!(
+            token,
+            TokenKind::Equal
+                | TokenKind::NotEqual
+                | TokenKind::GreaterThan
+                | TokenKind::GreaterThanEqual
+                | TokenKind::LessThan
+                | TokenKind::LessThanEqual
+        )
     }
 }
 

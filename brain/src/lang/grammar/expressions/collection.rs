@@ -1,4 +1,7 @@
-use crate::lang::grammar::{context::Context, value::Value, Evaluate};
+use crate::lang::{
+    grammar::{context::Context, value::Value, Evaluate, Parse},
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 use super::Expression;
 
@@ -23,6 +26,28 @@ impl Evaluate for Collection {
         }
 
         Ok(Value::Collection(values))
+    }
+}
+
+impl Parse for Collection {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::LeftBracket)?;
+
+        let mut elements = vec![];
+
+        while !stream.check(TokenKind::RightBracket) {
+            let expression = Expression::parse(stream)?;
+
+            elements.push(expression);
+
+            stream.skip_if(TokenKind::Comma);
+        }
+
+        stream.expect(TokenKind::RightBracket)?;
+
+        stream.skip_if(TokenKind::Semicolon);
+
+        Ok(Self::new(elements))
     }
 }
 

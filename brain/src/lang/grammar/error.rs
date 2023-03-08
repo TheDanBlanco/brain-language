@@ -6,6 +6,7 @@ pub enum ErrorKind {
     InvalidType,
     IndexOutOfBounds,
     UnknownIdentifier,
+    UnexpectedExpression,
     InvalidMapKey,
     InvalidLogicalOperation,
     InvalidMathematicalOperation,
@@ -29,6 +30,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::IdentifierAlreadyExists => write!(f, "IdentifierAlreadyExists"),
             ErrorKind::UnexpectedToken => write!(f, "UnexpectedToken"),
             ErrorKind::UnexpectedEndOfFile => write!(f, "UnexpectedEndOfFile"),
+            ErrorKind::UnexpectedExpression => write!(f, "UnexpectedExpression"),
         }
     }
 }

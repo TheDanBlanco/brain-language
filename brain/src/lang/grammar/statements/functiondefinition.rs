@@ -40,7 +40,6 @@ impl Resolve for FunctionDefinition {
 }
 
 impl Parse for FunctionDefinition {
-    // TODO (danb) parse identifier
     fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Function)?;
 
@@ -51,12 +50,12 @@ impl Parse for FunctionDefinition {
 
         let mut arguments = vec![];
 
-        while stream.check(TokenKind::RightParen) {
+        while !stream.check(TokenKind::RightParen) {
             let next = stream.next();
 
             if next.is_none() {
                 return Err(Error::new(
-                    ErrorKind::UnexpectedToken,
+                    ErrorKind::UnexpectedEndOfFile,
                     "Expected function argument, found End of File".to_string(),
                 ));
             }

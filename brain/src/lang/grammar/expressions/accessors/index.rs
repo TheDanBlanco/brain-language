@@ -1,9 +1,12 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    expressions::Expression,
-    value::Value,
-    Evaluate,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        expressions::Expression,
+        value::Value,
+        Evaluate, Parse,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -18,6 +21,19 @@ impl Index {
             index: Box::new(index),
             target: Box::new(target),
         }
+    }
+
+    pub fn parse(
+        stream: &mut TokenStream,
+        target: Expression,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::LeftBracket);
+
+        let index = Expression::parse(stream)?;
+
+        stream.expect(TokenKind::RightBracket);
+
+        Ok(Index::new(index, target))
     }
 }
 

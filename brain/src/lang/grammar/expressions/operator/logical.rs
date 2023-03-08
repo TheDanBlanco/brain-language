@@ -1,6 +1,10 @@
-use crate::lang::grammar::{
-    error::{Error, ErrorKind},
-    value::Value,
+use crate::lang::{
+    grammar::{
+        error::{Error, ErrorKind},
+        value::Value,
+        Match,
+    },
+    tokens::tokenkind::TokenKind,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -24,6 +28,20 @@ impl Logical {
                 format!("cannot do logical comparison on {left} and {right}"),
             )),
         }
+    }
+
+    pub fn parse(token: &TokenKind) -> Self {
+        match token {
+            TokenKind::And => Logical::And,
+            TokenKind::Or => Logical::Or,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Match for Logical {
+    fn matches(token: &TokenKind) -> bool {
+        matches!(token, TokenKind::And | TokenKind::Or)
     }
 }
 

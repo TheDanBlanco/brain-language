@@ -1,4 +1,12 @@
-use crate::lang::grammar::{context::Context, value::Value, Evaluate};
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        value::Value,
+        Evaluate, Match, Parse,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Literal {
@@ -11,9 +19,51 @@ impl Literal {
     }
 }
 
+impl Match for Literal {
+    fn matches(token: &TokenKind) -> bool {
+        matches!(
+            token,
+            TokenKind::Number(_)
+                | TokenKind::String(_)
+                | TokenKind::True
+                | TokenKind::False
+                | TokenKind::Null,
+        )
+    }
+}
+
 impl Evaluate for Literal {
     fn evaluate(&self, _context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         Ok(self.value.clone())
+    }
+}
+
+impl Parse for Literal {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.next();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected literal, found End of File".to_string(),
+            ));
+        }
+
+        let literal = match &next.unwrap().token {
+            TokenKind::Number(number) => Self::new(Value::Number(*number)),
+            TokenKind::String(string) => Self::new(Value::String(string.to_string())),
+            TokenKind::True => Self::new(Value::Boolean(true)),
+            TokenKind::False => Self::new(Value::Boolean(false)),
+            TokenKind::Null => Self::new(Value::Null),
+            _ => {
+                return Err(Error::new(
+                    ErrorKind::UnexpectedToken,
+                    format!("Expected literal, {:#?}", next.unwrap()),
+                ))
+            }
+        };
+
+        Ok(literal)
     }
 }
 

@@ -1,4 +1,12 @@
-use crate::lang::grammar::{context::Context, value::Value};
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        value::Value,
+        Match, Parse,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
+};
 
 use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical};
 
@@ -77,6 +85,59 @@ impl Operator {
             Operator::Logical(logical) => logical.evaluate(left, right),
             Operator::Comparison(comparison) => comparison.evaluate(left, right),
         }
+    }
+}
+
+impl Parse for Operator {
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.next();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected operator, found End of File".to_string(),
+            ));
+        }
+
+        let token = &next.unwrap().token;
+
+        if Mathematical::matches(token) {
+            return Ok(Operator::Mathematical(Mathematical::parse(token)));
+        }
+
+        if Logical::matches(token) {
+            return Ok(Operator::Logical(Logical::parse(token)));
+        }
+
+        if Comparison::matches(token) {
+            return Ok(Operator::Comparison(Comparison::parse(token)));
+        }
+
+        return Err(Error::new(
+            ErrorKind::UnexpectedToken,
+            format!("Expected operator, found {token}"),
+        ));
+    }
+}
+
+impl Match for Operator {
+    fn matches(token: &TokenKind) -> bool {
+        matches!(
+            token,
+            TokenKind::Add
+                | TokenKind::Subtract
+                | TokenKind::Multiply
+                | TokenKind::Divide
+                | TokenKind::Modulo
+                | TokenKind::Equal
+                | TokenKind::NotEqual
+                | TokenKind::GreaterThan
+                | TokenKind::GreaterThanEqual
+                | TokenKind::LessThan
+                | TokenKind::LessThanEqual
+                | TokenKind::And
+                | TokenKind::Or
+        )
     }
 }
 

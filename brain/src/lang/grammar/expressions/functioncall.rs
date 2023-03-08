@@ -1,12 +1,15 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    output::Output,
-    value::Value,
-    Evaluate, Resolve,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        output::Output,
+        value::Value,
+        Evaluate, Match, Parse, Resolve,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
-use super::Expression;
+use super::{binary::Binary, operator::Operator, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
@@ -20,6 +23,49 @@ impl FunctionCall {
             identifier: Box::new(identifier),
             arguments,
         }
+    }
+
+    pub fn parse(
+        stream: &mut TokenStream,
+        identifier: Expression,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::LeftParen)?;
+
+        let mut arguments = vec![];
+
+        while !stream.check(TokenKind::RightParen) {
+            let mut expression = Expression::parse(stream)?;
+            stream.skip_if(TokenKind::Comma);
+
+            let next = stream.peek();
+
+            if next.is_none() {
+                return Err(
+                    Error::new(
+                        ErrorKind::UnexpectedEndOfFile,
+                        "Expected binary expression, function call, or ending parenthesis, found End of File".to_string()
+                    )
+                );
+            }
+
+            if Operator::matches(&next.unwrap().token) {
+                let binary = Binary::parse(stream, expression)?;
+                expression = Expression::Binary(binary);
+            }
+
+            if stream.check(TokenKind::LeftParen) {
+                let function_call = Self::parse(stream, expression)?;
+                expression = Expression::FunctionCall(function_call);
+            }
+
+            arguments.push(expression);
+        }
+
+        stream.expect(TokenKind::RightParen)?;
+
+        stream.skip_if(TokenKind::Semicolon);
+
+        Ok(Self::new(identifier, arguments))
     }
 }
 

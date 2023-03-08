@@ -1,8 +1,12 @@
 use core::fmt;
 
-use crate::lang::grammar::{
-    error::{Error, ErrorKind},
-    value::Value,
+use crate::lang::{
+    grammar::{
+        error::{Error, ErrorKind},
+        value::Value,
+        Match,
+    },
+    tokens::tokenkind::TokenKind,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -55,6 +59,30 @@ impl Mathematical {
                 ),
             )),
         }
+    }
+
+    pub fn parse(token: &TokenKind) -> Self {
+        match token {
+            TokenKind::Add => Mathematical::Add,
+            TokenKind::Subtract => Mathematical::Subtract,
+            TokenKind::Multiply => Mathematical::Multiply,
+            TokenKind::Divide => Mathematical::Divide,
+            TokenKind::Modulo => Mathematical::Modulo,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Match for Mathematical {
+    fn matches(token: &TokenKind) -> bool {
+        matches!(
+            token,
+            TokenKind::Add
+                | TokenKind::Subtract
+                | TokenKind::Multiply
+                | TokenKind::Divide
+                | TokenKind::Modulo
+        )
     }
 }
 

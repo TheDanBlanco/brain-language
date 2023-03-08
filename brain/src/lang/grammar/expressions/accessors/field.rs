@@ -1,9 +1,12 @@
-use crate::lang::grammar::{
-    context::Context,
-    error::{Error, ErrorKind},
-    expressions::Expression,
-    value::Value,
-    Evaluate,
+use crate::lang::{
+    grammar::{
+        context::Context,
+        error::{Error, ErrorKind},
+        expressions::Expression,
+        value::Value,
+        Evaluate,
+    },
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -13,11 +16,37 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn new(field: Value, target: Expression) -> Self {
+    pub fn new(field: String, target: Expression) -> Self {
         Field {
-            field,
+            field: Value::String(field),
             target: Box::new(target),
         }
+    }
+
+    pub fn parse(
+        stream: &mut TokenStream,
+        target: Expression,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(TokenKind::Dot)?;
+        let next = stream.next();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected identifier, found End of File".to_string(),
+            ));
+        }
+
+        let token = &next.unwrap().token;
+
+        if let TokenKind::Identifier(property) = token {
+            return Ok(Self::new(property.to_string(), target));
+        }
+
+        Err(Error::new(
+            ErrorKind::UnexpectedToken,
+            format!("Expected identifier, found {token}"),
+        ))
     }
 }
 
@@ -51,8 +80,6 @@ impl Evaluate for Field {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use crate::lang::grammar::expressions::map::Map;
 
     use super::*;
@@ -60,7 +87,7 @@ mod tests {
     #[test]
     fn create_new_field() {
         let field = Field::new(
-            Value::String("a".to_string()),
+            "a".to_string(),
             Expression::Map(Map::new(vec![(
                 Expression::new_literal(Value::String("a".to_string())),
                 Expression::new_literal(Value::Number(1)),
@@ -80,7 +107,7 @@ mod tests {
     fn field_access_map() {
         let context = &mut Context::new();
         let field = Field::new(
-            Value::String("a".to_string()),
+            "a".to_string(),
             Expression::Map(Map::new(vec![(
                 Expression::new_literal(Value::String("a".to_string())),
                 Expression::new_literal(Value::Number(1)),
@@ -96,7 +123,7 @@ mod tests {
     fn field_access_map_key_not_found() {
         let context = &mut Context::new();
         let field = Field::new(
-            Value::String("b".to_string()),
+            "b".to_string(),
             Expression::Map(Map::new(vec![(
                 Expression::new_literal(Value::String("a".to_string())),
                 Expression::new_literal(Value::Number(1)),
@@ -114,111 +141,13 @@ mod tests {
     #[test]
     fn field_access_target_not_map() {
         let context = &mut Context::new();
-        let field = Field::new(
-            Value::String("a".to_string()),
-            Expression::new_literal(Value::Number(1)),
-        );
+        let field = Field::new("a".to_string(), Expression::new_literal(Value::Number(1)));
 
         let result = field.evaluate(context);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
             "[InvalidType]: Cannot access field a of 1".to_string()
-        );
-    }
-
-    #[test]
-    fn field_access_field_number() {
-        let context = &mut Context::new();
-        let field = Field::new(
-            Value::Number(1),
-            Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
-            )])),
-        );
-
-        let result = field.evaluate(context);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "[InvalidType]: Field accessor '1' must be of type String".to_string()
-        );
-    }
-
-    #[test]
-    fn field_access_field_bool() {
-        let context = &mut Context::new();
-        let field = Field::new(
-            Value::Boolean(true),
-            Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
-            )])),
-        );
-
-        let result = field.evaluate(context);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "[InvalidType]: Field accessor 'true' must be of type String".to_string()
-        );
-    }
-
-    #[test]
-    fn field_access_field_collection() {
-        let context = &mut Context::new();
-        let field = Field::new(
-            Value::Collection(vec![Value::Number(1)]),
-            Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
-            )])),
-        );
-
-        let result = field.evaluate(context);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "[InvalidType]: Field accessor '[1]' must be of type String".to_string()
-        );
-    }
-
-    #[test]
-    fn field_access_field_map() {
-        let context = &mut Context::new();
-        let field = Field::new(
-            Value::Map(BTreeMap::new()),
-            Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
-            )])),
-        );
-
-        let result = field.evaluate(context);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "[InvalidType]: Field accessor '{}' must be of type String".to_string()
-        );
-    }
-
-    #[test]
-    fn field_access_field_null() {
-        let context = &mut Context::new();
-        let field = Field::new(
-            Value::Null,
-            Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
-            )])),
-        );
-
-        let result = field.evaluate(context);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "[InvalidType]: Field accessor 'null' must be of type String".to_string()
         );
     }
 }

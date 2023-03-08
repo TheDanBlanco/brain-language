@@ -1,6 +1,6 @@
 use crate::lang::{
     grammar::{context::Context, expressions::Expression, output::Output, Node, Resolve},
-    tokens::stream::TokenStream,
+    tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
 use self::{
@@ -9,7 +9,10 @@ use self::{
     r#loop::Loop, r#return::Return, reassignment::Reassignment,
 };
 
-use super::Parse;
+use super::{
+    error::{Error, ErrorKind},
+    Parse,
+};
 
 pub mod assignment;
 pub mod block;
@@ -104,8 +107,38 @@ impl Resolve for Statement {
 }
 
 impl Parse for Statement {
-    fn parse(_stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        todo!()
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.peek();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected statement, found unexpected End of File".to_string(),
+            ));
+        }
+
+        let token = &next.unwrap().token;
+
+        let statement = match token{
+            TokenKind::Let => Statement::Assignment(Assignment::parse(stream)?),
+            TokenKind::Function => Statement::FunctionDefinition(FunctionDefinition::parse(stream)?),
+            TokenKind::If => Statement::Conditional(Conditional::parse(stream)?),
+            TokenKind::Identifier(_) => Statement::Reassignment(Reassignment::parse(stream)?),
+            TokenKind::Loop => Statement::Loop(Loop::parse(stream)?),
+            TokenKind::For => Statement::For(For::parse(stream)?),
+            TokenKind::LeftBrace => Statement::Block(Block::parse(stream)?),
+            TokenKind::Break => Statement::Break(Break::parse(stream)?),
+            TokenKind::Continue => Statement::Continue(Continue::parse(stream)?),
+            TokenKind::Return => Statement::Return(Return::parse(stream)?),
+            _ => return Err(
+                Error::new(
+                ErrorKind::UnexpectedToken,
+                format!("Expected let, fn, if, an identifier, loop, for, {{, break, continue, or return, found {token}")
+                )
+            )
+        };
+
+        Ok(statement)
     }
 }
 
