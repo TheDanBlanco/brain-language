@@ -313,6 +313,26 @@ fn check_builtin_functions(
                 println!("{}", out);
                 return Some(Value::Null);
             }
+            "len" => {
+                let mut out = 0;
+                for argument in arguments {
+                    let value = parse_expression(argument, symbols);
+                    match value {
+                        Value::Collection(c) => {
+                            out += c.len() as i64;
+                        }
+                        Value::String(s) => {
+                            out += s.chars().count() as i64;
+                        }
+                        Value::Map(m) => {
+                            out += m.len() as i64;
+                        }
+                        _ => panic!("invalid type for `len`"),
+                    }
+                }
+
+                return Some(Value::Number(out));
+            }
             _ => return None,
         }
     }
@@ -1800,5 +1820,71 @@ mod tests {
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
         assert_eq!(symbols.get("y").unwrap(), &Value::Number(10));
+    }
+
+    #[test]
+    fn test_builtin_len_function_with_string() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![Expression::Literal(Value::String("random".into()))],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(6));
+    }
+
+    #[test]
+    fn test_builtin_len_function_with_map() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![Expression::Map(vec![
+                        (
+                            Expression::Literal(Value::String("a".into())),
+                            Expression::Literal(Value::Number(1)),
+                        ),
+                        (
+                            Expression::Literal(Value::String("b".into())),
+                            Expression::Literal(Value::Number(2)),
+                        ),
+                        (
+                            Expression::Literal(Value::String("c".into())),
+                            Expression::Literal(Value::Number(3)),
+                        ),
+                    ])],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(3));
+    }
+
+    #[test]
+    fn test_builtin_len_function_with_collection() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::FunctionCall(
+                    Box::new(Expression::Identifier("len".into())),
+                    vec![Expression::Collection(vec![
+                        Expression::Literal(Value::Number(1)),
+                        Expression::Literal(Value::Number(2)),
+                        Expression::Literal(Value::Number(3)),
+                        Expression::Literal(Value::Number(4)),
+                        Expression::Literal(Value::Number(5)),
+                        Expression::Literal(Value::Number(6)),
+                        Expression::Literal(Value::Number(7)),
+                    ])],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(7));
     }
 }

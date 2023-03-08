@@ -46,6 +46,7 @@ pub enum Token {
     Null,
     Or,
     Print,
+    Len,
     Return,
     Let,
     Loop,
@@ -61,7 +62,7 @@ pub enum Token {
 impl Token {
     pub fn is_builtin_function(&self) -> bool {
         match self {
-            Token::Print | Token::Function => true,
+            Token::Print | Token::Function | Token::Len => true,
             _ => false,
         }
     }
@@ -144,6 +145,7 @@ mod tests {
     fn test_is_builtin_function() {
         assert!(Token::Print.is_builtin_function());
         assert!(Token::Function.is_builtin_function());
+        assert!(Token::Len.is_builtin_function());
         assert!(!Token::Plus.is_builtin_function());
     }
 
