@@ -297,6 +297,24 @@ mod tests {
     }
 
     #[test]
+    fn len() {
+        let input = "len";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Identifier("len".into()));
+    }
+
+    #[test]
+    fn len_and_parens() {
+        let input = "len(a);";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Identifier("len".into()));
+        assert_eq!(l.next_token(), Token::LeftParen);
+        assert_eq!(l.next_token(), Token::Identifier("a".into()));
+        assert_eq!(l.next_token(), Token::RightParen);
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
     fn assign_number_to_identifier() {
         let input = "let a = 1;";
         let mut l = Lexer::new(input.into());
