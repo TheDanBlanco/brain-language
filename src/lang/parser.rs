@@ -392,8 +392,6 @@ impl Parser {
                 break;
             }
 
-            println!("next: {:?}", self.peek());
-
             if self.peek().is_mathematical() {
                 return self.parse_mathematical_operator(initial);
             }
