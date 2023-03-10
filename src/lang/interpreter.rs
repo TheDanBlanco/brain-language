@@ -1962,4 +1962,36 @@ mod tests {
             ))]);
         parse_statement(statement, &mut symbols);
     }
+
+    #[test]
+    fn test_parse_statement_with_bitwise_and() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::Number(5))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitAnd),
+                    Box::new(Expression::Literal(Value::Number(1))),
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(1));
+    }
+
+    #[test]
+    fn test_parse_statement_with_bitwise_or() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::Number(5))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitOr),
+                    Box::new(Expression::Literal(Value::Number(1))),
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(5));
+    }
 }
