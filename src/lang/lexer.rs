@@ -148,6 +148,8 @@ impl Lexer {
             Some('[') => Token::LeftBracket,
             Some(']') => Token::RightBracket,
             Some('#') => Token::Comment,
+            Some('&') => Token::BitAnd,
+            Some('|') => Token::BitOr,
             Some('"') => Token::String(self.read_string()),
             Some('\'') => Token::Char(self.read_char_literal()),
             Some('0'..='9') => Token::Number(self.read_number()),
@@ -704,5 +706,31 @@ mod tests {
         assert_eq!(l.next_token(), Token::Break);
         assert_eq!(l.next_token(), Token::RightBrace);
         assert_eq!(l.next_token(), Token::RightBrace);
+    }
+
+    #[test]
+    fn statement_with_bitwise_and() {
+        let input = "let x = 5 & 1;";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::Number("5".into()));
+        assert_eq!(l.next_token(), Token::BitAnd);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Semicolon);
+    }
+
+    #[test]
+    fn statement_with_bitwise_or() {
+        let input = "let x = 5 | 1;";
+        let mut l = Lexer::new(input.into());
+        assert_eq!(l.next_token(), Token::Let);
+        assert_eq!(l.next_token(), Token::Identifier("x".into()));
+        assert_eq!(l.next_token(), Token::Assign);
+        assert_eq!(l.next_token(), Token::Number("5".into()));
+        assert_eq!(l.next_token(), Token::BitOr);
+        assert_eq!(l.next_token(), Token::Number("1".into()));
+        assert_eq!(l.next_token(), Token::Semicolon);
     }
 }

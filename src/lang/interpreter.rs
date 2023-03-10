@@ -3,7 +3,8 @@ use std::collections::{BTreeMap, HashMap};
 use crate::lang::parser::{Accessor, LogicalOperator, MathematicalOperator};
 
 use super::parser::{
-    ComparisonOperator, Expression, Operator, Statement, StatementExpression, Value,
+    BitwiseOperator, ComparisonOperator, Expression, Operator, Statement, StatementExpression,
+    Value,
 };
 
 // enum for the different types of interpreter return values
@@ -77,6 +78,13 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
                         LogicalOperator::Or => Value::Boolean(lhs != 0 || rhs != 0),
                     }
                     _ => panic!("cannot perform logical operator on type Function or Null")
+                }
+                Operator::BitwiseOperator(op) => match (lhs, rhs) {
+                    (Value::Number(lhs), Value::Number(rhs)) => match op {
+                        BitwiseOperator::BitAnd => Value::Number(lhs & rhs),
+                        BitwiseOperator::BitOr => Value::Number(lhs | rhs),
+                    }
+                    _ => panic!("cannot perform bitwise operation on NaN")
                 }
             };
         }

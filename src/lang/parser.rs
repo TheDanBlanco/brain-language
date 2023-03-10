@@ -24,6 +24,13 @@ pub enum ComparisonOperator {
     LessThanEqual,
 }
 
+#[allow(dead_code)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
+pub enum BitwiseOperator {
+    BitAnd,
+    BitOr,
+}
+
 #[derive(Debug, PartialEq, Clone, Hash, Eq, PartialOrd, Ord)]
 pub enum LogicalOperator {
     And,
@@ -122,6 +129,7 @@ pub enum Operator {
     MathematicalOperator(MathematicalOperator),
     LogicalOperator(LogicalOperator),
     ComparisonOperator(ComparisonOperator),
+    BitwiseOperator(BitwiseOperator),
 }
 
 #[derive(Debug, PartialEq)]
@@ -384,12 +392,18 @@ impl Parser {
                 break;
             }
 
+            println!("next: {:?}", self.peek());
+
             if self.peek().is_mathematical() {
                 return self.parse_mathematical_operator(initial);
             }
 
             if self.peek().is_comparator() {
                 return self.parse_comparison_operator(initial);
+            }
+
+            if self.peek().is_bitwise() {
+                return self.parse_bitwise_operator(initial);
             }
 
             return self.parse_logical_operator(initial);
@@ -440,6 +454,21 @@ impl Parser {
         Expression::Binary(
             Box::new(initial),
             Operator::MathematicalOperator(op),
+            Box::new(self.parse_expression()),
+        )
+    }
+
+    fn parse_bitwise_operator(&mut self, initial: Expression) -> Expression {
+        let op = match self.peek() {
+            Token::BitAnd => BitwiseOperator::BitAnd,
+            Token::BitOr => BitwiseOperator::BitOr,
+            _ => panic!("node is not an operator"),
+        };
+
+        self.skip();
+        Expression::Binary(
+            Box::new(initial),
+            Operator::BitwiseOperator(op),
             Box::new(self.parse_expression()),
         )
     }
@@ -1755,6 +1784,58 @@ mod tests {
                     Accessor::Property(Value::String("y".into())),
                 )),
                 Accessor::Property(Value::String("z".into())),
+            ))
+        );
+    }
+
+    #[test]
+    fn test_bitwise_operator_or() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Number("5".into()),
+            Token::BitOr,
+            Token::Number("1".into()),
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::Number(5))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitOr),
+                    Box::new(Expression::Literal(Value::Number(1)))
+                ))
+            ))
+        );
+    }
+
+    #[test]
+    fn test_bitwise_operator_and() {
+        let tokens = vec![
+            Token::Let,
+            Token::Identifier("x".into()),
+            Token::Assign,
+            Token::Number("5".into()),
+            Token::BitAnd,
+            Token::Number("1".into()),
+            Token::Semicolon,
+        ];
+        let mut parser = Parser::new(tokens);
+        let node = parser.parse();
+        assert_eq!(
+            node,
+            StatementExpression::Statement(Statement::Assignment(
+                "x".to_string(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::Number(5))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitAnd),
+                    Box::new(Expression::Literal(Value::Number(1)))
+                ))
             ))
         );
     }
