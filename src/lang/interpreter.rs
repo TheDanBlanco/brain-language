@@ -1994,4 +1994,20 @@ mod tests {
         parse_statement(statement, &mut symbols);
         assert_eq!(symbols.get("x").unwrap(), &Value::Number(5));
     }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_statement_with_bitwise_panics_for_invalid_types() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::String("NaN".into()))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitOr),
+                    Box::new(Expression::Literal(Value::Number(1))),
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+    }
 }
