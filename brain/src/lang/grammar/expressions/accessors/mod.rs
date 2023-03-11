@@ -5,7 +5,7 @@ use crate::lang::{
 
 use self::{field::Field, index::Index};
 
-use super::{collection::Collection, functioncall::FunctionCall, Expression};
+use super::{collection::Collection, Expression};
 
 pub mod field;
 pub mod index;
@@ -29,22 +29,16 @@ impl Accessor {
         stream: &mut TokenStream,
         initial: Option<Expression>,
     ) -> Result<Expression, Box<dyn std::error::Error>> {
-        let mut expression: Expression;
+        let mut expression;
 
         if let Some(identifier) = initial {
             expression = identifier;
 
-            while let Some(next) = stream.next() {
+            while let Some(next) = stream.peek() {
                 let token = &next.token;
 
-                if !Self::matches(token) {
+                if !Self::matches(token) || stream.check(TokenKind::LeftParen) {
                     break;
-                }
-
-                if stream.check(TokenKind::LeftParen) {
-                    let function_call = FunctionCall::parse(stream, expression)?;
-                    expression = Expression::FunctionCall(function_call);
-                    continue;
                 }
 
                 if stream.check(TokenKind::LeftBracket) {
@@ -52,6 +46,8 @@ impl Accessor {
                     expression = Expression::Accessor(Accessor::Index(index));
                     continue;
                 }
+
+                if stream.check(TokenKind::LeftParen) {}
 
                 let field = Field::parse(stream, expression)?;
                 expression = Expression::Accessor(Accessor::Field(field))
@@ -76,10 +72,7 @@ impl Evaluate for Accessor {
 
 impl Match for Accessor {
     fn matches(token: &TokenKind) -> bool {
-        matches!(
-            token,
-            TokenKind::LeftParen | TokenKind::Dot | TokenKind::LeftBracket
-        )
+        matches!(token, TokenKind::Dot | TokenKind::LeftBracket)
     }
 }
 
@@ -136,4 +129,109 @@ mod tests {
 
         assert!(result.is_ok());
     }
+
+    // #[test]
+    // fn parse_accessor_is_collection() {
+    //     let tokens = vec![
+    //         Token::new(0, 0, TokenKind::LeftBracket),
+    //         Token::new(0, 0, TokenKind::Number(0)),
+    //         Token::new(0, 0, TokenKind::RightBracket),
+    //     ];
+
+    //     let stream = &mut TokenStream::from_vec(tokens);
+
+    //     let result = Accessor::parse(stream);
+
+    //     assert!(result.is_ok());
+    //     assert_eq!(
+    //         result.unwrap(),
+    //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))])
+    //     );
+    // }
+
+    // #[test]
+    // fn parse_accessor_is_index_accessor() {
+    //     let expression =
+    //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
+
+    //     let tokens = vec![
+    //         Token::new(0, 0, TokenKind::LeftBracket),
+    //         Token::new(0, 0, TokenKind::Number(0)),
+    //         Token::new(0, 0, TokenKind::RightBracket),
+    //     ];
+
+    //     let stream = &mut TokenStream::from_vec(tokens);
+
+    //     let result = Accessor::parse(stream);
+
+    //     assert!(result.is_ok());
+    //     assert_eq!(
+    //         result.unwrap(),
+    //         Expression::Accessor(Accessor::Index(Index::new(
+    //             Expression::new_literal(Value::Number(0)),
+    //             expression
+    //         )))
+    //     );
+    // }
+
+    // #[test]
+    // fn parse_accessor_is_index_accessor_with_function_call() {
+    //     let expression =
+    //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
+
+    //     let tokens = vec![
+    //         Token::new(0, 0, TokenKind::LeftBracket),
+    //         Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+    //         Token::new(0, 0, TokenKind::LeftParen),
+    //         Token::new(0, 0, TokenKind::RightParen),
+    //         Token::new(0, 0, TokenKind::RightBracket),
+    //     ];
+
+    //     let stream = &mut TokenStream::from_vec(tokens);
+
+    //     let result = Accessor::parse(stream, Some(expression.clone()));
+
+    //     assert!(result.is_ok());
+    //     assert_eq!(
+    //         result.unwrap(),
+    //         Expression::Accessor(Accessor::Index(Index::new(
+    //             Expression::new_function_call(Expression::new_identifier("a".to_string()), vec![]),
+    //             expression
+    //         )))
+    //     );
+    // }
+
+    // #[test]
+    // fn parse_accessor_is_field_accessor() {
+    //     let expression = Expression::new_map(vec![]);
+
+    //     let tokens = vec![
+    //         Token::new(0, 0, TokenKind::Dot),
+    //         Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+    //     ];
+
+    //     let stream = &mut TokenStream::from_vec(tokens);
+
+    //     let result = Accessor::parse(stream, Some(expression.clone()));
+
+    //     assert!(result.is_ok());
+    //     assert_eq!(
+    //         result.unwrap(),
+    //         Expression::Accessor(Accessor::Field(Field::new("a".to_string(), expression)))
+    //     );
+    // }
+
+    // #[test]
+    // fn parse_accessor_is_not_accessor() {
+    //     let expression = Expression::new_map(vec![]);
+
+    //     let tokens = vec![Token::new(0, 0, TokenKind::Semicolon)];
+
+    //     let stream = &mut TokenStream::from_vec(tokens);
+
+    //     let result = Accessor::parse(stream, Some(expression.clone()));
+
+    //     assert!(result.is_ok());
+    //     assert_eq!(result.unwrap(), expression);
+    // }
 }

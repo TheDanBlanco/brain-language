@@ -11,7 +11,7 @@ use self::{
 
 use super::{
     error::{Error, ErrorKind},
-    Parse,
+    Match, Parse,
 };
 
 pub mod assignment;
@@ -119,7 +119,7 @@ impl Parse for Statement {
 
         let token = &next.unwrap().token;
 
-        let statement = match token{
+        let statement = match token {
             TokenKind::Let => Statement::Assignment(Assignment::parse(stream)?),
             TokenKind::Function => Statement::FunctionDefinition(FunctionDefinition::parse(stream)?),
             TokenKind::If => Statement::Conditional(Conditional::parse(stream)?),
@@ -142,9 +142,30 @@ impl Parse for Statement {
     }
 }
 
+impl Match for Statement {
+    fn matches(token: &TokenKind) -> bool {
+        matches!(
+            token,
+            TokenKind::Let
+                | TokenKind::Function
+                | TokenKind::If
+                | TokenKind::Identifier(_)
+                | TokenKind::Loop
+                | TokenKind::For
+                | TokenKind::LeftBrace
+                | TokenKind::Break
+                | TokenKind::Continue
+                | TokenKind::Return
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{expressions::operator::Operator, value::Value};
+    use crate::lang::{
+        grammar::{expressions::operator::Operator, value::Value},
+        tokens::token::Token,
+    };
 
     use super::*;
 
@@ -170,6 +191,22 @@ mod tests {
         let result = statement.resolve(context);
 
         assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_assignment() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Let),
+            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::Number(0)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok());
     }
 
     #[test]
@@ -203,6 +240,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_statement_reassignement() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::Number(0)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn new_statement_conditional() {
         let statement = Statement::new_conditional(
             Expression::new_literal(Value::Boolean(true)),
@@ -231,6 +283,22 @@ mod tests {
         );
 
         let result = statement.resolve(context);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_conditional() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::If),
+            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
 
         assert!(result.is_ok())
     }
@@ -281,6 +349,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_statement_function_definition() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Function),
+            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
     fn new_statement_return() {
         let statement = Statement::new_return(Expression::new_literal(Value::Number(0)));
 
@@ -297,6 +383,21 @@ mod tests {
         let statement = Statement::new_return(Expression::new_literal(Value::Number(0)));
 
         let result = statement.resolve(context);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_return() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Return),
+            Token::new(0, 0, TokenKind::Null),
+            Token::new(0, 0, TokenKind::Semicolon),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
 
         assert!(result.is_ok())
     }
@@ -320,6 +421,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_statement_break() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Break)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
     fn new_statement_continue() {
         let statement = Statement::new_continue();
 
@@ -333,6 +445,17 @@ mod tests {
         let statement = Statement::new_continue();
 
         let result = statement.resolve(context);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_continue() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Continue)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
 
         assert!(result.is_ok())
     }
@@ -354,6 +477,22 @@ mod tests {
         let statement = Statement::new_loop(Statement::new_break());
 
         let result = statement.resolve(context);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_loop() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Loop),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::Break),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
 
         assert!(result.is_ok())
     }
@@ -392,6 +531,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_statement_for() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::For),
+            Token::new(0, 0, TokenKind::Identifier("item".to_string())),
+            Token::new(0, 0, TokenKind::In),
+            Token::new(0, 0, TokenKind::Identifier("collection".to_string())),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
     fn new_statement_block() {
         let statement = Statement::new_block(vec![Node::from_statement(Statement::new_break())]);
 
@@ -412,5 +569,49 @@ mod tests {
         let result = statement.resolve(context);
 
         assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_block() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn parse_statement_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected statement, found unexpected End of File".to_string()
+        )
+    }
+
+    #[test]
+    fn parse_statement_pass_invalid_token() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Add)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedToken]: Expected let, fn, if, an identifier, loop, for, {, break, continue, or return, found Token::Add".to_string()
+        )
     }
 }

@@ -42,7 +42,7 @@ impl Parse for Loop {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::Node;
+    use crate::lang::{grammar::Node, tokens::token::Token};
 
     use super::*;
 
@@ -72,5 +72,21 @@ mod tests {
         assert!(result.is_ok());
 
         assert_eq!(result.unwrap(), Output::Break);
+    }
+
+    #[test]
+    fn parse_loop() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Loop),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Loop::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Loop::new(Statement::new_block(vec![])));
     }
 }

@@ -143,6 +143,8 @@ impl Match for Operator {
 
 #[cfg(test)]
 mod tests {
+    use crate::lang::tokens::token::Token;
+
     use super::*;
 
     #[test]
@@ -267,5 +269,71 @@ mod tests {
 
         let result = operator.evaluate(left, right, context);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_operator_mathematical() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Add)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_addition());
+    }
+
+    #[test]
+    fn parse_operator_logical() {
+        let tokens = vec![Token::new(0, 0, TokenKind::And)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_and());
+    }
+
+    #[test]
+    fn parse_operator_comparison() {
+        let tokens = vec![Token::new(0, 0, TokenKind::GreaterThan)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_gt());
+    }
+
+    #[test]
+    fn parse_operator_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected operator, found End of File".to_string()
+        );
+    }
+
+    #[test]
+    fn parse_operator_not_operator() {
+        let tokens = vec![Token::new(0, 0, TokenKind::LeftBrace)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedToken]: Expected operator, found Token::LeftBrace".to_string()
+        );
     }
 }

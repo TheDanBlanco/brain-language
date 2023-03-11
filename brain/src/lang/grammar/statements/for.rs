@@ -75,7 +75,10 @@ impl Parse for For {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{expressions::operator::Operator, Node};
+    use crate::lang::{
+        grammar::{expressions::operator::Operator, Node},
+        tokens::token::Token,
+    };
 
     use super::*;
 
@@ -191,5 +194,46 @@ mod tests {
             context.symbols.get(&"x".to_string()).unwrap(),
             &Value::Number(1),
         )
+    }
+
+    #[test]
+    fn parse_loop() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::For),
+            Token::new(0, 0, TokenKind::Identifier("item".to_string())),
+            Token::new(0, 0, TokenKind::In),
+            Token::new(0, 0, TokenKind::Identifier("collection".to_string())),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = For::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            For::new(
+                "item".to_string(),
+                Expression::new_identifier("collection".to_string()),
+                Statement::new_block(vec![])
+            )
+        );
+    }
+
+    #[test]
+    fn parse_loop_eof() {
+        let tokens = vec![Token::new(0, 0, TokenKind::For)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = For::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+        );
     }
 }

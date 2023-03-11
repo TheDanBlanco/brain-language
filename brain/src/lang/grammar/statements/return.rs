@@ -28,13 +28,15 @@ impl Parse for Return {
 
         let expression = Expression::parse(stream)?;
 
+        stream.skip_if(TokenKind::Semicolon);
+
         Ok(Self::new(expression))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::value::Value;
+    use crate::lang::{grammar::value::Value, tokens::token::Token};
 
     use super::*;
 
@@ -58,6 +60,24 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Output::Value(Value::String("hello".to_string()))
+        );
+    }
+
+    #[test]
+    fn parse_return() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Return),
+            Token::new(0, 0, TokenKind::Number(0)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Return::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Return::new(Expression::new_literal(Value::Number(0)))
         );
     }
 }

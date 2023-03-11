@@ -86,4 +86,22 @@ mod tests {
             "[InvalidLogicalOperation]: cannot do logical comparison on 1 and true".to_string()
         )
     }
+
+    #[test]
+    fn matches_logical() {
+        assert!(Logical::matches(&TokenKind::And));
+        assert!(Logical::matches(&TokenKind::Or));
+    }
+
+    #[test]
+    fn parse_logical() {
+        assert_eq!(Logical::parse(&TokenKind::And), Logical::And);
+        assert_eq!(Logical::parse(&TokenKind::Or), Logical::Or);
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_comparison_unreachable() {
+        Logical::parse(&TokenKind::Add);
+    }
 }

@@ -9,7 +9,7 @@ use crate::lang::{
     tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
-use super::{binary::Binary, operator::Operator, Expression};
+use super::{binary::Binary, identifier::Identifier, operator::Operator, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
@@ -27,15 +27,19 @@ impl FunctionCall {
 
     pub fn parse(
         stream: &mut TokenStream,
-        identifier: Expression,
+        initial: Option<Expression>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let identifier = match initial {
+            Some(expression) => expression,
+            None => Expression::Identifier(Identifier::parse(stream)?),
+        };
+
         stream.expect(TokenKind::LeftParen)?;
 
         let mut arguments = vec![];
 
         while !stream.check(TokenKind::RightParen) {
             let mut expression = Expression::parse(stream)?;
-            stream.skip_if(TokenKind::Comma);
 
             let next = stream.peek();
 
@@ -48,15 +52,14 @@ impl FunctionCall {
                 );
             }
 
-            if Operator::matches(&next.unwrap().token) {
-                let binary = Binary::parse(stream, expression)?;
+            let token = &next.unwrap().token;
+
+            if Operator::matches(token) {
+                let binary = Binary::parse(stream, Some(expression))?;
                 expression = Expression::Binary(binary);
             }
 
-            if stream.check(TokenKind::LeftParen) {
-                let function_call = Self::parse(stream, expression)?;
-                expression = Expression::FunctionCall(function_call);
-            }
+            stream.skip_if(TokenKind::Comma);
 
             arguments.push(expression);
         }
@@ -115,7 +118,7 @@ impl Evaluate for FunctionCall {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::statements::Statement;
+    use crate::lang::{grammar::statements::Statement, tokens::token::Token};
 
     use super::*;
 
@@ -144,34 +147,13 @@ mod tests {
         );
 
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::new_function(
-                vec![],
-                Statement::new_return(Expression::new_literal(Value::Number(0))),
-            )),
+            Expression::new_literal(Value::String("foo".to_string())),
             vec![],
         );
 
         let result = function_call.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(0),);
-    }
-
-    #[test]
-    fn eval_function_call_no_return_value() {
-        let context = &mut Context::new();
-        context.symbols.insert(
-            "foo".to_string(),
-            Value::new_function(vec![], Statement::new_break()),
-        );
-
-        let function_call = FunctionCall::new(
-            Expression::new_literal(Value::new_function(vec![], Statement::new_break())),
-            vec![],
-        );
-
-        let result = function_call.evaluate(context);
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Null,);
+        assert_eq!(result.unwrap(), Value::Null);
     }
 
     #[test]
@@ -240,5 +222,158 @@ mod tests {
             result.err().unwrap().to_string(),
             "[InvalidType]: 'foo' is not a function"
         )
+    }
+
+    #[test]
+    fn parse_function_call() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionCall::parse(stream, None);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionCall::new(Expression::new_identifier("foo".to_string()), vec![])
+        );
+    }
+
+    #[test]
+    fn parse_function_call_with_initial() {
+        let initial = Expression::new_identifier("foo".to_string());
+
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionCall::parse(stream, Some(initial));
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionCall::new(Expression::new_identifier("foo".to_string()), vec![])
+        );
+    }
+
+    #[test]
+    fn parse_function_call_with_args() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::Identifier("b".to_string())),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionCall::parse(stream, None);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionCall::new(
+                Expression::new_identifier("foo".to_string()),
+                vec![
+                    Expression::new_identifier("a".to_string()),
+                    Expression::new_identifier("b".to_string())
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn parse_function_call_with_function_arg() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::Identifier("b".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionCall::parse(stream, None);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionCall::new(
+                Expression::new_identifier("foo".to_string()),
+                vec![
+                    Expression::new_identifier("a".to_string()),
+                    Expression::new_function_call(
+                        Expression::new_identifier("b".to_string()),
+                        vec![],
+                    )
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn parse_function_call_with_binary_arg() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::Add),
+            Token::new(0, 0, TokenKind::Number(1)),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionCall::parse(stream, None);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionCall::new(
+                Expression::new_identifier("foo".to_string()),
+                vec![
+                    Expression::new_identifier("a".to_string()),
+                    Expression::new_binary(
+                        Expression::new_literal(Value::Number(0)),
+                        Operator::new_addition(),
+                        Expression::new_literal(Value::Number(1)),
+                    )
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn parse_function_call_eof() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::Number(0)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionCall::parse(stream, None);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected binary expression, function call, or ending parenthesis, found End of File".to_string()
+        );
     }
 }

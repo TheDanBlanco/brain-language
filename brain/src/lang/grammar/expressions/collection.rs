@@ -53,6 +53,8 @@ impl Parse for Collection {
 
 #[cfg(test)]
 mod tests {
+    use crate::lang::tokens::token::Token;
+
     use super::*;
 
     #[test]
@@ -86,6 +88,26 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3),])
+        );
+    }
+
+    #[test]
+    fn parse_collection() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::RightBracket),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Collection::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Collection::new(vec![Expression::new_literal(Value::Number(0))])
         );
     }
 }

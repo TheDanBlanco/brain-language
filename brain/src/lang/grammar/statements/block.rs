@@ -36,14 +36,12 @@ impl Parse for Block {
         stream.expect(TokenKind::LeftBrace)?;
 
         loop {
-            let node = Node::parse(stream)?;
-            nodes.push(node);
-
             if stream.check(TokenKind::RightBrace) {
                 break;
             }
 
-            break;
+            let node = Node::parse(stream)?;
+            nodes.push(node);
         }
 
         stream.expect(TokenKind::RightBrace)?;

@@ -57,7 +57,7 @@ impl Parse for Map {
             } else {
                 return Err(Error::new(
                     ErrorKind::UnexpectedExpression,
-                    format!("Expected identifier, found {key:#?}"),
+                    format!("Only string values may be keys."),
                 ));
             }
 
@@ -65,7 +65,7 @@ impl Parse for Map {
 
             let value = Expression::parse(stream)?;
 
-            stream.expect(TokenKind::Comma)?;
+            stream.skip_if(TokenKind::Comma);
 
             entries.push((key, value));
         }
@@ -80,7 +80,10 @@ impl Parse for Map {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::grammar::{statements::Statement, value::Value};
+    use crate::lang::{
+        grammar::{statements::Statement, value::Value},
+        tokens::token::Token,
+    };
 
     #[test]
     fn create_new_map() {
@@ -205,5 +208,51 @@ mod tests {
         let result = map.evaluate(context);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: {}",);
+    }
+
+    #[test]
+    fn parse_map() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::Colon),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Map::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Map::new(vec![(
+                Expression::new_literal(Value::String("a".to_string())),
+                Expression::new_literal(Value::Number(0))
+            )])
+        );
+    }
+
+    #[test]
+    fn parse_map_key_not_identifier() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::Colon),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Map::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedExpression]: Only string values may be keys.".to_string()
+        );
     }
 }

@@ -168,4 +168,40 @@ mod tests {
             "[InvalidMathematicalOperation]: cannot add 1 and hello"
         );
     }
+
+    #[test]
+    fn matches_comparison() {
+        assert!(Mathematical::matches(&TokenKind::Add));
+        assert!(Mathematical::matches(&TokenKind::Subtract));
+        assert!(Mathematical::matches(&TokenKind::Multiply));
+        assert!(Mathematical::matches(&TokenKind::Divide));
+        assert!(Mathematical::matches(&TokenKind::Modulo));
+    }
+
+    #[test]
+    fn parse_comparison() {
+        assert_eq!(Mathematical::parse(&TokenKind::Add), Mathematical::Add);
+        assert_eq!(
+            Mathematical::parse(&TokenKind::Subtract),
+            Mathematical::Subtract
+        );
+        assert_eq!(
+            Mathematical::parse(&TokenKind::Multiply),
+            Mathematical::Multiply
+        );
+        assert_eq!(
+            Mathematical::parse(&TokenKind::Divide),
+            Mathematical::Divide
+        );
+        assert_eq!(
+            Mathematical::parse(&TokenKind::Modulo),
+            Mathematical::Modulo
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_comparison_unreachable() {
+        Mathematical::parse(&TokenKind::And);
+    }
 }

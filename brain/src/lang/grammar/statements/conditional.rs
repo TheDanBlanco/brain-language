@@ -10,7 +10,7 @@ use crate::lang::{
     tokens::{stream::TokenStream, tokenkind::TokenKind},
 };
 
-use super::{block::Block, Statement};
+use super::Statement;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Conditional {
@@ -74,13 +74,12 @@ impl Parse for Conditional {
 
         let consequence = Statement::parse(stream)?;
 
-        let alternative = {
-            if stream.check(TokenKind::Else) {
-                Block::parse(stream)?;
-            }
+        let mut alternative = None;
 
-            None
-        };
+        if stream.check(TokenKind::Else) {
+            stream.skip();
+            alternative = Some(Statement::parse(stream)?)
+        }
 
         Ok(Self::new(condition, consequence, alternative))
     }
@@ -88,7 +87,10 @@ impl Parse for Conditional {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{expressions::operator::Operator, Node};
+    use crate::lang::{
+        grammar::{expressions::operator::Operator, Node},
+        tokens::token::Token,
+    };
 
     use super::*;
 
@@ -485,6 +487,57 @@ mod tests {
         assert_eq!(
             result.err().unwrap().to_string(),
             "[InvalidType]: '[function]' cannot be used as a boolean."
+        );
+    }
+
+    #[test]
+    fn parse_conditional() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::If),
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Conditional::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Conditional::new(
+                Expression::new_identifier("x".into()),
+                Statement::new_block(vec![]),
+                None
+            )
+        );
+    }
+
+    #[test]
+    fn parse_conditional_with_alternate() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::If),
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0, 0, TokenKind::Else),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Conditional::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Conditional::new(
+                Expression::new_identifier("x".into()),
+                Statement::new_block(vec![]),
+                Some(Statement::new_block(vec![]))
+            )
         );
     }
 }

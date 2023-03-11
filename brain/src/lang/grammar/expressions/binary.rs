@@ -23,8 +23,15 @@ impl Binary {
 
     pub fn parse(
         stream: &mut TokenStream,
-        lhs: Expression,
+        initial: Option<Expression>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let lhs = match initial {
+            Some(expression) => expression,
+            None => Expression::parse(stream)?,
+        };
+
+        println!("{lhs:#?}");
+
         let operator = Operator::parse(stream)?;
         let rhs = Expression::parse(stream)?;
 
@@ -43,6 +50,8 @@ impl Evaluate for Binary {
 
 #[cfg(test)]
 mod test {
+    use crate::lang::tokens::{token::Token, tokenkind::TokenKind};
+
     use super::*;
 
     #[test]
@@ -74,5 +83,52 @@ mod test {
         let result = binary.evaluate(context);
 
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_binary() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::LessThan),
+            Token::new(0, 0, TokenKind::Number(1)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Binary::parse(stream, None);
+
+        // assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Binary::new(
+                Expression::new_literal(Value::Number(0)),
+                Operator::new_lt(),
+                Expression::new_literal(Value::Number(1))
+            )
+        );
+    }
+
+    #[test]
+    fn parse_binary_with_initial() {
+        let expression = Expression::new_literal(Value::Number(0));
+
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LessThan),
+            Token::new(0, 0, TokenKind::Number(1)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Binary::parse(stream, Some(expression));
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Binary::new(
+                Expression::new_literal(Value::Number(0)),
+                Operator::new_lt(),
+                Expression::new_literal(Value::Number(1))
+            )
+        );
     }
 }

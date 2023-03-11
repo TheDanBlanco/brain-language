@@ -80,7 +80,7 @@ impl Evaluate for Field {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::expressions::map::Map;
+    use crate::lang::{grammar::expressions::map::Map, tokens::token::Token};
 
     use super::*;
 
@@ -149,5 +149,75 @@ mod tests {
             result.unwrap_err().to_string(),
             "[InvalidType]: Cannot access field a of 1".to_string()
         );
+    }
+
+    #[test]
+    fn field_accessor_type_not_string() {
+        let context = &mut Context::new();
+        let field = Field {
+            field: Value::Null,
+            target: Box::new(Expression::new_literal(Value::Number(1))),
+        };
+
+        let result = field.evaluate(context);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "[InvalidType]: Field accessor 'null' must be of type String".to_string()
+        );
+    }
+
+    #[test]
+    fn parse_field_accessor() {
+        let expression = Expression::new_map(vec![]);
+
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Dot),
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Field::parse(stream, expression.clone());
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Field::new("a".to_string(), expression));
+    }
+
+    #[test]
+    fn parse_field_accessor_eof() {
+        let expression = Expression::new_map(vec![]);
+
+        let tokens = vec![Token::new(0, 0, TokenKind::Dot)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Field::parse(stream, expression.clone());
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+        )
+    }
+
+    #[test]
+    fn parse_field_accessor_not_identifier() {
+        let expression = Expression::new_map(vec![]);
+
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Dot),
+            Token::new(0, 0, TokenKind::Null),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Field::parse(stream, expression.clone());
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedToken]: Expected identifier, found Token::Null".to_string()
+        )
     }
 }

@@ -43,13 +43,15 @@ impl Parse for Identifier {
             ));
         }
 
-        if let TokenKind::Identifier(string) = &next.unwrap().token {
+        let token = &next.unwrap().token;
+
+        if let TokenKind::Identifier(string) = token {
             return Ok(Self::new(string.to_string()));
         }
 
         return Err(Error::new(
             ErrorKind::UnexpectedExpression,
-            format!("Expected identifier, found {next:#?}"),
+            format!("Expected identifier, found {token}"),
         ));
     }
 }
@@ -58,7 +60,7 @@ impl Parse for Identifier {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::grammar::value::Value;
+    use crate::lang::{grammar::value::Value, tokens::token::Token};
 
     #[test]
     fn create_new_identifier() {
@@ -87,6 +89,48 @@ mod tests {
         assert_eq!(
             result.unwrap_err().to_string(),
             "[UnknownIdentifier]: 'hello'",
+        );
+    }
+
+    #[test]
+    fn parse_identifier() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Identifier("a".to_string()))];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Identifier::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Identifier::new("a".to_string()));
+    }
+
+    #[test]
+    fn parse_identifier_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Identifier::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+        );
+    }
+
+    #[test]
+    fn parse_identifier_not_identifier() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Null)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Identifier::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedExpression]: Expected identifier, found Token::Null".to_string()
         );
     }
 }

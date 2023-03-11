@@ -57,6 +57,14 @@ impl Expression {
     pub fn new_map(pairs: Vec<(Expression, Expression)>) -> Self {
         Expression::Map(Map::new(pairs))
     }
+
+    pub fn new_field_accessor(field: String, target: Expression) -> Self {
+        Expression::Accessor(Accessor::new_field(field, target))
+    }
+
+    pub fn new_index_accessor(index: Expression, target: Expression) -> Self {
+        Expression::Accessor(Accessor::new_index(index, target))
+    }
 }
 
 impl Evaluate for Expression {
@@ -87,50 +95,62 @@ impl Parse for Expression {
 
         let token = &next.unwrap().token;
 
-        if let TokenKind::Identifier(identifier) = token {
-            let identifier = Self::Identifier(Identifier::new(identifier.to_string()));
-
-            if next.is_some() && Operator::matches(&next.unwrap().token) {
-                return Ok(Self::Binary(Binary::parse(stream, identifier)?));
-            }
-
-            if next.is_some() && Accessor::matches(&&next.unwrap().token) {
-                return Ok(Accessor::parse(stream, Some(identifier))?);
-            }
-
-            return Ok(identifier);
+        if Literal::matches(token) {
+            return Ok(Self::Literal(Literal::parse(stream)?));
         }
 
-        if Literal::matches(&token) {
-            let literal = Self::Literal(Literal::parse(stream)?);
-
-            let next = stream.peek();
-
-            if next.is_some() && !Operator::matches(&next.unwrap().token) {
-                return Ok(Self::Binary(Binary::parse(stream, literal)?));
-            }
-
-            return Ok(literal);
-        }
-
-        if &TokenKind::LeftBracket == token {
+        if stream.check(TokenKind::LeftBracket) {
             return Ok(Accessor::parse(stream, None)?);
         }
 
-        if &TokenKind::LeftBrace == token {
+        if stream.check(TokenKind::LeftBrace) {
             return Ok(Self::Map(Map::parse(stream)?));
+        }
+
+        if let &TokenKind::Identifier(_) = token {
+            let mut expression = Self::Identifier(Identifier::parse(stream)?);
+            while let Some(next) = stream.peek() {
+                if Operator::matches(&next.token) {
+                    expression = Self::Binary(Binary::parse(stream, Some(expression))?);
+                    continue;
+                }
+
+                if Accessor::matches(&next.token) {
+                    expression = Accessor::parse(stream, Some(expression))?;
+                    continue;
+                }
+
+                if TokenKind::LeftParen == next.token {
+                    expression =
+                        Expression::FunctionCall(FunctionCall::parse(stream, Some(expression))?);
+                    continue;
+                }
+
+                break;
+            }
+
+            return Ok(expression);
         }
 
         return Err(Error::new(
             ErrorKind::UnexpectedToken,
-            format!("Unexpected token {token}"),
+            format!(
+                "Expected literal, identifier, left brace, or left bracket, found {}",
+                stream.peek().unwrap().token
+            ),
         ));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::statements::Statement;
+    use crate::lang::{
+        grammar::{
+            expressions::accessors::{field::Field, index::Index},
+            statements::Statement,
+        },
+        tokens::token::Token,
+    };
 
     use super::*;
 
@@ -153,6 +173,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_literal() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Number(0))];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn new_expression_identifier() {
         let expression = Expression::new_identifier("foo".to_string());
         assert_eq!(
@@ -168,6 +199,17 @@ mod tests {
         let expression = Expression::new_identifier("foo".to_string());
 
         let result = expression.evaluate(context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_identifier() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Identifier("a".to_string()))];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
         assert!(result.is_ok());
     }
 
@@ -203,6 +245,22 @@ mod tests {
     }
 
     #[test]
+    fn parse_function_call() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn new_expression_binary() {
         let expression = Expression::new_binary(
             Expression::new_literal(Value::Number(1)),
@@ -233,6 +291,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_binary() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::Add),
+            Token::new(0, 0, TokenKind::Number(1)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn new_expression_collection() {
         let expression = Expression::new_collection(vec![
             Expression::new_literal(Value::Number(1)),
@@ -256,6 +329,23 @@ mod tests {
         ]);
 
         let result = expression.evaluate(context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_collection() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::Number(1)),
+            Token::new(0, 0, TokenKind::RightBracket),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
         assert!(result.is_ok());
     }
 
@@ -302,5 +392,265 @@ mod tests {
 
         let result = expression.evaluate(context);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_map() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::Colon),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Map::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_index_accessor() {
+        let expression = Expression::new_index_accessor(
+            Expression::new_literal(Value::Number(0)),
+            Expression::new_collection(vec![Expression::new_literal(Value::Null)]),
+        );
+        assert_eq!(
+            expression,
+            Expression::Accessor(Accessor::Index(Index::new(
+                Expression::new_literal(Value::Number(0)),
+                Expression::new_collection(vec![Expression::new_literal(Value::Null)])
+            )))
+        );
+    }
+
+    #[test]
+    fn eval_index_accessor() {
+        let context = &mut Context::new();
+        let expression = Expression::Accessor(Accessor::Index(Index::new(
+            Expression::new_literal(Value::Number(0)),
+            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]),
+        )));
+
+        let result = expression.evaluate(context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_index_accessor() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBracket),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_field_accessor() {
+        let expression = Expression::new_field_accessor(
+            "a".to_string(),
+            Expression::new_map(vec![(
+                Expression::new_literal(Value::String("a".to_string())),
+                Expression::new_literal(Value::Number(0)),
+            )]),
+        );
+        assert_eq!(
+            expression,
+            Expression::Accessor(Accessor::Field(Field::new(
+                "a".to_string(),
+                Expression::new_map(vec![(
+                    Expression::new_literal(Value::String("a".to_string())),
+                    Expression::new_literal(Value::Number(0))
+                )])
+            )))
+        );
+    }
+
+    #[test]
+    fn eval_field_accessor() {
+        let context = &mut Context::new();
+        let expression = Expression::new_field_accessor(
+            "a".to_string(),
+            Expression::new_map(vec![(
+                Expression::new_literal(Value::String("a".to_string())),
+                Expression::new_literal(Value::Number(0)),
+            )]),
+        );
+
+        let result = expression.evaluate(context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_field_accessor() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::Dot),
+            Token::new(0, 0, TokenKind::Identifier("b".to_string())),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_double_function_call() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::new_function_call(
+                Expression::new_function_call(Expression::new_identifier("a".to_string()), vec![]),
+                vec![]
+            ),
+        )
+    }
+
+    #[test]
+    fn parse_triple_function_call() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::new_function_call(
+                Expression::new_function_call(
+                    Expression::new_function_call(
+                        Expression::new_identifier("a".to_string()),
+                        vec![]
+                    ),
+                    vec![]
+                ),
+                vec![]
+            ),
+        )
+    }
+
+    #[test]
+    fn parse_function_call_accessor() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBracket),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::new_function_call(
+                Expression::new_index_accessor(
+                    Expression::new_literal(Value::Number(0)),
+                    Expression::new_identifier("a".to_string())
+                ),
+                vec![]
+            )
+        )
+    }
+
+    #[test]
+    fn parse_accessor_binary() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBracket),
+            Token::new(0, 0, TokenKind::Add),
+            Token::new(0, 0, TokenKind::Identifier("b".to_string())),
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBracket),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::new_binary(
+                Expression::new_index_accessor(
+                    Expression::new_literal(Value::Number(0)),
+                    Expression::new_identifier("a".to_string())
+                ),
+                Operator::new_addition(),
+                Expression::new_index_accessor(
+                    Expression::new_literal(Value::Number(0)),
+                    Expression::new_identifier("b".to_string())
+                ),
+            )
+        )
+    }
+
+    #[test]
+    fn parse_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected literal, identifier, left brace, or left bracket, found End of File".to_string()
+        );
+    }
+
+    #[test]
+    fn parse_eof_unexpected_token() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Let)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Expression::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedToken]: Expected literal, identifier, left brace, or left bracket, found Token::Let".to_string()
+        );
     }
 }

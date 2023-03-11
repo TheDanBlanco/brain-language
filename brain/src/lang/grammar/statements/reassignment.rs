@@ -70,7 +70,10 @@ impl Parse for Reassignment {
 mod tests {
     use std::collections::BTreeMap;
 
-    use crate::lang::grammar::{statements::Statement, value::Value};
+    use crate::lang::{
+        grammar::{statements::Statement, value::Value},
+        tokens::token::Token,
+    };
 
     use super::*;
 
@@ -216,5 +219,142 @@ mod tests {
             result.err().unwrap().to_string(),
             "[UnknownIdentifier]: 'foo'",
         )
+    }
+
+    #[test]
+    fn parse_assignment() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::String("hello".to_string())),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Reassignment::new(
+                "x".to_string(),
+                Expression::new_literal(Value::String("hello".to_string())),
+            )
+        );
+    }
+
+    #[test]
+    fn parse_reassignment_number() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::Number(0)),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Reassignment::new("x".to_string(), Expression::new_literal(Value::Number(0)),)
+        );
+    }
+
+    #[test]
+    fn parse_reassignment_null() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::Null),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Reassignment::new("x".to_string(), Expression::new_literal(Value::Null),)
+        );
+    }
+
+    #[test]
+    fn parse_reassignment_bool() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::True),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Reassignment::new(
+                "x".to_string(),
+                Expression::new_literal(Value::Boolean(true)),
+            )
+        );
+    }
+
+    #[test]
+    fn parse_reassignment_collection() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::RightBracket),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Reassignment::new("x".to_string(), Expression::new_collection(vec![]),)
+        );
+    }
+
+    #[test]
+    fn parse_reassignment_map() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Identifier("x".into())),
+            Token::new(0, 0, TokenKind::Assign),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Reassignment::new("x".to_string(), Expression::new_map(vec![]),)
+        );
+    }
+
+    #[test]
+    fn parse_reassignment_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Reassignment::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+        );
     }
 }

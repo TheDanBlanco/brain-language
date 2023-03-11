@@ -1,5 +1,11 @@
 use self::{
-    context::Context, expressions::Expression, output::Output, statements::Statement, value::Value,
+    context::Context,
+    error::{Error, ErrorKind},
+    expressions::Expression,
+    output::Output,
+    statements::Statement,
+    util::disambiguate_reassignment,
+    value::Value,
 };
 
 use super::tokens::{stream::TokenStream, tokenkind::TokenKind};
@@ -9,6 +15,7 @@ pub mod error;
 pub mod expressions;
 pub mod output;
 pub mod statements;
+pub mod util;
 pub mod value;
 
 pub trait Resolve {
@@ -47,8 +54,23 @@ impl Node {
 }
 
 impl Parse for Node {
-    fn parse(_stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        todo!()
+    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+        let next = stream.peek();
+
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected any token, found End of File".into(),
+            ));
+        }
+
+        let token = &next.unwrap().token;
+
+        if Statement::matches(&token) || disambiguate_reassignment(stream) {
+            return Ok(Node::from_statement(Statement::parse(stream)?));
+        }
+
+        Ok(Node::from_expression(Expression::parse(stream)?))
     }
 }
 
@@ -73,5 +95,70 @@ pub struct Nodes {
 impl Nodes {
     pub fn new(nodes: Vec<Node>) -> Self {
         Nodes { nodes: nodes }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::lang::tokens::token::Token;
+
+    use super::*;
+
+    #[test]
+    fn new_node_from_statement() {
+        let statement = Statement::new_break();
+        let node = Node::from_statement(statement.clone());
+
+        assert_eq!(node, Node::Statement(statement))
+    }
+
+    #[test]
+    fn new_node_from_expression() {
+        let expression = Expression::new_literal(Value::Null);
+        let node = Node::from_expression(expression.clone());
+
+        assert_eq!(node, Node::Expression(expression))
+    }
+
+    #[test]
+    fn parse_node_statement() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Break)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Node::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Node::Statement(Statement::new_break()));
+    }
+
+    #[test]
+    fn parse_node_expression() {
+        let tokens = vec![Token::new(0, 0, TokenKind::String("a".to_string()))];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Node::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Node::Expression(Expression::new_literal(Value::String("a".to_string())))
+        );
+    }
+
+    #[test]
+    fn parse_node_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Node::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected any token, found End of File".to_string(),
+        );
     }
 }

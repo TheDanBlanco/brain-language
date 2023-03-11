@@ -79,15 +79,16 @@ impl Parse for FunctionDefinition {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::{
-        context::Context,
-        expressions::{operator::Operator, Expression},
-        statements::{r#return::Return, Statement},
-        value::Value,
-        Node, Resolve,
+    use crate::lang::{
+        grammar::{
+            expressions::{operator::Operator, Expression},
+            statements::r#return::Return,
+            Node,
+        },
+        tokens::token::Token,
     };
 
-    use super::FunctionDefinition;
+    use super::*;
 
     #[test]
     fn new_function_definition() {
@@ -136,5 +137,75 @@ mod tests {
             context.symbols.get("adder").unwrap(),
             &Value::Function(arguments, Box::new(block))
         )
+    }
+
+    #[test]
+    fn parse_function_definition() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Function),
+            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionDefinition::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionDefinition::new("x".to_string(), vec![], Statement::new_block(vec![]))
+        );
+    }
+
+    #[test]
+    fn parse_function_definition_with_args() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Function),
+            Token::new(0, 0, TokenKind::Identifier("adder".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
+            Token::new(0, 0, TokenKind::Comma),
+            Token::new(0, 0, TokenKind::Identifier("y".to_string())),
+            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0, 0, TokenKind::LeftBrace),
+            Token::new(0, 0, TokenKind::RightBrace),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionDefinition::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            FunctionDefinition::new(
+                "adder".to_string(),
+                vec!["x".to_string(), "y".to_string()],
+                Statement::new_block(vec![])
+            )
+        );
+    }
+
+    #[test]
+    fn parse_function_definition_with_eof_args() {
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::Function),
+            Token::new(0, 0, TokenKind::Identifier("adder".to_string())),
+            Token::new(0, 0, TokenKind::LeftParen),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionDefinition::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected function argument, found End of File".to_string()
+        );
     }
 }

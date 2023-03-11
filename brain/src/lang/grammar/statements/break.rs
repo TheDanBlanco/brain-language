@@ -23,6 +23,8 @@ impl Parse for Break {
 
 #[cfg(test)]
 mod test {
+    use crate::lang::tokens::token::Token;
+
     use super::*;
 
     #[test]
@@ -33,5 +35,17 @@ mod test {
         let result = r#break.resolve(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Output::Break,)
+    }
+
+    #[test]
+    fn parse_break() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Break)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Break::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Break);
     }
 }

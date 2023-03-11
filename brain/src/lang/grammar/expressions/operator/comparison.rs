@@ -113,6 +113,7 @@ impl Match for Comparison {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -239,5 +240,64 @@ mod tests {
             result.unwrap_err().to_string(),
             "[InvalidComparisonOperation]: Cannot do equal comparison on true and 1",
         )
+    }
+
+    #[test]
+    fn matches_comparison() {
+        assert!(Comparison::matches(&TokenKind::Equal));
+        assert!(Comparison::matches(&TokenKind::NotEqual));
+        assert!(Comparison::matches(&TokenKind::GreaterThan));
+        assert!(Comparison::matches(&TokenKind::GreaterThanEqual));
+        assert!(Comparison::matches(&TokenKind::LessThan));
+        assert!(Comparison::matches(&TokenKind::LessThanEqual));
+
+        assert!(!Comparison::matches(&TokenKind::Add))
+    }
+
+    #[test]
+    fn parse_comparison() {
+        assert_eq!(Comparison::parse(&TokenKind::Equal), Comparison::Equal);
+        assert_eq!(
+            Comparison::parse(&TokenKind::NotEqual),
+            Comparison::NotEqual
+        );
+        assert_eq!(
+            Comparison::parse(&TokenKind::GreaterThan),
+            Comparison::GreaterThan
+        );
+        assert_eq!(
+            Comparison::parse(&TokenKind::GreaterThanEqual),
+            Comparison::GreaterThanEqual
+        );
+        assert_eq!(
+            Comparison::parse(&TokenKind::LessThan),
+            Comparison::LessThan
+        );
+        assert_eq!(
+            Comparison::parse(&TokenKind::LessThanEqual),
+            Comparison::LessThanEqual
+        );
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!(format!("{}", Comparison::Equal), "equal");
+        assert_eq!(format!("{}", Comparison::NotEqual), "not equal");
+        assert_eq!(format!("{}", Comparison::GreaterThan), "greater than");
+        assert_eq!(
+            format!("{}", Comparison::GreaterThanEqual),
+            "greater than or equal to"
+        );
+        assert_eq!(format!("{}", Comparison::LessThan), "less than");
+        assert_eq!(
+            format!("{}", Comparison::LessThanEqual),
+            "less than or equal to"
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn parse_comparison_unreachable() {
+        Comparison::parse(&TokenKind::Add);
     }
 }

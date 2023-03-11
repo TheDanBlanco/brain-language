@@ -27,11 +27,11 @@ impl Index {
         stream: &mut TokenStream,
         target: Expression,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::LeftBracket);
+        stream.expect(TokenKind::LeftBracket)?;
 
         let index = Expression::parse(stream)?;
 
-        stream.expect(TokenKind::RightBracket);
+        stream.expect(TokenKind::RightBracket)?;
 
         Ok(Index::new(index, target))
     }
@@ -135,7 +135,7 @@ impl Evaluate for Index {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::grammar::expressions::map::Map;
+    use crate::lang::{grammar::expressions::map::Map, tokens::token::Token};
 
     use super::*;
 
@@ -373,6 +373,43 @@ mod tests {
         assert_eq!(
             result.unwrap_err().to_string(),
             "[InvalidType]: Index must be a number, not 'a'"
+        );
+    }
+
+    #[test]
+    fn index_accessor_invalid_type() {
+        let context = &mut Context::new();
+        let index = Index::new(
+            Expression::new_literal(Value::Number(0)),
+            Expression::new_literal(Value::Null),
+        );
+
+        let result = index.evaluate(context);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "[InvalidType]: Cannot index into null"
+        );
+    }
+
+    #[test]
+    fn parse_index_accessor() {
+        let expression = Expression::new_identifier("a".to_string());
+
+        let tokens = vec![
+            Token::new(0, 0, TokenKind::LeftBracket),
+            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0, 0, TokenKind::RightBracket),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Index::parse(stream, expression.clone());
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Index::new(Expression::new_literal(Value::Number(0)), expression)
         );
     }
 }

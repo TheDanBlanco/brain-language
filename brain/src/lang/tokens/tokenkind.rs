@@ -5,6 +5,7 @@ use crate::lang::grammar::error::{Error, ErrorKind};
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
     None,
+    Illegal,
     Continue,
     Semicolon,
     Comma,
@@ -65,6 +66,7 @@ impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::None => write!(f, "Token::None"),
+            Self::Illegal => write!(f, "Token::Illegal"),
             Self::Continue => write!(f, "Token::Continue"),
             Self::Semicolon => write!(f, "Token::Semicolon"),
             Self::Comma => write!(f, "Token::Comma"),
@@ -107,5 +109,152 @@ impl fmt::Display for TokenKind {
             Self::String(string) => write!(f, "Token::String({string})"),
             Self::Number(number) => write!(f, "Token::Number({number})"),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn get_identifier() {
+        let token = TokenKind::Identifier("test".to_string());
+
+        let identifier = token.get_identifier();
+
+        assert!(identifier.is_ok());
+        assert_eq!(identifier.unwrap(), "test".to_string())
+    }
+
+    #[test]
+    fn get_identifier_not_identifier() {
+        let token = TokenKind::Let;
+
+        let identifier = token.get_identifier();
+
+        assert!(identifier.is_err());
+        assert_eq!(
+            identifier.err().unwrap().to_string(),
+            "[UnexpectedToken]: Expected Token::Identifier, found Token::Let".to_string(),
+        )
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(format!("{}", TokenKind::None), "Token::None".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::Illegal),
+            "Token::Illegal".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::Continue),
+            "Token::Continue".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::Semicolon),
+            "Token::Semicolon".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::Comma), "Token::Comma".to_string());
+        assert_eq!(format!("{}", TokenKind::Colon), "Token::Colon".to_string());
+        assert_eq!(format!("{}", TokenKind::Dot), "Token::Dot".to_string());
+        assert_eq!(format!("{}", TokenKind::Break), "Token::Break".to_string());
+        assert_eq!(format!("{}", TokenKind::Eof), "Token::EoF".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::Return),
+            "Token::Return".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::Let), "Token::Let".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::Assign),
+            "Token::Assign".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::For), "Token::For".to_string());
+        assert_eq!(format!("{}", TokenKind::In), "Token::In".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::Function),
+            "Token::Function".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::Loop), "Token::Loop".to_string());
+        assert_eq!(format!("{}", TokenKind::True), "Token::True".to_string());
+        assert_eq!(format!("{}", TokenKind::False), "Token::False".to_string());
+        assert_eq!(format!("{}", TokenKind::Null), "Token::Null".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::LeftBrace),
+            "Token::LeftBrace".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::RightBrace),
+            "Token::RightBrace".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::LeftParen),
+            "Token::LeftParen".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::RightParen),
+            "Token::RightParen".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::LeftBracket),
+            "Token::LeftBracket".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::RightBracket),
+            "Token::RightBracket".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::Add), "Token::Add".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::Subtract),
+            "Token::Subtract".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::Multiply),
+            "Token::Multiply".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::Divide),
+            "Token::Divide".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::Modulo),
+            "Token::Modulo".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::And), "Token::And".to_string());
+        assert_eq!(format!("{}", TokenKind::Or), "Token::Or".to_string());
+        assert_eq!(format!("{}", TokenKind::Equal), "Token::Equal".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::NotEqual),
+            "Token::NotEqual".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::GreaterThan),
+            "Token::GreaterThan".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::GreaterThanEqual),
+            "Token::GreaterThanEqual".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::LessThan),
+            "Token::LessThan".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::LessThanEqual),
+            "Token::LessThanEqual".to_string()
+        );
+        assert_eq!(format!("{}", TokenKind::If), "Token::If".to_string());
+        assert_eq!(format!("{}", TokenKind::Else), "Token::Else".to_string());
+        assert_eq!(
+            format!("{}", TokenKind::Identifier("a".to_string())),
+            "Token::Identifier(a)".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::String("b".to_string())),
+            "Token::String(b)".to_string()
+        );
+        assert_eq!(
+            format!("{}", TokenKind::Number(0)),
+            "Token::Number(0)".to_string()
+        );
     }
 }

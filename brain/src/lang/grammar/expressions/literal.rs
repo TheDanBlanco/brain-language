@@ -49,7 +49,9 @@ impl Parse for Literal {
             ));
         }
 
-        let literal = match &next.unwrap().token {
+        let token = &next.unwrap().token;
+
+        let literal = match token {
             TokenKind::Number(number) => Self::new(Value::Number(*number)),
             TokenKind::String(string) => Self::new(Value::String(string.to_string())),
             TokenKind::True => Self::new(Value::Boolean(true)),
@@ -58,7 +60,7 @@ impl Parse for Literal {
             _ => {
                 return Err(Error::new(
                     ErrorKind::UnexpectedToken,
-                    format!("Expected literal, {:#?}", next.unwrap()),
+                    format!("Expected literal, found {token}"),
                 ))
             }
         };
@@ -71,7 +73,10 @@ impl Parse for Literal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lang::grammar::{statements::Statement, value::Value};
+    use crate::lang::{
+        grammar::{statements::Statement, value::Value},
+        tokens::token::Token,
+    };
 
     #[test]
     fn create_new_number_literal() {
@@ -169,6 +174,99 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Value::new_function(vec![], Statement::new_break()),
+        );
+    }
+
+    #[test]
+    fn parse_literal_string() {
+        let tokens = vec![Token::new(0, 0, TokenKind::String("a".to_string()))];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Literal::new(Value::String("a".to_string()))
+        );
+    }
+
+    #[test]
+    fn parse_literal_number() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Number(0))];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Literal::new(Value::Number(0)));
+    }
+
+    #[test]
+    fn parse_literal_null() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Null)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Literal::new(Value::Null));
+    }
+
+    #[test]
+    fn parse_literal_bool_true() {
+        let tokens = vec![Token::new(0, 0, TokenKind::True)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Literal::new(Value::Boolean(true)));
+    }
+
+    #[test]
+    fn parse_literal_bool_false() {
+        let tokens = vec![Token::new(0, 0, TokenKind::False)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Literal::new(Value::Boolean(false)));
+    }
+
+    #[test]
+    fn parse_literal_eof() {
+        let tokens = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected literal, found End of File".to_string()
+        );
+    }
+
+    #[test]
+    fn parse_literal_not_primitive() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Add)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Literal::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedToken]: Expected literal, found Token::Add".to_string()
         );
     }
 }

@@ -23,15 +23,29 @@ impl Parse for Continue {
 
 #[cfg(test)]
 mod test {
+    use crate::lang::tokens::token::Token;
+
     use super::*;
 
     #[test]
-    fn resolve_break() {
+    fn resolve_continue() {
         let context = &mut Context::new();
         let r#break = Continue {};
 
         let result = r#break.resolve(context);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Output::Continue,)
+    }
+
+    #[test]
+    fn parse_continue() {
+        let tokens = vec![Token::new(0, 0, TokenKind::Continue)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Continue::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Continue);
     }
 }
