@@ -1,17 +1,12 @@
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
 use self::{
-    context::Context,
-    error::{Error, ErrorKind},
-    expressions::Expression,
-    output::Output,
-    statements::Statement,
-    util::disambiguate_reassignment,
-    value::Value,
+    context::Context, expressions::Expression, output::Output, statements::Statement,
+    util::disambiguate_reassignment, value::Value,
 };
 
-use super::tokens::{stream::TokenStream, tokenkind::TokenKind};
-
 pub mod context;
-pub mod error;
 pub mod expressions;
 pub mod output;
 pub mod statements;
@@ -100,7 +95,7 @@ impl Nodes {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::tokens::token::Token;
+    use brain_token::token::Token;
 
     use super::*;
 

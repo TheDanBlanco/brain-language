@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, value::Value, Evaluate, Match, Parse},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, value::Value, Evaluate, Match, Parse};
 
 use self::{field::Field, index::Index};
 

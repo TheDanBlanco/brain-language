@@ -1,12 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        value::Value,
-        Match, Parse,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, value::Value, Match, Parse};
 
 use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical};
 
@@ -143,7 +138,8 @@ impl Match for Operator {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::tokens::token::Token;
+
+    use brain_token::token::Token;
 
     use super::*;
 

@@ -1,4 +1,4 @@
-use crate::lang::tokens::stream::TokenStream;
+use brain_token::stream::TokenStream;
 
 pub struct Lexer {
     input: String,

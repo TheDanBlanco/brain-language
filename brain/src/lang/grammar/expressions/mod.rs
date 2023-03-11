@@ -1,17 +1,14 @@
-use crate::lang::{
-    grammar::{context::Context, value::Value},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, value::Value};
 
 use self::{
     accessors::Accessor, binary::Binary, collection::Collection, functioncall::FunctionCall,
     identifier::Identifier, literal::Literal, map::Map, operator::Operator,
 };
 
-use super::{
-    error::{Error, ErrorKind},
-    Evaluate, Match, Parse,
-};
+use super::{Evaluate, Match, Parse};
 
 pub mod accessors;
 pub mod binary;
@@ -144,12 +141,11 @@ impl Parse for Expression {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{
-            expressions::accessors::{field::Field, index::Index},
-            statements::Statement,
-        },
-        tokens::token::Token,
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{
+        expressions::accessors::{field::Field, index::Index},
+        statements::Statement,
     };
 
     use super::*;

@@ -1,4 +1,4 @@
-use crate::lang::tokens::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 pub fn disambiguate_reassignment(stream: &mut TokenStream) -> bool {
     if let (Some(next), Some(following)) = stream.double_peek() {
@@ -13,7 +13,7 @@ pub fn disambiguate_reassignment(stream: &mut TokenStream) -> bool {
 
 #[cfg(test)]
 mod test {
-    use crate::lang::tokens::token::Token;
+    use brain_token::token::Token;
 
     use super::*;
 

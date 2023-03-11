@@ -1,13 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        output::Output,
-        value::Value,
-        Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, output::Output, value::Value, Parse, Resolve};
 
 use super::Statement;
 
@@ -79,13 +73,12 @@ impl Parse for FunctionDefinition {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{
-            expressions::{operator::Operator, Expression},
-            statements::r#return::Return,
-            Node,
-        },
-        tokens::token::Token,
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{
+        expressions::{operator::Operator, Expression},
+        statements::r#return::Return,
+        Node,
     };
 
     use super::*;

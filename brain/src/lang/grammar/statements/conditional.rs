@@ -1,13 +1,9 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        expressions::Expression,
-        output::Output,
-        value::Value,
-        Evaluate, Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{
+    context::Context, expressions::Expression, output::Output, value::Value, Evaluate, Parse,
+    Resolve,
 };
 
 use super::Statement;
@@ -87,10 +83,9 @@ impl Parse for Conditional {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{expressions::operator::Operator, Node},
-        tokens::token::Token,
-    };
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{expressions::operator::Operator, Node};
 
     use super::*;
 

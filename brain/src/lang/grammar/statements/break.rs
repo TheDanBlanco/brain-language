@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, output::Output, Parse, Resolve},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, output::Output, Parse, Resolve};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Break;
@@ -23,7 +22,8 @@ impl Parse for Break {
 
 #[cfg(test)]
 mod test {
-    use crate::lang::tokens::token::Token;
+
+    use brain_token::token::Token;
 
     use super::*;
 

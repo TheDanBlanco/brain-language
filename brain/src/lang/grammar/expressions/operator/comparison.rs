@@ -1,13 +1,9 @@
 use core::fmt;
 
-use crate::lang::{
-    grammar::{
-        error::{Error, ErrorKind},
-        value::Value,
-        Match,
-    },
-    tokens::tokenkind::TokenKind,
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::tokenkind::TokenKind;
+
+use crate::lang::grammar::{value::Value, Match};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Comparison {

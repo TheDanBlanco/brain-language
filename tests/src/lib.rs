@@ -1,11 +1,24 @@
-// #[derive(Brain)]
-// enum Token {
-//     #[token("let")]
-//     Let,
+use brain_attribute::Brain;
 
-//     #[token("assign")]
-//     Assign,
+#[derive(Brain)]
+enum Token {
+    #[token("let")]
+    Let,
 
-//     #[regex(["a-zA-z"])]
-//     Identifier(String),
-// }
+    #[token("assign")]
+    Assign,
+
+    #[regex(["a-zA-z"])]
+    Identifier(String),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_works() {
+        let token = Token::Let;
+        token.lex().unwrap();
+    }
+}

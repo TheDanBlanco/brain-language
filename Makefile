@@ -10,4 +10,5 @@ coverage:
 	open ./target/coverage/html/index.html
 
 bootstrap:
+	rustup component add llvm-tools-preview
 	cargo install grcov

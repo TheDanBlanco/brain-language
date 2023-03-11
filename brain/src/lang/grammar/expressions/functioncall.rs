@@ -1,12 +1,8 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        output::Output,
-        value::Value,
-        Evaluate, Match, Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{
+    context::Context, output::Output, value::Value, Evaluate, Match, Parse, Resolve,
 };
 
 use super::{binary::Binary, identifier::Identifier, operator::Operator, Expression};
@@ -118,7 +114,9 @@ impl Evaluate for FunctionCall {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{grammar::statements::Statement, tokens::token::Token};
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::statements::Statement;
 
     use super::*;
 

@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, output::Output, Parse, Resolve},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, output::Output, Parse, Resolve};
 
 use super::Statement;
 
@@ -42,7 +41,9 @@ impl Parse for Loop {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{grammar::Node, tokens::token::Token};
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::Node;
 
     use super::*;
 

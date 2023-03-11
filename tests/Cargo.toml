@@ -8,4 +8,4 @@ release = { lto = true }
 bench = { lto = true }
 
 [dependencies]
-brain_attribute = { path = "../brain_attribute" }
+brain-attribute = { path = "../brain-attribute" }

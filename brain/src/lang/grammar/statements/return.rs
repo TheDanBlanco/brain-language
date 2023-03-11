@@ -1,8 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context, expressions::Expression, output::Output, Evaluate, Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{
+    context::Context, expressions::Expression, output::Output, Evaluate, Parse, Resolve,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -36,7 +35,9 @@ impl Parse for Return {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{grammar::value::Value, tokens::token::Token};
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::value::Value;
 
     use super::*;
 

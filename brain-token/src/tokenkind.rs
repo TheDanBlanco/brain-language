@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::lang::grammar::error::{Error, ErrorKind};
+use brain_errors::{Error, ErrorKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {

@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, value::Value, Evaluate, Parse},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
 
 use super::Expression;
 
@@ -53,7 +52,8 @@ impl Parse for Collection {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::tokens::token::Token;
+
+    use brain_token::token::Token;
 
     use super::*;
 

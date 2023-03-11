@@ -1,6 +1,8 @@
-use crate::lang::{
-    grammar::{context::Context, expressions::Expression, output::Output, Node, Resolve},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{
+    context::Context, expressions::Expression, output::Output, Node, Resolve,
 };
 
 use self::{
@@ -9,10 +11,7 @@ use self::{
     r#loop::Loop, r#return::Return, reassignment::Reassignment,
 };
 
-use super::{
-    error::{Error, ErrorKind},
-    Match, Parse,
-};
+use super::{Match, Parse};
 
 pub mod assignment;
 pub mod block;
@@ -162,10 +161,9 @@ impl Match for Statement {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{expressions::operator::Operator, value::Value},
-        tokens::token::Token,
-    };
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{expressions::operator::Operator, value::Value};
 
     use super::*;
 

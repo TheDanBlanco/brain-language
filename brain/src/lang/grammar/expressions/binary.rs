@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, value::Value, Evaluate, Parse},
-    tokens::stream::TokenStream,
-};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
 
 use super::{operator::Operator, Expression};
 
@@ -50,7 +49,7 @@ impl Evaluate for Binary {
 
 #[cfg(test)]
 mod test {
-    use crate::lang::tokens::{token::Token, tokenkind::TokenKind};
+    use brain_token::{token::Token, tokenkind::TokenKind};
 
     use super::*;
 

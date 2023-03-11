@@ -1,14 +1,9 @@
 use std::collections::BTreeMap;
 
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        value::Value,
-        Evaluate, Parse,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
 
 use super::Expression;
 
@@ -79,11 +74,10 @@ impl Parse for Map {
 
 #[cfg(test)]
 mod tests {
+    use brain_token::token::Token;
+
     use super::*;
-    use crate::lang::{
-        grammar::{statements::Statement, value::Value},
-        tokens::token::Token,
-    };
+    use crate::lang::grammar::{statements::Statement, value::Value};
 
     #[test]
     fn create_new_map() {

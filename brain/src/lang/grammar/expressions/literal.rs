@@ -1,12 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        value::Value,
-        Evaluate, Match, Parse,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, value::Value, Evaluate, Match, Parse};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Literal {
@@ -72,11 +67,10 @@ impl Parse for Literal {
 // tests
 #[cfg(test)]
 mod tests {
+    use brain_token::token::Token;
+
     use super::*;
-    use crate::lang::{
-        grammar::{statements::Statement, value::Value},
-        tokens::token::Token,
-    };
+    use crate::lang::grammar::{statements::Statement, value::Value};
 
     #[test]
     fn create_new_number_literal() {

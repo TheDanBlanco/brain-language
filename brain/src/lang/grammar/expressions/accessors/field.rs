@@ -1,13 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        expressions::Expression,
-        value::Value,
-        Evaluate,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_errors::{Error, ErrorKind};
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+
+use crate::lang::grammar::{context::Context, expressions::Expression, value::Value, Evaluate};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Field {
@@ -80,7 +74,9 @@ impl Evaluate for Field {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{grammar::expressions::map::Map, tokens::token::Token};
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::expressions::map::Map;
 
     use super::*;
 

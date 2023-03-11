@@ -1,4 +1,4 @@
-use crate::lang::grammar::error::{Error, ErrorKind};
+use brain_errors::{Error, ErrorKind};
 
 use super::{token::Token, tokenkind::TokenKind};
 
