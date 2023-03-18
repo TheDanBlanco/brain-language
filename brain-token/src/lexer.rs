@@ -116,3 +116,120 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::attributes::{Literal, Regex as RegexAttribute};
+
+    use super::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    enum TestToken {
+        Literal,
+        Regex,
+    }
+
+    #[test]
+    fn new() {
+        let lexer = Lexer::<TestToken>::new();
+
+        assert_eq!(lexer.tokens, TokenStream::<TestToken>::new());
+        assert_eq!(lexer.start, 0);
+        assert_eq!(lexer.current, 0);
+        assert_eq!(lexer.input, "".to_string());
+        assert_eq!(lexer.attributes, vec![]);
+    }
+
+    #[test]
+    fn add_attribute() {
+        let mut lexer = Lexer::<TestToken>::new();
+        let attribute = Attribute::Literal(Literal::new(TestToken::Literal, "test".to_string()));
+
+        lexer.add_attribute(attribute.clone());
+
+        assert_eq!(lexer.attributes, vec![attribute]);
+    }
+
+    #[test]
+    fn lex_literal() {
+        let mut lexer = Lexer::<TestToken>::new();
+        let attribute = Attribute::Literal(Literal::new(TestToken::Literal, "test".to_string()));
+        lexer.add_attribute(attribute);
+
+        let tokens = lexer.lex("test".to_string()).unwrap();
+
+        assert_eq!(
+            tokens,
+            TokenStream::<TestToken>::from_vec(vec![Token::new(
+                0..4,
+                TestToken::Literal,
+                Some("test".to_string())
+            )])
+        );
+    }
+
+    #[test]
+    fn lex_regex() {
+        let mut lexer = Lexer::<TestToken>::new();
+        let attribute = Attribute::Regex(RegexAttribute::new(
+            TestToken::Regex,
+            r"test".to_string(),
+        ));
+        lexer.add_attribute(attribute);
+
+        let tokens = lexer.lex("test".to_string()).unwrap();
+
+        assert_eq!(
+            tokens,
+            TokenStream::<TestToken>::from_vec(vec![Token::new(
+                0..4,
+                TestToken::Regex,
+                Some("test".to_string())
+            )])
+        );
+    }
+
+    #[test]
+    fn lex_multiple() {
+        let mut lexer = Lexer::<TestToken>::new();
+        let attribute = Attribute::Literal(Literal::new(TestToken::Literal, "a".to_string()));
+        lexer.add_attribute(attribute);
+        let attribute = Attribute::Regex(RegexAttribute::new(
+            TestToken::Regex,
+            r"string".to_string(),
+        ));
+        lexer.add_attribute(attribute);
+
+        let tokens = lexer.lex("a string".to_string()).unwrap();
+
+        assert_eq!(
+            tokens,
+            TokenStream::<TestToken>::from_vec(vec![
+                Token::new(0..1, TestToken::Literal, Some("a".to_string())),
+                Token::new(2..8, TestToken::Regex, Some("string".to_string()))
+            ])
+        );
+    }
+
+    #[test]
+    fn lex_not_found() {
+        let mut lexer = Lexer::<TestToken>::new();
+        let attribute = Attribute::Literal(Literal::new(TestToken::Literal, "a".to_string()));
+        lexer.add_attribute(attribute);
+
+        let result = lexer.lex("b".to_string());
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn skip_whitespace() {
+        let mut lexer = Lexer::<TestToken>::new();
+        let attribute = Attribute::Literal(Literal::new(TestToken::Literal, "a".to_string()));
+        lexer.add_attribute(attribute);
+
+        lexer.lex("a ".to_string()).unwrap();
+
+        assert_eq!(lexer.current, 2);
+    }
+}
