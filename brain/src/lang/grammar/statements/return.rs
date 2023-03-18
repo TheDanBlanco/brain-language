@@ -1,7 +1,8 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
 use crate::lang::grammar::{
-    context::Context, expressions::Expression, output::Output, Evaluate, Parse, Resolve,
+    context::Context, expressions::Expression, output::Output, token::BrainToken, Evaluate, Parse,
+    Resolve,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -22,12 +23,12 @@ impl Resolve for Return {
 }
 
 impl Parse for Return {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Return)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::Return)?;
 
         let expression = Expression::parse(stream)?;
 
-        stream.skip_if(TokenKind::Semicolon);
+        stream.skip_if(BrainToken::Semicolon);
 
         Ok(Self::new(expression))
     }
@@ -67,8 +68,8 @@ mod tests {
     #[test]
     fn parse_return() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Return),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..6, BrainToken::Return, None),
+            Token::new(7..8, BrainToken::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

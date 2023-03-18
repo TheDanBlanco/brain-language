@@ -18,12 +18,12 @@ enum BrainToken {
     Semicolon,
 
     #[regex(r#""[a-zA-Z0-9_-]+""#)]
-    String
+    String,
 }
 
 #[cfg(test)]
 mod tests {
-    use brain_token::{token::Token, stream::TokenStream};
+    use brain_token::{stream::TokenStream, token::Token};
 
     use super::*;
 

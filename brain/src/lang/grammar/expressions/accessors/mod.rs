@@ -1,6 +1,8 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, value::Value, Evaluate, Match, Parse};
+use crate::lang::grammar::{
+    context::Context, token::BrainToken, value::Value, Evaluate, Match, Parse,
+};
 
 use self::{field::Field, index::Index};
 
@@ -25,7 +27,7 @@ impl Accessor {
     }
 
     pub fn parse(
-        stream: &mut TokenStream<TokenKind>,
+        stream: &mut TokenStream<BrainToken>,
         initial: Option<Expression>,
     ) -> Result<Expression, Box<dyn std::error::Error>> {
         let mut expression;
@@ -36,17 +38,17 @@ impl Accessor {
             while let Some(next) = stream.peek() {
                 let token = &next.token;
 
-                if !Self::matches(token) || stream.check(TokenKind::LeftParen) {
+                if !Self::matches(token) || stream.check(BrainToken::LeftParen) {
                     break;
                 }
 
-                if stream.check(TokenKind::LeftBracket) {
+                if stream.check(BrainToken::LeftBracket) {
                     let index = Index::parse(stream, expression)?;
                     expression = Expression::Accessor(Accessor::Index(index));
                     continue;
                 }
 
-                if stream.check(TokenKind::LeftParen) {}
+                if stream.check(BrainToken::LeftParen) {}
 
                 let field = Field::parse(stream, expression)?;
                 expression = Expression::Accessor(Accessor::Field(field))
@@ -70,8 +72,8 @@ impl Evaluate for Accessor {
 }
 
 impl Match for Accessor {
-    fn matches(token: &TokenKind) -> bool {
-        matches!(token, TokenKind::Dot | TokenKind::LeftBracket)
+    fn matches(token: &BrainToken) -> bool {
+        matches!(token, BrainToken::Dot | BrainToken::LeftBracket)
     }
 }
 
@@ -132,9 +134,9 @@ mod tests {
     // #[test]
     // fn parse_accessor_is_collection() {
     //     let tokens = vec![
-    //         Token::new(0, 0, TokenKind::LeftBracket),
-    //         Token::new(0, 0, TokenKind::Number(0)),
-    //         Token::new(0, 0, TokenKind::RightBracket),
+    //         Token::new(0, 0, BrainToken::LeftBracket),
+    //         Token::new(0, 0, BrainToken::Number(0)),
+    //         Token::new(0, 0, BrainToken::RightBracket),
     //     ];
 
     //     let stream = &mut TokenStream::from_vec(tokens);
@@ -154,9 +156,9 @@ mod tests {
     //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
 
     //     let tokens = vec![
-    //         Token::new(0, 0, TokenKind::LeftBracket),
-    //         Token::new(0, 0, TokenKind::Number(0)),
-    //         Token::new(0, 0, TokenKind::RightBracket),
+    //         Token::new(0, 0, BrainToken::LeftBracket),
+    //         Token::new(0, 0, BrainToken::Number(0)),
+    //         Token::new(0, 0, BrainToken::RightBracket),
     //     ];
 
     //     let stream = &mut TokenStream::from_vec(tokens);
@@ -179,11 +181,11 @@ mod tests {
     //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
 
     //     let tokens = vec![
-    //         Token::new(0, 0, TokenKind::LeftBracket),
-    //         Token::new(0, 0, TokenKind::Identifier("a".to_string())),
-    //         Token::new(0, 0, TokenKind::LeftParen),
-    //         Token::new(0, 0, TokenKind::RightParen),
-    //         Token::new(0, 0, TokenKind::RightBracket),
+    //         Token::new(0, 0, BrainToken::LeftBracket),
+    //         Token::new(0, 0, BrainToken::Identifier("a".to_string())),
+    //         Token::new(0, 0, BrainToken::LeftParen),
+    //         Token::new(0, 0, BrainToken::RightParen),
+    //         Token::new(0, 0, BrainToken::RightBracket),
     //     ];
 
     //     let stream = &mut TokenStream::from_vec(tokens);
@@ -205,8 +207,8 @@ mod tests {
     //     let expression = Expression::new_map(vec![]);
 
     //     let tokens = vec![
-    //         Token::new(0, 0, TokenKind::Dot),
-    //         Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+    //         Token::new(0, 0, BrainToken::Dot),
+    //         Token::new(0, 0, BrainToken::Identifier("a".to_string())),
     //     ];
 
     //     let stream = &mut TokenStream::from_vec(tokens);
@@ -224,7 +226,7 @@ mod tests {
     // fn parse_accessor_is_not_accessor() {
     //     let expression = Expression::new_map(vec![]);
 
-    //     let tokens = vec![Token::new(0, 0, TokenKind::Semicolon)];
+    //     let tokens = vec![Token::new(0, 0, BrainToken::Semicolon)];
 
     //     let stream = &mut TokenStream::from_vec(tokens);
 

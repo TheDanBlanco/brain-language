@@ -1,9 +1,8 @@
 use core::fmt;
 
 use brain_error::{Error, ErrorKind};
-use brain_token::tokenkind::TokenKind;
 
-use crate::lang::grammar::{value::Value, Match};
+use crate::lang::grammar::{token::BrainToken, value::Value, Match};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Comparison {
@@ -80,29 +79,29 @@ impl Comparison {
         }
     }
 
-    pub fn parse(token: &TokenKind) -> Self {
+    pub fn parse(token: &BrainToken) -> Self {
         match token {
-            TokenKind::Equal => Comparison::Equal,
-            TokenKind::NotEqual => Comparison::NotEqual,
-            TokenKind::GreaterThan => Comparison::GreaterThan,
-            TokenKind::GreaterThanEqual => Comparison::GreaterThanEqual,
-            TokenKind::LessThan => Comparison::LessThan,
-            TokenKind::LessThanEqual => Comparison::LessThanEqual,
+            BrainToken::Equal => Comparison::Equal,
+            BrainToken::NotEqual => Comparison::NotEqual,
+            BrainToken::GreaterThan => Comparison::GreaterThan,
+            BrainToken::GreaterThanEqual => Comparison::GreaterThanEqual,
+            BrainToken::LessThan => Comparison::LessThan,
+            BrainToken::LessThanEqual => Comparison::LessThanEqual,
             _ => unreachable!(),
         }
     }
 }
 
 impl Match for Comparison {
-    fn matches(token: &TokenKind) -> bool {
+    fn matches(token: &BrainToken) -> bool {
         matches!(
             token,
-            TokenKind::Equal
-                | TokenKind::NotEqual
-                | TokenKind::GreaterThan
-                | TokenKind::GreaterThanEqual
-                | TokenKind::LessThan
-                | TokenKind::LessThanEqual
+            BrainToken::Equal
+                | BrainToken::NotEqual
+                | BrainToken::GreaterThan
+                | BrainToken::GreaterThanEqual
+                | BrainToken::LessThan
+                | BrainToken::LessThanEqual
         )
     }
 }
@@ -240,37 +239,37 @@ mod tests {
 
     #[test]
     fn matches_comparison() {
-        assert!(Comparison::matches(&TokenKind::Equal));
-        assert!(Comparison::matches(&TokenKind::NotEqual));
-        assert!(Comparison::matches(&TokenKind::GreaterThan));
-        assert!(Comparison::matches(&TokenKind::GreaterThanEqual));
-        assert!(Comparison::matches(&TokenKind::LessThan));
-        assert!(Comparison::matches(&TokenKind::LessThanEqual));
+        assert!(Comparison::matches(&BrainToken::Equal));
+        assert!(Comparison::matches(&BrainToken::NotEqual));
+        assert!(Comparison::matches(&BrainToken::GreaterThan));
+        assert!(Comparison::matches(&BrainToken::GreaterThanEqual));
+        assert!(Comparison::matches(&BrainToken::LessThan));
+        assert!(Comparison::matches(&BrainToken::LessThanEqual));
 
-        assert!(!Comparison::matches(&TokenKind::Add))
+        assert!(!Comparison::matches(&BrainToken::Plus))
     }
 
     #[test]
     fn parse_comparison() {
-        assert_eq!(Comparison::parse(&TokenKind::Equal), Comparison::Equal);
+        assert_eq!(Comparison::parse(&BrainToken::Equal), Comparison::Equal);
         assert_eq!(
-            Comparison::parse(&TokenKind::NotEqual),
+            Comparison::parse(&BrainToken::NotEqual),
             Comparison::NotEqual
         );
         assert_eq!(
-            Comparison::parse(&TokenKind::GreaterThan),
+            Comparison::parse(&BrainToken::GreaterThan),
             Comparison::GreaterThan
         );
         assert_eq!(
-            Comparison::parse(&TokenKind::GreaterThanEqual),
+            Comparison::parse(&BrainToken::GreaterThanEqual),
             Comparison::GreaterThanEqual
         );
         assert_eq!(
-            Comparison::parse(&TokenKind::LessThan),
+            Comparison::parse(&BrainToken::LessThan),
             Comparison::LessThan
         );
         assert_eq!(
-            Comparison::parse(&TokenKind::LessThanEqual),
+            Comparison::parse(&BrainToken::LessThanEqual),
             Comparison::LessThanEqual
         );
     }
@@ -294,6 +293,6 @@ mod tests {
     #[test]
     #[should_panic]
     fn parse_comparison_unreachable() {
-        Comparison::parse(&TokenKind::Add);
+        Comparison::parse(&BrainToken::Plus);
     }
 }

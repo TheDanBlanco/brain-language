@@ -1,7 +1,9 @@
 use brain_error::{Error, ErrorKind};
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, expressions::Expression, value::Value, Evaluate};
+use crate::lang::grammar::{
+    context::Context, expressions::Expression, token::BrainToken, value::Value, Evaluate,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Field {
@@ -18,10 +20,10 @@ impl Field {
     }
 
     pub fn parse(
-        stream: &mut TokenStream<TokenKind>,
+        stream: &mut TokenStream<BrainToken>,
         target: Expression,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Dot)?;
+        stream.expect(BrainToken::Dot)?;
         let next = stream.next();
 
         if next.is_none() {
@@ -31,15 +33,15 @@ impl Field {
             ));
         }
 
-        let token = &next.unwrap().token;
+        let token = &next.unwrap();
 
-        if let TokenKind::Identifier(property) = token {
-            return Ok(Self::new(property.to_string(), target));
+        if let BrainToken::Identifier = token.token {
+            return Ok(Self::new(token.data.clone().unwrap(), target));
         }
 
         Err(Error::new(
             ErrorKind::UnexpectedToken,
-            format!("Expected identifier, found {token}"),
+            format!("Expected identifier, found {}", token.token),
         ))
     }
 }
@@ -168,8 +170,8 @@ mod tests {
         let expression = Expression::new_map(vec![]);
 
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Dot),
-            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
+            Token::new(0..1, BrainToken::Dot, None),
+            Token::new(1..2, BrainToken::Identifier, Some("a".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -184,7 +186,7 @@ mod tests {
     fn parse_field_accessor_eof() {
         let expression = Expression::new_map(vec![]);
 
-        let tokens = vec![Token::new(0, 0, TokenKind::Dot)];
+        let tokens = vec![Token::new(0..1, BrainToken::Dot, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -202,8 +204,8 @@ mod tests {
         let expression = Expression::new_map(vec![]);
 
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Dot),
-            Token::new(0, 0, TokenKind::Null),
+            Token::new(0..1, BrainToken::Dot, None),
+            Token::new(1..2, BrainToken::Null, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

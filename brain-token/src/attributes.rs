@@ -55,13 +55,25 @@ mod tests {
     fn new_literal() {
         let attribute = Attribute::new(Test::A, "token".to_string(), "test".to_string());
 
-        assert_eq!(attribute, Attribute::Literal(Literal { token: Test::A, literal: "test".to_string() }));
+        assert_eq!(
+            attribute,
+            Attribute::Literal(Literal {
+                token: Test::A,
+                literal: "test".to_string()
+            })
+        );
     }
 
     #[test]
     fn new_regex() {
         let attribute = Attribute::new(Test::B, "regex".to_string(), "[a-z]".to_string());
 
-        assert_eq!(attribute, Attribute::Regex(Regex { token: Test::B, regex: "[a-z]".to_string() }));
+        assert_eq!(
+            attribute,
+            Attribute::Regex(Regex {
+                token: Test::B,
+                regex: "[a-z]".to_string()
+            })
+        );
     }
 }

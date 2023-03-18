@@ -1,15 +1,16 @@
 use brain_error::{Error, ErrorKind};
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
 use self::{
     context::Context, expressions::Expression, output::Output, statements::Statement,
-    util::disambiguate_reassignment, value::Value,
+    token::BrainToken, util::disambiguate_reassignment, value::Value,
 };
 
 pub mod context;
 pub mod expressions;
 pub mod output;
 pub mod statements;
+pub mod token;
 pub mod util;
 pub mod value;
 
@@ -25,11 +26,11 @@ pub trait Parse
 where
     Self: Sized,
 {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>>;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>>;
 }
 
 pub trait Match {
-    fn matches(token: &TokenKind) -> bool;
+    fn matches(token: &BrainToken) -> bool;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -49,7 +50,7 @@ impl Node {
 }
 
 impl Parse for Node {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         let next = stream.peek();
 
         if next.is_none() {
@@ -117,7 +118,7 @@ mod tests {
 
     #[test]
     fn parse_node_statement() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Break)];
+        let tokens = vec![Token::new(0..4, BrainToken::Break, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -129,13 +130,17 @@ mod tests {
 
     #[test]
     fn parse_node_expression() {
-        let tokens = vec![Token::new(0, 0, TokenKind::String("a".to_string()))];
+        let tokens = vec![Token::new(
+            0..1,
+            BrainToken::String,
+            Some(r#""a""#.to_string()),
+        )];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let result = Node::parse(stream);
 
-        assert!(result.is_ok());
+        // assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
             Node::Expression(Expression::new_literal(Value::String("a".to_string())))

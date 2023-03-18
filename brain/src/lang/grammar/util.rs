@@ -1,9 +1,11 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-pub fn disambiguate_reassignment(stream: &mut TokenStream<TokenKind>) -> bool {
+use super::token::BrainToken;
+
+pub fn disambiguate_reassignment(stream: &mut TokenStream<BrainToken>) -> bool {
     if let (Some(next), Some(following)) = stream.double_peek() {
         return match (&next.token, &following.token) {
-            (TokenKind::Identifier(_), TokenKind::Assign) => true,
+            (BrainToken::Identifier, BrainToken::Assign) => true,
             _ => false,
         };
     }
@@ -20,9 +22,8 @@ mod test {
     #[test]
     fn reassignment() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(2..3, BrainToken::Assign, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -33,9 +34,8 @@ mod test {
     #[test]
     fn equality() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
-            Token::new(0, 0, TokenKind::Equal),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(2..3, BrainToken::Equal, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

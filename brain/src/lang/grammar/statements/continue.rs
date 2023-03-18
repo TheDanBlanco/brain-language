@@ -1,6 +1,6 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, output::Output, Parse, Resolve};
+use crate::lang::grammar::{context::Context, output::Output, token::BrainToken, Parse, Resolve};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Continue;
@@ -12,9 +12,9 @@ impl Resolve for Continue {
 }
 
 impl Parse for Continue {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Continue, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Continue)?;
-        stream.skip_if(TokenKind::Semicolon);
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Continue, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::Continue)?;
+        stream.skip_if(BrainToken::Semicolon);
 
         Ok(Self)
     }
@@ -39,7 +39,7 @@ mod test {
 
     #[test]
     fn parse_continue() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Continue)];
+        let tokens = vec![Token::new(0..7, BrainToken::Continue, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

@@ -1,8 +1,8 @@
 use brain_error::{Error, ErrorKind};
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
 use crate::lang::grammar::{
-    context::Context, expressions::Expression, value::Value, Evaluate, Parse,
+    context::Context, expressions::Expression, token::BrainToken, value::Value, Evaluate, Parse,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,14 +20,14 @@ impl Index {
     }
 
     pub fn parse(
-        stream: &mut TokenStream<TokenKind>,
+        stream: &mut TokenStream<BrainToken>,
         target: Expression,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::LeftBracket)?;
+        stream.expect(BrainToken::LeftBracket)?;
 
         let index = Expression::parse(stream)?;
 
-        stream.expect(TokenKind::RightBracket)?;
+        stream.expect(BrainToken::RightBracket)?;
 
         Ok(Index::new(index, target))
     }
@@ -395,9 +395,9 @@ mod tests {
         let expression = Expression::new_identifier("a".to_string());
 
         let tokens = vec![
-            Token::new(0, 0, TokenKind::LeftBracket),
-            Token::new(0, 0, TokenKind::Number(0)),
-            Token::new(0, 0, TokenKind::RightBracket),
+            Token::new(0..1, BrainToken::LeftBracket, None),
+            Token::new(1..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(2..3, BrainToken::RightBracket, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

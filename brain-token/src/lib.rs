@@ -1,15 +1,16 @@
 use proc_macro2::TokenStream as ProcTokenStream;
-use quote::{quote};
-use syn::{DeriveInput, Data, Meta, NestedMeta};
+use quote::quote;
+use syn::{Data, DeriveInput, Meta, NestedMeta};
 
-use crate::attributes::{TOKEN, REGEX};
+use crate::attributes::{REGEX, TOKEN};
 
+pub mod attributes;
 pub mod lexer;
 pub mod stream;
 pub mod token;
-pub mod attributes;
 
-const BRAIN_WRONG_ATTRIBUTE_ERROR: &str = "Brain can only be derived for enums with #[token(\"...\")] or #[regex(\"...\")] attributes";
+const BRAIN_WRONG_ATTRIBUTE_ERROR: &str =
+    "Brain can only be derived for enums with #[token(\"...\")] or #[regex(\"...\")] attributes";
 
 pub trait Brain: Sized {
     fn lex(input: String) -> Result<stream::TokenStream<Self>, Box<dyn std::error::Error>>;
@@ -20,7 +21,7 @@ pub fn parse(input: DeriveInput) -> ProcTokenStream {
 
     if let Data::Enum(data) = input.data.clone() {
         let mut attributes = Vec::new();
-        
+
         for variant in data.variants {
             let variant_ident = variant.ident;
             let mut attribute = quote! { None };
@@ -39,7 +40,7 @@ pub fn parse(input: DeriveInput) -> ProcTokenStream {
                     for meta in list.nested {
                         if let NestedMeta::Lit(lit) = meta {
                             if let syn::Lit::Str(lit) = lit {
-                                attribute = quote! { 
+                                attribute = quote! {
                                     lexer.add_attribute(Attribute::new(#ident::#variant_ident, #attr_ident.to_string(), #lit.to_string()));
                                 };
                             } else {
@@ -56,7 +57,7 @@ pub fn parse(input: DeriveInput) -> ProcTokenStream {
 
             attributes.push(attribute);
         }
-    
+
         let expanded = quote! {
             #[automatically_derived]
             use ::brain_token::Brain;

@@ -1,8 +1,9 @@
 use brain_error::{Error, ErrorKind};
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
 use crate::lang::grammar::{
-    context::Context, output::Output, value::Value, Evaluate, Match, Parse, Resolve,
+    context::Context, output::Output, token::BrainToken, value::Value, Evaluate, Match, Parse,
+    Resolve,
 };
 
 use super::{binary::Binary, identifier::Identifier, operator::Operator, Expression};
@@ -22,7 +23,7 @@ impl FunctionCall {
     }
 
     pub fn parse(
-        stream: &mut TokenStream<TokenKind>,
+        stream: &mut TokenStream<BrainToken>,
         initial: Option<Expression>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let identifier = match initial {
@@ -30,11 +31,11 @@ impl FunctionCall {
             None => Expression::Identifier(Identifier::parse(stream)?),
         };
 
-        stream.expect(TokenKind::LeftParen)?;
+        stream.expect(BrainToken::LeftParen)?;
 
         let mut arguments = vec![];
 
-        while !stream.check(TokenKind::RightParen) {
+        while !stream.check(BrainToken::RightParen) {
             let mut expression = Expression::parse(stream)?;
 
             let next = stream.peek();
@@ -55,14 +56,14 @@ impl FunctionCall {
                 expression = Expression::Binary(binary);
             }
 
-            stream.skip_if(TokenKind::Comma);
+            stream.skip_if(BrainToken::Comma);
 
             arguments.push(expression);
         }
 
-        stream.expect(TokenKind::RightParen)?;
+        stream.expect(BrainToken::RightParen)?;
 
-        stream.skip_if(TokenKind::Semicolon);
+        stream.skip_if(BrainToken::Semicolon);
 
         Ok(Self::new(identifier, arguments))
     }
@@ -225,9 +226,9 @@ mod tests {
     #[test]
     fn parse_function_call() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0..3, BrainToken::Identifier, Some("foo".to_string())),
+            Token::new(4..5, BrainToken::LeftParen, None),
+            Token::new(5..6, BrainToken::RightParen, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -246,8 +247,8 @@ mod tests {
         let initial = Expression::new_identifier("foo".to_string());
 
         let tokens = vec![
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0..1, BrainToken::LeftParen, None),
+            Token::new(1..2, BrainToken::RightParen, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -264,12 +265,12 @@ mod tests {
     #[test]
     fn parse_function_call_with_args() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
-            Token::new(0, 0, TokenKind::Comma),
-            Token::new(0, 0, TokenKind::Identifier("b".to_string())),
-            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0..3, BrainToken::Identifier, Some("foo".to_string())),
+            Token::new(4..5, BrainToken::LeftParen, None),
+            Token::new(5..6, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(7..8, BrainToken::Comma, None),
+            Token::new(9..10, BrainToken::Identifier, Some("b".to_string())),
+            Token::new(11..12, BrainToken::RightParen, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -292,14 +293,14 @@ mod tests {
     #[test]
     fn parse_function_call_with_function_arg() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
-            Token::new(0, 0, TokenKind::Comma),
-            Token::new(0, 0, TokenKind::Identifier("b".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::RightParen),
-            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0..3, BrainToken::Identifier, Some("foo".to_string())),
+            Token::new(4..5, BrainToken::LeftParen, None),
+            Token::new(5..6, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(7..8, BrainToken::Comma, None),
+            Token::new(9..10, BrainToken::Identifier, Some("b".to_string())),
+            Token::new(10..11, BrainToken::LeftParen, None),
+            Token::new(11..12, BrainToken::RightParen, None),
+            Token::new(13..14, BrainToken::RightParen, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -325,14 +326,14 @@ mod tests {
     #[test]
     fn parse_function_call_with_binary_arg() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::Identifier("a".to_string())),
-            Token::new(0, 0, TokenKind::Comma),
-            Token::new(0, 0, TokenKind::Number(0)),
-            Token::new(0, 0, TokenKind::Add),
-            Token::new(0, 0, TokenKind::Number(1)),
-            Token::new(0, 0, TokenKind::RightParen),
+            Token::new(0..3, BrainToken::Identifier, Some("foo".to_string())),
+            Token::new(4..5, BrainToken::LeftParen, None),
+            Token::new(5..6, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(7..8, BrainToken::Comma, None),
+            Token::new(9..10, BrainToken::Number, Some("0".to_string())),
+            Token::new(10..11, BrainToken::Plus, None),
+            Token::new(9..10, BrainToken::Number, Some("1".to_string())),
+            Token::new(14..15, BrainToken::RightParen, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -359,9 +360,9 @@ mod tests {
     #[test]
     fn parse_function_call_eof() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Identifier("foo".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..3, BrainToken::Identifier, Some("foo".to_string())),
+            Token::new(4..5, BrainToken::LeftParen, None),
+            Token::new(5..6, BrainToken::Identifier, Some("a".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

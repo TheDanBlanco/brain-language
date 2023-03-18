@@ -1,6 +1,6 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
+use crate::lang::grammar::{context::Context, token::BrainToken, value::Value, Evaluate, Parse};
 
 use super::Expression;
 
@@ -29,22 +29,22 @@ impl Evaluate for Collection {
 }
 
 impl Parse for Collection {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::LeftBracket)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::LeftBracket)?;
 
         let mut elements = vec![];
 
-        while !stream.check(TokenKind::RightBracket) {
+        while !stream.check(BrainToken::RightBracket) {
             let expression = Expression::parse(stream)?;
 
             elements.push(expression);
 
-            stream.skip_if(TokenKind::Comma);
+            stream.skip_if(BrainToken::Comma);
         }
 
-        stream.expect(TokenKind::RightBracket)?;
+        stream.expect(BrainToken::RightBracket)?;
 
-        stream.skip_if(TokenKind::Semicolon);
+        stream.skip_if(BrainToken::Semicolon);
 
         Ok(Self::new(elements))
     }
@@ -94,10 +94,9 @@ mod tests {
     #[test]
     fn parse_collection() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::LeftBracket),
-            Token::new(0, 0, TokenKind::Number(0)),
-            Token::new(0, 0, TokenKind::Comma),
-            Token::new(0, 0, TokenKind::RightBracket),
+            Token::new(0..1, BrainToken::LeftBracket, None),
+            Token::new(1..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(2..3, BrainToken::RightBracket, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

@@ -1,7 +1,9 @@
 use brain_error::{Error, ErrorKind};
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, value::Value, Evaluate, Match, Parse};
+use crate::lang::grammar::{
+    context::Context, token::BrainToken, value::Value, Evaluate, Match, Parse,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Literal {
@@ -15,14 +17,14 @@ impl Literal {
 }
 
 impl Match for Literal {
-    fn matches(token: &TokenKind) -> bool {
+    fn matches(token: &BrainToken) -> bool {
         matches!(
             token,
-            TokenKind::Number(_)
-                | TokenKind::String(_)
-                | TokenKind::True
-                | TokenKind::False
-                | TokenKind::Null,
+            BrainToken::Number
+                | BrainToken::String
+                | BrainToken::True
+                | BrainToken::False
+                | BrainToken::Null,
         )
     }
 }
@@ -34,7 +36,7 @@ impl Evaluate for Literal {
 }
 
 impl Parse for Literal {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         let next = stream.next();
 
         if next.is_none() {
@@ -44,18 +46,20 @@ impl Parse for Literal {
             ));
         }
 
-        let token = &next.unwrap().token;
+        let token = next.unwrap();
 
-        let literal = match token {
-            TokenKind::Number(number) => Self::new(Value::Number(*number)),
-            TokenKind::String(string) => Self::new(Value::String(string.to_string())),
-            TokenKind::True => Self::new(Value::Boolean(true)),
-            TokenKind::False => Self::new(Value::Boolean(false)),
-            TokenKind::Null => Self::new(Value::Null),
+        let literal = match (&token.token, &token.data) {
+            (BrainToken::Number, Some(data)) => Self::new(Value::Number(data.parse().unwrap())),
+            (BrainToken::String, Some(data)) => {
+                Self::new(Value::String(data.replace("\"", "").replace("\'", "")))
+            }
+            (BrainToken::True, _) => Self::new(Value::Boolean(true)),
+            (BrainToken::False, _) => Self::new(Value::Boolean(false)),
+            (BrainToken::Null, _) => Self::new(Value::Null),
             _ => {
                 return Err(Error::new(
                     ErrorKind::UnexpectedToken,
-                    format!("Expected literal, found {token}"),
+                    format!("Expected literal, found {}", token.token),
                 ))
             }
         };
@@ -173,7 +177,11 @@ mod tests {
 
     #[test]
     fn parse_literal_string() {
-        let tokens = vec![Token::new(0, 0, TokenKind::String("a".to_string()))];
+        let tokens = vec![Token::new(
+            0..3,
+            BrainToken::String,
+            Some(r#""hey""#.to_string()),
+        )];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -182,13 +190,13 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Literal::new(Value::String("a".to_string()))
+            Literal::new(Value::String("hey".to_string()))
         );
     }
 
     #[test]
     fn parse_literal_number() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Number(0))];
+        let tokens = vec![Token::new(0..3, BrainToken::Number, Some("0".to_string()))];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -200,7 +208,7 @@ mod tests {
 
     #[test]
     fn parse_literal_null() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Null)];
+        let tokens = vec![Token::new(0..3, BrainToken::Null, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -212,7 +220,7 @@ mod tests {
 
     #[test]
     fn parse_literal_bool_true() {
-        let tokens = vec![Token::new(0, 0, TokenKind::True)];
+        let tokens = vec![Token::new(0..3, BrainToken::True, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -224,7 +232,7 @@ mod tests {
 
     #[test]
     fn parse_literal_bool_false() {
-        let tokens = vec![Token::new(0, 0, TokenKind::False)];
+        let tokens = vec![Token::new(0..4, BrainToken::False, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -251,7 +259,7 @@ mod tests {
 
     #[test]
     fn parse_literal_not_primitive() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Add)];
+        let tokens = vec![Token::new(0..1, BrainToken::Plus, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -260,7 +268,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedToken]: Expected literal, found Token::Add".to_string()
+            "[UnexpectedToken]: Expected literal, found Token::Plus".to_string()
         );
     }
 }

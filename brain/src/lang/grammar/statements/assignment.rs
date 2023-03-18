@@ -1,8 +1,9 @@
 use brain_error::{Error, ErrorKind};
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
 use crate::lang::grammar::{
-    context::Context, expressions::Expression, output::Output, Evaluate, Parse, Resolve,
+    context::Context, expressions::Expression, output::Output, token::BrainToken, Evaluate, Parse,
+    Resolve,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -38,8 +39,8 @@ impl Resolve for Assignment {
 }
 
 impl Parse for Assignment {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Let)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::Let)?;
 
         let next = stream.next();
 
@@ -50,15 +51,15 @@ impl Parse for Assignment {
             ));
         }
 
-        let identifer = next.unwrap().token.get_identifier()?;
+        let token = next.unwrap().clone();
 
-        stream.expect(TokenKind::Assign)?;
+        stream.expect(BrainToken::Assign)?;
 
         let expression = Expression::parse(stream)?;
 
-        stream.skip_if(TokenKind::Semicolon);
+        stream.skip_if(BrainToken::Semicolon);
 
-        let assignment = Self::new(identifer, expression);
+        let assignment = Self::new(token.data.unwrap(), expression);
 
         Ok(assignment)
     }
@@ -209,10 +210,10 @@ mod tests {
     #[test]
     fn parse_assignment() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::String("hello".to_string())),
+            Token::new(0..3, BrainToken::Let, None),
+            Token::new(4..5, BrainToken::Identifier, Some("x".into())),
+            Token::new(6..7, BrainToken::Assign, None),
+            Token::new(8..9, BrainToken::String, Some(r#""hello""#.into())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -232,10 +233,10 @@ mod tests {
     #[test]
     fn parse_assignment_number() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..3, BrainToken::Let, None),
+            Token::new(4..5, BrainToken::Identifier, Some("x".into())),
+            Token::new(6..7, BrainToken::Assign, None),
+            Token::new(8..9, BrainToken::Number, Some("0".into())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -252,10 +253,10 @@ mod tests {
     #[test]
     fn parse_assignment_null() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Null),
+            Token::new(0..3, BrainToken::Let, None),
+            Token::new(4..5, BrainToken::Identifier, Some("x".into())),
+            Token::new(6..7, BrainToken::Assign, None),
+            Token::new(8..11, BrainToken::Null, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -272,10 +273,10 @@ mod tests {
     #[test]
     fn parse_assignment_bool() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::True),
+            Token::new(0..3, BrainToken::Let, None),
+            Token::new(4..5, BrainToken::Identifier, Some("x".into())),
+            Token::new(6..7, BrainToken::Assign, None),
+            Token::new(8..11, BrainToken::True, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -295,11 +296,11 @@ mod tests {
     #[test]
     fn parse_assignment_collection() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::LeftBracket),
-            Token::new(0, 0, TokenKind::RightBracket),
+            Token::new(0..3, BrainToken::Let, None),
+            Token::new(4..5, BrainToken::Identifier, Some("x".into())),
+            Token::new(6..7, BrainToken::Assign, None),
+            Token::new(8..9, BrainToken::LeftBracket, None),
+            Token::new(10..11, BrainToken::RightBracket, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -316,11 +317,11 @@ mod tests {
     #[test]
     fn parse_assignment_map() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..3, BrainToken::Let, None),
+            Token::new(4..5, BrainToken::Identifier, Some("x".into())),
+            Token::new(6..7, BrainToken::Assign, None),
+            Token::new(8..9, BrainToken::LeftBrace, None),
+            Token::new(10..11, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -336,7 +337,7 @@ mod tests {
 
     #[test]
     fn parse_assignment_eof() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Let)];
+        let tokens = vec![Token::new(0..3, BrainToken::Let, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

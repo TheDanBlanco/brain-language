@@ -1,6 +1,6 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
+use crate::lang::grammar::{context::Context, token::BrainToken, value::Value, Evaluate, Parse};
 
 use super::{operator::Operator, Expression};
 
@@ -21,7 +21,7 @@ impl Binary {
     }
 
     pub fn parse(
-        stream: &mut TokenStream<TokenKind>,
+        stream: &mut TokenStream<BrainToken>,
         initial: Option<Expression>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let lhs = match initial {
@@ -49,7 +49,7 @@ impl Evaluate for Binary {
 
 #[cfg(test)]
 mod test {
-    use brain_token::{token::Token, tokenkind::TokenKind};
+    use brain_token::token::Token;
 
     use super::*;
 
@@ -87,16 +87,16 @@ mod test {
     #[test]
     fn parse_binary() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Number(0)),
-            Token::new(0, 0, TokenKind::LessThan),
-            Token::new(0, 0, TokenKind::Number(1)),
+            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..1, BrainToken::LessThan, None),
+            Token::new(0..1, BrainToken::Number, Some("1".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let result = Binary::parse(stream, None);
 
-        // assert!(result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
             Binary::new(
@@ -112,8 +112,8 @@ mod test {
         let expression = Expression::new_literal(Value::Number(0));
 
         let tokens = vec![
-            Token::new(0, 0, TokenKind::LessThan),
-            Token::new(0, 0, TokenKind::Number(1)),
+            Token::new(0..1, BrainToken::LessThan, None),
+            Token::new(0..1, BrainToken::Number, Some("1".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

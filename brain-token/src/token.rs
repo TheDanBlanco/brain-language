@@ -1,5 +1,3 @@
-use crate::Brain;
-
 pub type Span = std::ops::Range<usize>;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -9,7 +7,10 @@ pub struct Token<T> {
     pub data: Option<String>,
 }
 
-impl<T> Token<T> where T:Clone + std::fmt::Debug + PartialEq {
+impl<T> Token<T>
+where
+    T: Clone + std::fmt::Debug + PartialEq,
+{
     pub fn new(span: Span, token: T, data: Option<String>) -> Self {
         Token { span, token, data }
     }

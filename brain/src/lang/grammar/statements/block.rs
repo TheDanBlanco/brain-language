@@ -1,6 +1,8 @@
-use brain_token::{stream::TokenStream, tokenkind::TokenKind};
+use brain_token::stream::TokenStream;
 
-use crate::lang::grammar::{context::Context, output::Output, Node, Nodes, Parse, Resolve};
+use crate::lang::grammar::{
+    context::Context, output::Output, token::BrainToken, Node, Nodes, Parse, Resolve,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Block {
@@ -29,13 +31,13 @@ impl Resolve for Block {
 }
 
 impl Parse for Block {
-    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         let mut nodes = vec![];
 
-        stream.expect(TokenKind::LeftBrace)?;
+        stream.expect(BrainToken::LeftBrace)?;
 
         loop {
-            if stream.check(TokenKind::RightBrace) {
+            if stream.check(BrainToken::RightBrace) {
                 break;
             }
 
@@ -43,7 +45,7 @@ impl Parse for Block {
             nodes.push(node);
         }
 
-        stream.expect(TokenKind::RightBrace)?;
+        stream.expect(BrainToken::RightBrace)?;
 
         Ok(Self::new(nodes))
     }
@@ -134,8 +136,8 @@ mod tests {
     #[test]
     fn parse_block() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..1, BrainToken::LeftBrace, None),
+            Token::new(1..2, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
