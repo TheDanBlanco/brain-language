@@ -22,7 +22,7 @@ impl Resolve for Return {
 }
 
 impl Parse for Return {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Return)?;
 
         let expression = Expression::parse(stream)?;

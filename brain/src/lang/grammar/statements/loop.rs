@@ -30,7 +30,7 @@ impl Resolve for Loop {
 }
 
 impl Parse for Loop {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Loop)?;
 
         let block = Statement::parse(stream)?;

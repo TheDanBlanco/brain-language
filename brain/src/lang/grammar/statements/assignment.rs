@@ -1,4 +1,4 @@
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use crate::lang::grammar::{
@@ -38,7 +38,7 @@ impl Resolve for Assignment {
 }
 
 impl Parse for Assignment {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Let)?;
 
         let next = stream.next();

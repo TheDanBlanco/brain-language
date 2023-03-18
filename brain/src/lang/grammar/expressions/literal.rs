@@ -1,4 +1,4 @@
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use crate::lang::grammar::{context::Context, value::Value, Evaluate, Match, Parse};
@@ -34,7 +34,7 @@ impl Evaluate for Literal {
 }
 
 impl Parse for Literal {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         let next = stream.next();
 
         if next.is_none() {

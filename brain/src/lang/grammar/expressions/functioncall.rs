@@ -1,4 +1,4 @@
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use crate::lang::grammar::{
@@ -22,7 +22,7 @@ impl FunctionCall {
     }
 
     pub fn parse(
-        stream: &mut TokenStream,
+        stream: &mut TokenStream<TokenKind>,
         initial: Option<Expression>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let identifier = match initial {

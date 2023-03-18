@@ -12,7 +12,7 @@ impl Resolve for Continue {
 }
 
 impl Parse for Continue {
-    fn parse(stream: &mut TokenStream) -> Result<Continue, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Continue, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Continue)?;
         stream.skip_if(TokenKind::Semicolon);
 

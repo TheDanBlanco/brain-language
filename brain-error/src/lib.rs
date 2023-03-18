@@ -14,6 +14,7 @@ pub enum ErrorKind {
     IdentifierAlreadyExists,
     UnexpectedToken,
     UnexpectedEndOfFile,
+    ParseError,
 }
 
 impl fmt::Display for ErrorKind {
@@ -31,6 +32,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::UnexpectedToken => write!(f, "UnexpectedToken"),
             ErrorKind::UnexpectedEndOfFile => write!(f, "UnexpectedEndOfFile"),
             ErrorKind::UnexpectedExpression => write!(f, "UnexpectedExpression"),
+            ErrorKind::ParseError => write!(f, "ParseError"),
         }
     }
 }

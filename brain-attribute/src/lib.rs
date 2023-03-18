@@ -1,9 +1,9 @@
-use parser::parse;
+use brain_token::parse;
 use proc_macro::TokenStream;
-
-mod parser;
 
 #[proc_macro_derive(Brain, attributes(token, regex))]
 pub fn brain(input: TokenStream) -> TokenStream {
-    parse(input)
+    let derive = syn::parse_macro_input!(input as syn::DeriveInput);
+
+    parse(derive).into()
 }

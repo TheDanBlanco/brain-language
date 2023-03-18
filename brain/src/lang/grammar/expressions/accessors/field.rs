@@ -1,4 +1,4 @@
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use crate::lang::grammar::{context::Context, expressions::Expression, value::Value, Evaluate};
@@ -18,7 +18,7 @@ impl Field {
     }
 
     pub fn parse(
-        stream: &mut TokenStream,
+        stream: &mut TokenStream<TokenKind>,
         target: Expression,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Dot)?;

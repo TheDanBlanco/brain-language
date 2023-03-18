@@ -25,7 +25,7 @@ impl Accessor {
     }
 
     pub fn parse(
-        stream: &mut TokenStream,
+        stream: &mut TokenStream<TokenKind>,
         initial: Option<Expression>,
     ) -> Result<Expression, Box<dyn std::error::Error>> {
         let mut expression;

@@ -1,4 +1,4 @@
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use self::{
@@ -25,7 +25,7 @@ pub trait Parse
 where
     Self: Sized,
 {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>>;
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>>;
 }
 
 pub trait Match {
@@ -49,7 +49,7 @@ impl Node {
 }
 
 impl Parse for Node {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         let next = stream.peek();
 
         if next.is_none() {

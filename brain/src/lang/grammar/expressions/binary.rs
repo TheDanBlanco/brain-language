@@ -1,4 +1,4 @@
-use brain_token::stream::TokenStream;
+use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
 
@@ -21,7 +21,7 @@ impl Binary {
     }
 
     pub fn parse(
-        stream: &mut TokenStream,
+        stream: &mut TokenStream<TokenKind>,
         initial: Option<Expression>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let lhs = match initial {

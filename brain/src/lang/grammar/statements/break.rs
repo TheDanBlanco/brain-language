@@ -12,7 +12,7 @@ impl Resolve for Break {
 }
 
 impl Parse for Break {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::Break)?;
         stream.skip_if(TokenKind::Semicolon);
 

@@ -1,6 +1,6 @@
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
-pub fn disambiguate_reassignment(stream: &mut TokenStream) -> bool {
+pub fn disambiguate_reassignment(stream: &mut TokenStream<TokenKind>) -> bool {
     if let (Some(next), Some(following)) = stream.double_peek() {
         return match (&next.token, &following.token) {
             (TokenKind::Identifier(_), TokenKind::Assign) => true,

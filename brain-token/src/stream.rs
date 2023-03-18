@@ -1,14 +1,17 @@
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 
-use super::{token::Token, tokenkind::TokenKind};
+use super::token::Token;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct TokenStream {
-    stream: Vec<Token>,
+pub struct TokenStream<T> {
+    stream: Vec<Token<T>>,
     position: usize,
 }
 
-impl TokenStream {
+impl<T> TokenStream<T>
+where
+    T: core::fmt::Debug + PartialEq + Clone,
+{
     pub fn new() -> Self {
         TokenStream {
             stream: vec![],
@@ -16,14 +19,14 @@ impl TokenStream {
         }
     }
 
-    pub fn from_vec(stream: Vec<Token>) -> Self {
+    pub fn from_vec(stream: Vec<Token<T>>) -> Self {
         TokenStream {
             stream,
             position: 0,
         }
     }
 
-    pub fn next(&mut self) -> Option<&Token> {
+    pub fn next(&mut self) -> Option<&Token<T>> {
         let next = self.stream.get(self.position).clone();
         self.position = self.position + 1;
         next
@@ -33,22 +36,22 @@ impl TokenStream {
         self.next();
     }
 
-    pub fn peek(&self) -> Option<&Token> {
+    pub fn peek(&self) -> Option<&Token<T>> {
         self.stream.get(self.position)
     }
 
-    pub fn double_peek(&self) -> (Option<&Token>, Option<&Token>) {
+    pub fn double_peek(&self) -> (Option<&Token<T>>, Option<&Token<T>>) {
         (
             self.stream.get(self.position),
             self.stream.get(self.position + 1),
         )
     }
 
-    pub fn push(&mut self, token: Token) {
+    pub fn push(&mut self, token: Token<T>) {
         self.stream.push(token)
     }
 
-    pub fn expect(&mut self, token: TokenKind) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn expect(&mut self, token: T) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(next) = self.next() {
             if token == next.token {
                 return Ok(());
@@ -56,17 +59,17 @@ impl TokenStream {
 
             return Err(Error::new(
                 ErrorKind::UnexpectedToken,
-                format!("Expected {token}, found {}", next.token),
+                format!("Expected {token:?}, found {:?}", next.token),
             ));
         }
 
         return Err(Error::new(
             ErrorKind::UnexpectedEndOfFile,
-            format!("Expected {token}, but found End of File"),
+            format!("Expected {token:?}, but found End of File"),
         ));
     }
 
-    pub fn check(&self, token: TokenKind) -> bool {
+    pub fn check(&self, token: T) -> bool {
         if let Some(next) = self.peek() {
             return token == next.token;
         }
@@ -74,7 +77,7 @@ impl TokenStream {
         false
     }
 
-    pub fn skip_if(&mut self, token: TokenKind) {
+    pub fn skip_if(&mut self, token: T) {
         if self.check(token) {
             self.position = self.position + 1;
         }
@@ -85,13 +88,22 @@ impl TokenStream {
 mod tests {
     use super::*;
 
+    #[derive(Debug, Clone, PartialEq)]
+    enum TokenKind {
+        Let,
+        Identifier,
+        Assign,
+        Number,
+        LeftParen,
+    }
+
     #[test]
     fn new() {
-        let stream = TokenStream::new();
+        let stream = &mut TokenStream::<TokenKind>::new();
 
         assert_eq!(
             stream,
-            TokenStream {
+            &mut TokenStream {
                 stream: vec![],
                 position: 0,
             }
@@ -100,14 +112,14 @@ mod tests {
 
     #[test]
     fn push() {
-        let stream = &mut TokenStream::new();
+        let stream = &mut TokenStream::<TokenKind>::new();
 
-        stream.push(Token::new(0, 0, TokenKind::Let));
+        stream.push(Token::new(0..2, TokenKind::Let, None));
 
         assert_eq!(
             stream,
             &mut TokenStream {
-                stream: vec![Token::new(0, 0, TokenKind::Let)],
+                stream: vec![Token::new(0..2, TokenKind::Let, None)],
                 position: 0,
             }
         )
@@ -116,75 +128,75 @@ mod tests {
     #[test]
     fn peek() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let peek = stream.peek();
 
-        assert_eq!(peek.unwrap(), &Token::new(0, 0, TokenKind::Let));
+        assert_eq!(peek.unwrap(), &Token::new(0..2, TokenKind::Let, None));
     }
 
     #[test]
     fn multiple_peek() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let mut peek = stream.peek();
 
-        assert_eq!(peek.unwrap(), &Token::new(0, 0, TokenKind::Let));
+        assert_eq!(peek.unwrap(), &Token::new(0..2, TokenKind::Let, None));
 
         peek = stream.peek();
 
-        assert_eq!(peek.unwrap(), &Token::new(0, 0, TokenKind::Let));
+        assert_eq!(peek.unwrap(), &Token::new(0..2, TokenKind::Let, None));
     }
 
     #[test]
     fn next() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let next = stream.next();
 
-        assert_eq!(next.unwrap(), &Token::new(0, 0, TokenKind::Let));
+        assert_eq!(next.unwrap(), &Token::new(0..2, TokenKind::Let, None));
     }
 
     #[test]
     fn next_consume_stream() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
-        assert_eq!(stream.next().unwrap(), &Token::new(0, 0, TokenKind::Let));
+        assert_eq!(stream.next().unwrap(), &Token::new(0..2, TokenKind::Let, None));
         assert_eq!(
             stream.next().unwrap(),
-            &Token::new(0, 0, TokenKind::Identifier("x".to_string()))
+            &Token::new(0..2, TokenKind::Identifier, Some("x".to_string()))
         );
-        assert_eq!(stream.next().unwrap(), &Token::new(0, 0, TokenKind::Assign));
+        assert_eq!(stream.next().unwrap(), &Token::new(0..2, TokenKind::Assign, None));
         assert_eq!(
             stream.next().unwrap(),
-            &Token::new(0, 0, TokenKind::Number(0))
+            &Token::new(0..2, TokenKind::Number, Some("0".to_string()))
         );
         assert!(stream.next().is_none());
     }
@@ -192,10 +204,10 @@ mod tests {
     #[test]
     fn skip() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -203,18 +215,18 @@ mod tests {
         stream.skip();
 
         assert_eq!(
-            stream.next().unwrap(),
-            &Token::new(0, 0, TokenKind::Identifier("x".to_string()))
+            stream.peek().unwrap(),
+            &Token::new(0..2, TokenKind::Identifier, Some("x".to_string()))
         );
     }
 
     #[test]
     fn skip_consume_stream() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -230,10 +242,10 @@ mod tests {
     #[test]
     fn expect() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -244,29 +256,29 @@ mod tests {
     #[test]
     fn expect_consume_stream() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         assert!(stream.expect(TokenKind::Let).is_ok());
         assert!(stream
-            .expect(TokenKind::Identifier("x".to_string()))
+            .expect(TokenKind::Identifier)
             .is_ok());
         assert!(stream.expect(TokenKind::Assign).is_ok());
-        assert!(stream.expect(TokenKind::Number(0)).is_ok());
+        assert!(stream.expect(TokenKind::Number).is_ok());
     }
 
     #[test]
     fn expect_wrong_token() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -276,7 +288,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedToken]: Expected Token::LeftParen, found Token::Let"
+            "[UnexpectedToken]: Expected LeftParen, found Let"
         );
     }
 
@@ -291,17 +303,17 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected Token::LeftParen, but found End of File"
+            "[UnexpectedEndOfFile]: Expected LeftParen, but found End of File"
         );
     }
 
     #[test]
     fn check() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -313,26 +325,26 @@ mod tests {
     #[test]
     fn skip_if() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         stream.skip_if(TokenKind::Let);
 
-        assert_ne!(stream.peek().unwrap(), &Token::new(0, 0, TokenKind::Let));
+        assert_ne!(stream.peek().unwrap(), &Token::new(0..2, TokenKind::Let, None));
     }
 
     #[test]
     fn double_peek() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Let),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Assign),
-            Token::new(0, 0, TokenKind::Number(0)),
+            Token::new(0..2, TokenKind::Let, None),
+            Token::new(0..2, TokenKind::Identifier, Some("x".to_string())),
+            Token::new(0..2, TokenKind::Assign, None),
+            Token::new(0..2, TokenKind::Number, Some("0".to_string())),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -342,15 +354,15 @@ mod tests {
         assert_eq!(
             peek,
             (
-                Some(&Token::new(0, 0, TokenKind::Let)),
-                Some(&Token::new(0, 0, TokenKind::Identifier("x".to_string())))
+                Some(&Token::new(0..2, TokenKind::Let, None)),
+                Some(&Token::new(0..2, TokenKind::Identifier, Some("x".to_string())))
             )
         )
     }
 
     #[test]
     fn double_peek_none() {
-        let tokens = vec![];
+        let tokens: Vec<Token<TokenKind>> = vec![];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

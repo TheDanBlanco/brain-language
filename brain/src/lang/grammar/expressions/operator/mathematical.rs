@@ -1,6 +1,6 @@
 use core::fmt;
 
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::tokenkind::TokenKind;
 
 use crate::lang::grammar::{value::Value, Match};

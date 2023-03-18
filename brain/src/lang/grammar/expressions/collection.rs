@@ -29,7 +29,7 @@ impl Evaluate for Collection {
 }
 
 impl Parse for Collection {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::LeftBracket)?;
 
         let mut elements = vec![];

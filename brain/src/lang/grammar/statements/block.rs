@@ -29,7 +29,7 @@ impl Resolve for Block {
 }
 
 impl Parse for Block {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         let mut nodes = vec![];
 
         stream.expect(TokenKind::LeftBrace)?;

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use brain_errors::{Error, ErrorKind};
+use brain_error::{Error, ErrorKind};
 use brain_token::{stream::TokenStream, tokenkind::TokenKind};
 
 use crate::lang::grammar::{context::Context, value::Value, Evaluate, Parse};
@@ -39,7 +39,7 @@ impl Evaluate for Map {
 }
 
 impl Parse for Map {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<TokenKind>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(TokenKind::LeftBrace)?;
 
         let mut entries = vec![];
