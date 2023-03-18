@@ -1,13 +1,8 @@
 use core::fmt;
 
-use crate::lang::{
-    grammar::{
-        error::{Error, ErrorKind},
-        value::Value,
-        Match,
-    },
-    tokens::tokenkind::TokenKind,
-};
+use brain_error::{Error, ErrorKind};
+
+use crate::lang::grammar::{token::BrainToken, value::Value, Match};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Mathematical {
@@ -61,27 +56,27 @@ impl Mathematical {
         }
     }
 
-    pub fn parse(token: &TokenKind) -> Self {
+    pub fn parse(token: &BrainToken) -> Self {
         match token {
-            TokenKind::Add => Mathematical::Add,
-            TokenKind::Subtract => Mathematical::Subtract,
-            TokenKind::Multiply => Mathematical::Multiply,
-            TokenKind::Divide => Mathematical::Divide,
-            TokenKind::Modulo => Mathematical::Modulo,
+            BrainToken::Plus => Mathematical::Add,
+            BrainToken::Minus => Mathematical::Subtract,
+            BrainToken::Times => Mathematical::Multiply,
+            BrainToken::Divide => Mathematical::Divide,
+            BrainToken::Modulo => Mathematical::Modulo,
             _ => unreachable!(),
         }
     }
 }
 
 impl Match for Mathematical {
-    fn matches(token: &TokenKind) -> bool {
+    fn matches(token: &BrainToken) -> bool {
         matches!(
             token,
-            TokenKind::Add
-                | TokenKind::Subtract
-                | TokenKind::Multiply
-                | TokenKind::Divide
-                | TokenKind::Modulo
+            BrainToken::Plus
+                | BrainToken::Minus
+                | BrainToken::Times
+                | BrainToken::Divide
+                | BrainToken::Modulo
         )
     }
 }
@@ -171,30 +166,30 @@ mod tests {
 
     #[test]
     fn matches_comparison() {
-        assert!(Mathematical::matches(&TokenKind::Add));
-        assert!(Mathematical::matches(&TokenKind::Subtract));
-        assert!(Mathematical::matches(&TokenKind::Multiply));
-        assert!(Mathematical::matches(&TokenKind::Divide));
-        assert!(Mathematical::matches(&TokenKind::Modulo));
+        assert!(Mathematical::matches(&BrainToken::Plus));
+        assert!(Mathematical::matches(&BrainToken::Minus));
+        assert!(Mathematical::matches(&BrainToken::Times));
+        assert!(Mathematical::matches(&BrainToken::Divide));
+        assert!(Mathematical::matches(&BrainToken::Modulo));
     }
 
     #[test]
     fn parse_comparison() {
-        assert_eq!(Mathematical::parse(&TokenKind::Add), Mathematical::Add);
+        assert_eq!(Mathematical::parse(&BrainToken::Plus), Mathematical::Add);
         assert_eq!(
-            Mathematical::parse(&TokenKind::Subtract),
+            Mathematical::parse(&BrainToken::Minus),
             Mathematical::Subtract
         );
         assert_eq!(
-            Mathematical::parse(&TokenKind::Multiply),
+            Mathematical::parse(&BrainToken::Times),
             Mathematical::Multiply
         );
         assert_eq!(
-            Mathematical::parse(&TokenKind::Divide),
+            Mathematical::parse(&BrainToken::Divide),
             Mathematical::Divide
         );
         assert_eq!(
-            Mathematical::parse(&TokenKind::Modulo),
+            Mathematical::parse(&BrainToken::Modulo),
             Mathematical::Modulo
         );
     }
@@ -202,6 +197,6 @@ mod tests {
     #[test]
     #[should_panic]
     fn parse_comparison_unreachable() {
-        Mathematical::parse(&TokenKind::And);
+        Mathematical::parse(&BrainToken::And);
     }
 }

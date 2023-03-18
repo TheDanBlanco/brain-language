@@ -1,12 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        value::Value,
-        Evaluate, Parse,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_error::{Error, ErrorKind};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{context::Context, token::BrainToken, value::Value, Evaluate, Parse};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Identifier {
@@ -33,7 +28,7 @@ impl Evaluate for Identifier {
 }
 
 impl Parse for Identifier {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         let next = stream.next();
 
         if next.is_none() {
@@ -43,15 +38,15 @@ impl Parse for Identifier {
             ));
         }
 
-        let token = &next.unwrap().token;
+        let token = next.unwrap();
 
-        if let TokenKind::Identifier(string) = token {
-            return Ok(Self::new(string.to_string()));
+        if let BrainToken::Identifier = &token.token {
+            return Ok(Identifier::new(token.data.clone().unwrap()));
         }
 
         return Err(Error::new(
             ErrorKind::UnexpectedExpression,
-            format!("Expected identifier, found {token}"),
+            format!("Expected identifier, found {}", token.token),
         ));
     }
 }
@@ -59,8 +54,10 @@ impl Parse for Identifier {
 // tests
 #[cfg(test)]
 mod tests {
+    use brain_token::token::Token;
+
     use super::*;
-    use crate::lang::{grammar::value::Value, tokens::token::Token};
+    use crate::lang::grammar::value::Value;
 
     #[test]
     fn create_new_identifier() {
@@ -94,7 +91,11 @@ mod tests {
 
     #[test]
     fn parse_identifier() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Identifier("a".to_string()))];
+        let tokens = vec![Token::new(
+            0..1,
+            BrainToken::Identifier,
+            Some("a".to_string()),
+        )];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -121,7 +122,7 @@ mod tests {
 
     #[test]
     fn parse_identifier_not_identifier() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Null)];
+        let tokens = vec![Token::new(0..3, BrainToken::Null, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

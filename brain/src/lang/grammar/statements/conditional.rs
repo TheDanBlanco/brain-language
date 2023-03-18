@@ -1,13 +1,9 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        expressions::Expression,
-        output::Output,
-        value::Value,
-        Evaluate, Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_error::{Error, ErrorKind};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{
+    context::Context, expressions::Expression, output::Output, token::BrainToken, value::Value,
+    Evaluate, Parse, Resolve,
 };
 
 use super::Statement;
@@ -67,8 +63,8 @@ impl Resolve for Conditional {
 }
 
 impl Parse for Conditional {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::If)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::If)?;
 
         let condition = Expression::parse(stream)?;
 
@@ -76,7 +72,7 @@ impl Parse for Conditional {
 
         let mut alternative = None;
 
-        if stream.check(TokenKind::Else) {
+        if stream.check(BrainToken::Else) {
             stream.skip();
             alternative = Some(Statement::parse(stream)?)
         }
@@ -87,10 +83,9 @@ impl Parse for Conditional {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{expressions::operator::Operator, Node},
-        tokens::token::Token,
-    };
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{expressions::operator::Operator, Node};
 
     use super::*;
 
@@ -493,10 +488,10 @@ mod tests {
     #[test]
     fn parse_conditional() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::If),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..2, BrainToken::If, None),
+            Token::new(3..4, BrainToken::True, None),
+            Token::new(5..6, BrainToken::LeftBrace, None),
+            Token::new(6..7, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -507,7 +502,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Conditional::new(
-                Expression::new_identifier("x".into()),
+                Expression::new_literal(Value::Boolean(true)),
                 Statement::new_block(vec![]),
                 None
             )
@@ -517,13 +512,13 @@ mod tests {
     #[test]
     fn parse_conditional_with_alternate() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::If),
-            Token::new(0, 0, TokenKind::Identifier("x".into())),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
-            Token::new(0, 0, TokenKind::Else),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..2, BrainToken::If, None),
+            Token::new(3..4, BrainToken::True, None),
+            Token::new(5..6, BrainToken::LeftBrace, None),
+            Token::new(6..7, BrainToken::RightBrace, None),
+            Token::new(8..10, BrainToken::Else, None),
+            Token::new(11..12, BrainToken::LeftBrace, None),
+            Token::new(12..13, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -534,7 +529,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Conditional::new(
-                Expression::new_identifier("x".into()),
+                Expression::new_literal(Value::Boolean(true)),
                 Statement::new_block(vec![]),
                 Some(Statement::new_block(vec![]))
             )

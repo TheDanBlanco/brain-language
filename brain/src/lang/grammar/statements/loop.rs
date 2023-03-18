@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, output::Output, Parse, Resolve},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{context::Context, output::Output, token::BrainToken, Parse, Resolve};
 
 use super::Statement;
 
@@ -31,8 +30,8 @@ impl Resolve for Loop {
 }
 
 impl Parse for Loop {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Loop)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::Loop)?;
 
         let block = Statement::parse(stream)?;
 
@@ -42,7 +41,9 @@ impl Parse for Loop {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{grammar::Node, tokens::token::Token};
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::Node;
 
     use super::*;
 
@@ -77,9 +78,9 @@ mod tests {
     #[test]
     fn parse_loop() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Loop),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..4, BrainToken::Loop, None),
+            Token::new(5..6, BrainToken::LeftBrace, None),
+            Token::new(11..12, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

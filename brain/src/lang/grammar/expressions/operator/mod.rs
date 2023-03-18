@@ -1,12 +1,7 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        value::Value,
-        Match, Parse,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_error::{Error, ErrorKind};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{context::Context, token::BrainToken, value::Value, Match, Parse};
 
 use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical};
 
@@ -89,7 +84,7 @@ impl Operator {
 }
 
 impl Parse for Operator {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         let next = stream.next();
 
         if next.is_none() {
@@ -121,29 +116,15 @@ impl Parse for Operator {
 }
 
 impl Match for Operator {
-    fn matches(token: &TokenKind) -> bool {
-        matches!(
-            token,
-            TokenKind::Add
-                | TokenKind::Subtract
-                | TokenKind::Multiply
-                | TokenKind::Divide
-                | TokenKind::Modulo
-                | TokenKind::Equal
-                | TokenKind::NotEqual
-                | TokenKind::GreaterThan
-                | TokenKind::GreaterThanEqual
-                | TokenKind::LessThan
-                | TokenKind::LessThanEqual
-                | TokenKind::And
-                | TokenKind::Or
-        )
+    fn matches(token: &BrainToken) -> bool {
+        Comparison::matches(token) || Logical::matches(token) || Mathematical::matches(token)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::tokens::token::Token;
+
+    use brain_token::token::Token;
 
     use super::*;
 
@@ -273,7 +254,7 @@ mod tests {
 
     #[test]
     fn parse_operator_mathematical() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Add)];
+        let tokens = vec![Token::new(0..1, BrainToken::Plus, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -285,7 +266,7 @@ mod tests {
 
     #[test]
     fn parse_operator_logical() {
-        let tokens = vec![Token::new(0, 0, TokenKind::And)];
+        let tokens = vec![Token::new(0..2, BrainToken::And, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -297,7 +278,7 @@ mod tests {
 
     #[test]
     fn parse_operator_comparison() {
-        let tokens = vec![Token::new(0, 0, TokenKind::GreaterThan)];
+        let tokens = vec![Token::new(0..1, BrainToken::GreaterThan, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -324,7 +305,7 @@ mod tests {
 
     #[test]
     fn parse_operator_not_operator() {
-        let tokens = vec![Token::new(0, 0, TokenKind::LeftBrace)];
+        let tokens = vec![Token::new(0..1, BrainToken::LeftBrace, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

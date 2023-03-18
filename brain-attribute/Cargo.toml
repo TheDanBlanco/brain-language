@@ -1,0 +1,13 @@
+[package]
+name = "brain-attribute"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "brain_attribute"
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0.109", features = ["full"] }
+brain-token = { path = "../brain-token", version = "0.1.0" }

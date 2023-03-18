@@ -1,6 +1,7 @@
-use crate::lang::{
-    grammar::{context::Context, output::Output, Node, Nodes, Parse, Resolve},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{
+    context::Context, output::Output, token::BrainToken, Node, Nodes, Parse, Resolve,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -30,13 +31,13 @@ impl Resolve for Block {
 }
 
 impl Parse for Block {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         let mut nodes = vec![];
 
-        stream.expect(TokenKind::LeftBrace)?;
+        stream.expect(BrainToken::LeftBrace)?;
 
         loop {
-            if stream.check(TokenKind::RightBrace) {
+            if stream.check(BrainToken::RightBrace) {
                 break;
             }
 
@@ -44,7 +45,7 @@ impl Parse for Block {
             nodes.push(node);
         }
 
-        stream.expect(TokenKind::RightBrace)?;
+        stream.expect(BrainToken::RightBrace)?;
 
         Ok(Self::new(nodes))
     }
@@ -52,6 +53,8 @@ impl Parse for Block {
 
 #[cfg(test)]
 mod tests {
+    use brain_token::token::Token;
+
     use crate::lang::grammar::{
         expressions::Expression, statements::Statement, value::Value, Node,
     };
@@ -128,5 +131,20 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Output::None);
+    }
+
+    #[test]
+    fn parse_block() {
+        let tokens = vec![
+            Token::new(0..1, BrainToken::LeftBrace, None),
+            Token::new(1..2, BrainToken::RightBrace, None),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Block::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Block::new(vec![]));
     }
 }

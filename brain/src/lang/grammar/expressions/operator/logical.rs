@@ -1,11 +1,6 @@
-use crate::lang::{
-    grammar::{
-        error::{Error, ErrorKind},
-        value::Value,
-        Match,
-    },
-    tokens::tokenkind::TokenKind,
-};
+use brain_error::{Error, ErrorKind};
+
+use crate::lang::grammar::{token::BrainToken, value::Value, Match};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Logical {
@@ -30,18 +25,18 @@ impl Logical {
         }
     }
 
-    pub fn parse(token: &TokenKind) -> Self {
+    pub fn parse(token: &BrainToken) -> Self {
         match token {
-            TokenKind::And => Logical::And,
-            TokenKind::Or => Logical::Or,
+            BrainToken::And => Logical::And,
+            BrainToken::Or => Logical::Or,
             _ => unreachable!(),
         }
     }
 }
 
 impl Match for Logical {
-    fn matches(token: &TokenKind) -> bool {
-        matches!(token, TokenKind::And | TokenKind::Or)
+    fn matches(token: &BrainToken) -> bool {
+        matches!(token, BrainToken::And | BrainToken::Or)
     }
 }
 
@@ -89,19 +84,19 @@ mod tests {
 
     #[test]
     fn matches_logical() {
-        assert!(Logical::matches(&TokenKind::And));
-        assert!(Logical::matches(&TokenKind::Or));
+        assert!(Logical::matches(&BrainToken::And));
+        assert!(Logical::matches(&BrainToken::Or));
     }
 
     #[test]
     fn parse_logical() {
-        assert_eq!(Logical::parse(&TokenKind::And), Logical::And);
-        assert_eq!(Logical::parse(&TokenKind::Or), Logical::Or);
+        assert_eq!(Logical::parse(&BrainToken::And), Logical::And);
+        assert_eq!(Logical::parse(&BrainToken::Or), Logical::Or);
     }
 
     #[test]
     #[should_panic]
     fn parse_comparison_unreachable() {
-        Logical::parse(&TokenKind::Add);
+        Logical::parse(&BrainToken::Plus);
     }
 }

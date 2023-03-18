@@ -1,7 +1,6 @@
-use crate::lang::{
-    grammar::{context::Context, output::Output, Parse, Resolve},
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
-};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{context::Context, output::Output, token::BrainToken, Parse, Resolve};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Break;
@@ -13,9 +12,9 @@ impl Resolve for Break {
 }
 
 impl Parse for Break {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Break)?;
-        stream.skip_if(TokenKind::Semicolon);
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::Break)?;
+        stream.skip_if(BrainToken::Semicolon);
 
         Ok(Self)
     }
@@ -23,7 +22,8 @@ impl Parse for Break {
 
 #[cfg(test)]
 mod test {
-    use crate::lang::tokens::token::Token;
+
+    use brain_token::token::Token;
 
     use super::*;
 
@@ -39,7 +39,7 @@ mod test {
 
     #[test]
     fn parse_break() {
-        let tokens = vec![Token::new(0, 0, TokenKind::Break)];
+        let tokens = vec![Token::new(0..5, BrainToken::Break, None)];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

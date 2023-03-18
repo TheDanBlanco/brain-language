@@ -1,12 +1,8 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        output::Output,
-        value::Value,
-        Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_error::{Error, ErrorKind};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{
+    context::Context, output::Output, token::BrainToken, value::Value, Parse, Resolve,
 };
 
 use super::Statement;
@@ -40,17 +36,25 @@ impl Resolve for FunctionDefinition {
 }
 
 impl Parse for FunctionDefinition {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::Function)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::Function)?;
 
         let next = stream.next();
-        let identifier = next.unwrap().token.get_identifier()?;
 
-        stream.expect(TokenKind::LeftParen)?;
+        if next.is_none() {
+            return Err(Error::new(
+                ErrorKind::UnexpectedEndOfFile,
+                "Expected function identifier, found End of File".to_string(),
+            ));
+        }
+
+        let token = next.unwrap().clone();
+
+        stream.expect(BrainToken::LeftParen)?;
 
         let mut arguments = vec![];
 
-        while !stream.check(TokenKind::RightParen) {
+        while !stream.check(BrainToken::RightParen) {
             let next = stream.next();
 
             if next.is_none() {
@@ -60,18 +64,19 @@ impl Parse for FunctionDefinition {
                 ));
             }
 
-            let argument = next.unwrap().token.get_identifier()?;
-            arguments.push(argument.to_string());
-            stream.skip_if(TokenKind::Comma);
+            let token = next.unwrap().clone();
+
+            arguments.push(token.data.unwrap());
+            stream.skip_if(BrainToken::Comma);
         }
 
-        stream.expect(TokenKind::RightParen)?;
+        stream.expect(BrainToken::RightParen)?;
 
         let block = Statement::parse(stream)?;
 
-        let definition = Self::new(identifier, arguments, block);
+        let definition = Self::new(token.data.unwrap(), arguments, block);
 
-        stream.skip_if(TokenKind::Semicolon);
+        stream.skip_if(BrainToken::Semicolon);
 
         Ok(definition)
     }
@@ -79,13 +84,12 @@ impl Parse for FunctionDefinition {
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{
-            expressions::{operator::Operator, Expression},
-            statements::r#return::Return,
-            Node,
-        },
-        tokens::token::Token,
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{
+        expressions::{operator::Operator, Expression},
+        statements::r#return::Return,
+        Node,
     };
 
     use super::*;
@@ -142,12 +146,12 @@ mod tests {
     #[test]
     fn parse_function_definition() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Function),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::RightParen),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..2, BrainToken::Function, None),
+            Token::new(3..4, BrainToken::Identifier, Some("x".to_string())),
+            Token::new(5..6, BrainToken::LeftParen, None),
+            Token::new(7..8, BrainToken::RightParen, None),
+            Token::new(9..10, BrainToken::LeftBrace, None),
+            Token::new(11..12, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -164,15 +168,15 @@ mod tests {
     #[test]
     fn parse_function_definition_with_args() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Function),
-            Token::new(0, 0, TokenKind::Identifier("adder".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
-            Token::new(0, 0, TokenKind::Identifier("x".to_string())),
-            Token::new(0, 0, TokenKind::Comma),
-            Token::new(0, 0, TokenKind::Identifier("y".to_string())),
-            Token::new(0, 0, TokenKind::RightParen),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..2, BrainToken::Function, None),
+            Token::new(3..4, BrainToken::Identifier, Some("adder".to_string())),
+            Token::new(5..6, BrainToken::LeftParen, None),
+            Token::new(7..8, BrainToken::Identifier, Some("x".to_string())),
+            Token::new(9..10, BrainToken::Comma, None),
+            Token::new(11..12, BrainToken::Identifier, Some("y".to_string())),
+            Token::new(13..14, BrainToken::RightParen, None),
+            Token::new(15..16, BrainToken::LeftBrace, None),
+            Token::new(17..18, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -193,9 +197,9 @@ mod tests {
     #[test]
     fn parse_function_definition_with_eof_args() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::Function),
-            Token::new(0, 0, TokenKind::Identifier("adder".to_string())),
-            Token::new(0, 0, TokenKind::LeftParen),
+            Token::new(0..2, BrainToken::Function, None),
+            Token::new(3..4, BrainToken::Identifier, Some("adder".to_string())),
+            Token::new(5..6, BrainToken::LeftParen, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

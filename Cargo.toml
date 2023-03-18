@@ -1,5 +1,5 @@
 [workspace]
-members = ["brain", "brain_attribute", "tests"]
+members = ["brain", "brain-attribute", "brain-token", "brain-error", "tests"]
 
 [profile]
 release = { lto = true }

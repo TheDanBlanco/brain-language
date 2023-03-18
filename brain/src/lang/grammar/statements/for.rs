@@ -1,13 +1,9 @@
-use crate::lang::{
-    grammar::{
-        context::Context,
-        error::{Error, ErrorKind},
-        expressions::Expression,
-        output::Output,
-        value::Value,
-        Evaluate, Parse, Resolve,
-    },
-    tokens::{stream::TokenStream, tokenkind::TokenKind},
+use brain_error::{Error, ErrorKind};
+use brain_token::stream::TokenStream;
+
+use crate::lang::grammar::{
+    context::Context, expressions::Expression, output::Output, token::BrainToken, value::Value,
+    Evaluate, Parse, Resolve,
 };
 
 use super::Statement;
@@ -49,8 +45,8 @@ impl Resolve for For {
 }
 
 impl Parse for For {
-    fn parse(stream: &mut TokenStream) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(TokenKind::For)?;
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::For)?;
 
         let next = stream.next();
 
@@ -61,24 +57,23 @@ impl Parse for For {
             ));
         }
 
-        let identifier = next.unwrap().token.get_identifier()?;
+        let data = &next.unwrap().clone().data;
 
-        stream.expect(TokenKind::In)?;
+        stream.expect(BrainToken::In)?;
 
         let collection = Expression::parse(stream)?;
 
         let block = Statement::parse(stream)?;
 
-        Ok(Self::new(identifier, collection, block))
+        Ok(Self::new(data.clone().unwrap(), collection, block))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::lang::{
-        grammar::{expressions::operator::Operator, Node},
-        tokens::token::Token,
-    };
+    use brain_token::token::Token;
+
+    use crate::lang::grammar::{expressions::operator::Operator, Node};
 
     use super::*;
 
@@ -199,12 +194,16 @@ mod tests {
     #[test]
     fn parse_loop() {
         let tokens = vec![
-            Token::new(0, 0, TokenKind::For),
-            Token::new(0, 0, TokenKind::Identifier("item".to_string())),
-            Token::new(0, 0, TokenKind::In),
-            Token::new(0, 0, TokenKind::Identifier("collection".to_string())),
-            Token::new(0, 0, TokenKind::LeftBrace),
-            Token::new(0, 0, TokenKind::RightBrace),
+            Token::new(0..3, BrainToken::For, None),
+            Token::new(4..8, BrainToken::Identifier, Some("item".to_string())),
+            Token::new(9..11, BrainToken::In, None),
+            Token::new(
+                12..22,
+                BrainToken::Identifier,
+                Some("collection".to_string()),
+            ),
+            Token::new(23..24, BrainToken::LeftBrace, None),
+            Token::new(25..26, BrainToken::RightBrace, None),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -224,7 +223,9 @@ mod tests {
 
     #[test]
     fn parse_loop_eof() {
-        let tokens = vec![Token::new(0, 0, TokenKind::For)];
+        let tokens = vec![
+            Token::new(0..3, BrainToken::For, None),
+        ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
