@@ -2,11 +2,10 @@ use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{
-    context::Context, output::Output, token::BrainToken, value::Value, Evaluate, Match, Parse,
-    Resolve,
+    context::Context, output::Output, token::BrainToken, value::Value, Evaluate, Parse, Resolve,
 };
 
-use super::{builtin::Builtin, identifier::Identifier, operator::Operator, Expression};
+use super::{builtin::Builtin, identifier::Identifier, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
@@ -122,7 +121,7 @@ impl Evaluate for FunctionCall {
 mod tests {
     use brain_token::token::Token;
 
-    use crate::grammar::statements::Statement;
+    use crate::grammar::{expressions::operator::Operator, statements::Statement};
 
     use super::*;
 
