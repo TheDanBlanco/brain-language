@@ -3,7 +3,8 @@ use std::collections::{BTreeMap, HashMap};
 use crate::lang::parser::{Accessor, LogicalOperator, MathematicalOperator};
 
 use super::parser::{
-    ComparisonOperator, Expression, Operator, Statement, StatementExpression, Value,
+    BitwiseOperator, ComparisonOperator, Expression, Operator, Statement, StatementExpression,
+    Value,
 };
 
 // enum for the different types of interpreter return values
@@ -77,6 +78,13 @@ fn parse_expression(expression: Expression, symbols: &mut HashMap<String, Value>
                         LogicalOperator::Or => Value::Boolean(lhs != 0 || rhs != 0),
                     }
                     _ => panic!("cannot perform logical operator on type Function or Null")
+                }
+                Operator::BitwiseOperator(op) => match (lhs, rhs) {
+                    (Value::Number(lhs), Value::Number(rhs)) => match op {
+                        BitwiseOperator::BitAnd => Value::Number(lhs & rhs),
+                        BitwiseOperator::BitOr => Value::Number(lhs | rhs),
+                    }
+                    _ => panic!("cannot perform bitwise operation on NaN")
                 }
             };
         }
@@ -1950,6 +1958,54 @@ mod tests {
                         Expression::Literal(Value::String("one".into())),
                         Expression::Literal(Value::String("two".into())),
                     ],
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+    }
+
+    #[test]
+    fn test_parse_statement_with_bitwise_and() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::Number(5))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitAnd),
+                    Box::new(Expression::Literal(Value::Number(1))),
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(1));
+    }
+
+    #[test]
+    fn test_parse_statement_with_bitwise_or() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::Number(5))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitOr),
+                    Box::new(Expression::Literal(Value::Number(1))),
+                )),
+            ))]);
+        parse_statement(statement, &mut symbols);
+        assert_eq!(symbols.get("x").unwrap(), &Value::Number(5));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_parse_statement_with_bitwise_panics_for_invalid_types() {
+        let mut symbols = HashMap::new();
+        let statement =
+            Statement::Block(vec![StatementExpression::Statement(Statement::Assignment(
+                "x".into(),
+                Box::new(Expression::Binary(
+                    Box::new(Expression::Literal(Value::String("NaN".into()))),
+                    Operator::BitwiseOperator(BitwiseOperator::BitOr),
+                    Box::new(Expression::Literal(Value::Number(1))),
                 )),
             ))]);
         parse_statement(statement, &mut symbols);

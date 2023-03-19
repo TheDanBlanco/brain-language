@@ -17,6 +17,8 @@ pub enum Token {
     Divide,
     Times,
     Comment,
+    BitAnd,
+    BitOr,
 
     // One or two character tokens.
     Bang,
@@ -124,8 +126,15 @@ impl Token {
         }
     }
 
+    pub fn is_bitwise(&self) -> bool {
+        match self {
+            Token::BitOr | Token::BitAnd => true,
+            _ => false,
+        }
+    }
+
     pub fn is_operator(&self) -> bool {
-        self.is_logical() || self.is_comparator() || self.is_mathematical()
+        self.is_logical() || self.is_comparator() || self.is_mathematical() || self.is_bitwise()
     }
 
     pub fn is_accessor_indicator(&self) -> bool {
@@ -219,7 +228,15 @@ mod tests {
         assert!(Token::LessEqual.is_operator());
         assert!(Token::And.is_operator());
         assert!(Token::Or.is_operator());
+        assert!(Token::BitAnd.is_operator());
+        assert!(Token::BitOr.is_operator());
         assert!(!Token::LeftBrace.is_operator());
+    }
+
+    #[test]
+    fn test_is_bitwise_operator() {
+        assert!(Token::BitAnd.is_bitwise());
+        assert!(Token::BitOr.is_bitwise());
     }
 
     #[test]
