@@ -1,4 +1,8 @@
+<img src="https://raw.githubusercontent.com/TheDanBlanco/brain-language/v2/brain-logo.png?token=GHSAT0AAAAAAB6PT4HEMYDST7C2ILTBQMBGZAXGJUA" alt="Brain logo" width=400 align=right />
+
 # Brain
+![Tests](https://github.com/thedanblanco/brain-language/actions/workflows/rust.yml/badge.svg?branch=v2)
+![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)
 
 ## What is Brain?
 Brain is a simple interpreted programming language, built primarily to deeply learn Rust.
