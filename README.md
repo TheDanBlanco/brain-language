@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/TheDanBlanco/brain-language/v2/brain-logo.png?raw=true" alt="Brain logo" width=400 align=right />
+<img src="https://github.com/TheDanBlanco/brain-language/blob/v2/brain-logo.png?raw=true" alt="Brain logo" width=400 align=right />
 
 # Brain
 ![Tests](https://github.com/thedanblanco/brain-language/actions/workflows/rust.yml/badge.svg?branch=v2)
