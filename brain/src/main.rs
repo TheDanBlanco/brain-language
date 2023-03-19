@@ -1,66 +1,37 @@
-use lang::interpreter::interpret;
-use std::{
-    env,
-    fs::File,
-    io::{self, BufRead},
-    path::Path,
-};
+use brain_grammar::{grammar::token::BrainToken, Program};
+use brain_token::Brain;
+use cli::Cli;
+use io::read_file;
 
-use crate::lang::{lexer::Lexer, parser::Parser};
+mod cli;
+mod io;
 
-mod lang;
+pub const BRAIN_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn main() {
-    let args: Vec<String> = env::args().collect();
-    let mut verbose = false;
-
-    if args.get(1).is_none() {
-        println!("Usage: brain FILENAME\n");
-        println!("  version: 0.1");
-
-        return;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cli = Cli::new();
+    if let Err(err) = cli.parse() {
+        println!("{}", err);
+        return Ok(());
     }
 
-    if let Some(verbosity) = args.get(2) {
-        verbose = verbosity == "--verbose";
+    if cli.help {
+        println!("Usage: brain [file] [--debug] [--help] --version]");
+        return Ok(());
     }
 
-    let file = &args[1];
-
-    let mut input = Vec::new();
-
-    if let Ok(lines) = read_lines(file) {
-        for line in lines {
-            if let Ok(line) = line {
-                if !line.is_empty() {
-                    input.push(line);
-                }
-            }
-        }
-
-        let mut lexer = Lexer::new(input.concat());
-        let tokens = lexer.get_all_tokens();
-
-        if verbose {
-            println!("tokens:\n {tokens:#?}\n");
-        }
-
-        let mut parser = Parser::new(tokens);
-        let ast = parser.create_ast();
-
-        if verbose {
-            println!("ast:\n {ast:#?}\n");
-        }
-
-        interpret(ast);
+    if cli.version {
+        println!("brain {BRAIN_VERSION}");
+        return Ok(());
     }
+
+    let source = read_file(cli.file).unwrap();
+
+    let stream = BrainToken::lex(source);
+    let mut program = Program::new(stream.unwrap(), cli.debug);
+    if let Err(err) = program.run() {
+        println!("{}", err);
+    }
+
+    Ok(())
 }
-
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-//

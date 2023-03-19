@@ -59,7 +59,10 @@ where
 
             return Err(Error::new(
                 ErrorKind::UnexpectedToken,
-                format!("Expected {token:?}, found {:?}", next.token),
+                format!(
+                    "Expected {token:?}, found {:?} ({} - {})",
+                    next.token, next.span.start, next.span.end
+                ),
             ));
         }
 
@@ -292,7 +295,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedToken]: Expected LeftParen, found Let"
+            "[UnexpectedToken]: Expected LeftParen, found Let (0 - 2)"
         );
     }
 

@@ -17,6 +17,7 @@ version = "0.1.0"
 dependencies = [
  "brain-attribute",
  "brain-error",
+ "brain-grammar",
  "brain-token",
 ]
 
@@ -31,6 +32,15 @@ dependencies = [
 [[package]]
 name = "brain-error"
 version = "0.1.0"
+
+[[package]]
+name = "brain-grammar"
+version = "0.1.0"
+dependencies = [
+ "brain-attribute",
+ "brain-error",
+ "brain-token",
+]
 
 [[package]]
 name = "brain-token"
@@ -101,6 +111,7 @@ version = "0.1.0"
 dependencies = [
  "brain-attribute",
  "brain-error",
+ "brain-grammar",
  "brain-token",
 ]
 

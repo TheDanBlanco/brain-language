@@ -171,10 +171,8 @@ mod tests {
     #[test]
     fn lex_regex() {
         let mut lexer = Lexer::<TestToken>::new();
-        let attribute = Attribute::Regex(RegexAttribute::new(
-            TestToken::Regex,
-            r"test".to_string(),
-        ));
+        let attribute =
+            Attribute::Regex(RegexAttribute::new(TestToken::Regex, r"test".to_string()));
         lexer.add_attribute(attribute);
 
         let tokens = lexer.lex("test".to_string()).unwrap();
@@ -194,10 +192,8 @@ mod tests {
         let mut lexer = Lexer::<TestToken>::new();
         let attribute = Attribute::Literal(Literal::new(TestToken::Literal, "a".to_string()));
         lexer.add_attribute(attribute);
-        let attribute = Attribute::Regex(RegexAttribute::new(
-            TestToken::Regex,
-            r"string".to_string(),
-        ));
+        let attribute =
+            Attribute::Regex(RegexAttribute::new(TestToken::Regex, r"string".to_string()));
         lexer.add_attribute(attribute);
 
         let tokens = lexer.lex("a string".to_string()).unwrap();
