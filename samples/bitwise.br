@@ -1,5 +1,0 @@
-let x = 5 & 1;
-print(x);
-
-let y = 5 | 1;
-print(y);
