@@ -16,10 +16,6 @@ impl Cli {
     }
 
     pub fn parse(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // we expect the cli to be called like:
-        // brain <file> [--debug] [--help] [--version]
-        // if no file is provided, we should return a usage message
-
         let args: Vec<String> = std::env::args().collect();
         if args.len() < 2 {
             return Err("Usage: brain [file] [--debug] [--help] --version]".into());

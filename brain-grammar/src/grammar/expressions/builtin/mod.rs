@@ -31,3 +31,33 @@ impl Builtin {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matches() {
+        assert!(Builtin::matches("print".to_string()));
+
+        assert!(!Builtin::matches("DOES NOT MATCH ANYTHING".to_string()));
+    }
+
+    #[test]
+    fn resolve_print() {
+        let mut context = Context::new();
+
+        let result = Builtin::resolve(&mut context, "print".to_string(), vec![]);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
+    fn resolve_not_found() {
+        let mut context = Context::new();
+
+        let result = Builtin::resolve(&mut context, "NOT FOUND".to_string(), vec![]);
+
+        assert!(result.is_err())
+    }
+}

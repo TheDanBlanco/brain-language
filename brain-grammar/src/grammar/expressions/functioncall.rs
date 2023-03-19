@@ -6,9 +6,7 @@ use crate::grammar::{
     Resolve,
 };
 
-use super::{
-    binary::Binary, builtin::Builtin, identifier::Identifier, operator::Operator, Expression,
-};
+use super::{builtin::Builtin, identifier::Identifier, operator::Operator, Expression};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FunctionCall {
@@ -38,7 +36,7 @@ impl FunctionCall {
         let mut arguments = vec![];
 
         while !stream.check(BrainToken::RightParen) {
-            let mut expression = Expression::parse(stream)?;
+            let expression = Expression::parse(stream)?;
 
             let next = stream.peek();
 
@@ -49,13 +47,6 @@ impl FunctionCall {
                         "Expected binary expression, function call, or ending parenthesis, found End of File".to_string()
                     )
                 );
-            }
-
-            let token = &next.unwrap().token;
-
-            if Operator::matches(token) {
-                let binary = Binary::parse(stream, Some(expression))?;
-                expression = Expression::Binary(binary);
             }
 
             stream.skip_if(BrainToken::Comma);

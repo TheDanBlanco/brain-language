@@ -101,7 +101,7 @@ where
         return Err(Error::new(
             ErrorKind::ParseError,
             format!(
-                "No remaining tokens matched for : {}",
+                "No remaining tokens matched for \"{}\"",
                 &self.input[self.current..]
             ),
         ));
@@ -216,6 +216,10 @@ mod tests {
         let result = lexer.lex("b".to_string());
 
         assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[ParseError]: No remaining tokens matched for \"b\"".to_string()
+        )
     }
 
     #[test]

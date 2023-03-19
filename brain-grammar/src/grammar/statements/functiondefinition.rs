@@ -195,6 +195,21 @@ mod tests {
     }
 
     #[test]
+    fn parse_function_definition_with_eof() {
+        let tokens = vec![Token::new(0..2, BrainToken::Function, None)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = FunctionDefinition::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.err().unwrap().to_string(),
+            "[UnexpectedEndOfFile]: Expected function identifier, found End of File".to_string()
+        );
+    }
+
+    #[test]
     fn parse_function_definition_with_eof_args() {
         let tokens = vec![
             Token::new(0..2, BrainToken::Function, None),

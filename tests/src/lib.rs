@@ -20,6 +20,21 @@ mod tests {
     }
 
     #[test]
+    fn test_with_verbose() {
+        let source = "let first = 0".to_string();
+
+        let stream = BrainToken::lex(source);
+        let mut program = Program::new(stream.unwrap(), true);
+
+        let _ = program.run();
+
+        assert_eq!(
+            program.context.symbols.get("first"),
+            Some(&Value::Number(0))
+        );
+    }
+
+    #[test]
     fn assignment() {
         let source = "let first = 0".to_string();
 
