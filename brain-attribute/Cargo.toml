@@ -9,5 +9,5 @@ name = "brain_attribute"
 proc-macro = true
 
 [dependencies]
-syn = { version = "1.0.109", features = ["full"] }
+syn = { version = "2.0.2", features = ["full"] }
 brain-token = { path = "../brain-token", version = "0.1.0" }
