@@ -1,7 +1,7 @@
-<img src="https://github.com/TheDanBlanco/brain-language/blob/v2/brain-logo.png?raw=true" alt="Brain logo" width=400 align=right />
+<img src="https://github.com/TheDanBlanco/brain-language/blob/main/brain-logo.png?raw=true" alt="Brain logo" width=400 align=right />
 
 # Brain
-![Tests](https://github.com/thedanblanco/brain-language/actions/workflows/rust.yml/badge.svg?branch=v2)
+![Tests](https://github.com/thedanblanco/brain-language/actions/workflows/rust.yml/badge.svg)
 ![MIT/Apache 2.0](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)
 
 ## What is Brain?
