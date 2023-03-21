@@ -1,8 +1,6 @@
-[package]
-name = "lang"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["brain", "brain-attribute", "brain-token", "brain-error", "brain-grammar", "tests"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[profile]
+release = { lto = true }
+bench = { lto = true }

@@ -1,0 +1,9 @@
+let a = 10;
+let b = 5;
+
+print(a + b);
+
+let c = "hello"
+let d = "world";
+
+print(c + d);
