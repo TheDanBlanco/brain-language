@@ -196,7 +196,10 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Expression::Accessor(Accessor::Index(Index::new(
-                Expression::new_function_call(Expression::new_identifier("func".to_string()), vec![]),
+                Expression::new_function_call(
+                    Expression::new_identifier("func".to_string()),
+                    vec![]
+                ),
                 expression
             )))
         );
