@@ -26,7 +26,7 @@ name = "brain-attribute"
 version = "0.1.0"
 dependencies = [
  "brain-token",
- "syn 2.0.4",
+ "syn",
 ]
 
 [[package]]
@@ -50,7 +50,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "regex",
- "syn 1.0.109",
+ "syn",
 ]
 
 [[package]]
@@ -99,17 +99,6 @@ name = "syn"
 version = "1.0.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
-
-[[package]]
-name = "syn"
-version = "2.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c622ae390c9302e214c31013517c2061ecb2699935882c60a9b37f82f8625ae"
 dependencies = [
  "proc-macro2",
  "quote",
