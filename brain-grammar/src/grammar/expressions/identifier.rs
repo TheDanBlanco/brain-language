@@ -54,7 +54,6 @@ impl Parse for Identifier {
     }
 }
 
-// tests
 #[cfg(test)]
 mod tests {
     use brain_token::token::Token;

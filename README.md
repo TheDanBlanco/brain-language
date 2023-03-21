@@ -24,6 +24,8 @@ let y = { 'a': 1, 'b': 2 };
 print(y.a);
 ```
 
+More samples can be found in the `samples/` folder.
+
 ## Usage
 ```
 Usage: brain [filename] [flags]
@@ -34,8 +36,6 @@ Flags:
     --debug     Verbosely prints the language tokens & AST
     --version   Returns the version of Brain
 ```
-
-More samples can be found in the `samples/` folder.
 
 ## Design Goals
 * Capable in use

@@ -164,7 +164,7 @@ mod tests {
 
         let result = Node::parse(stream);
 
-        // assert!(result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
             Node::Expression(Expression::new_literal(Value::String("a".to_string())))

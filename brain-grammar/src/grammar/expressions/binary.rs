@@ -94,7 +94,7 @@ mod test {
 
         let result = Expression::parse(stream);
 
-        // assert!(result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
             Expression::Binary(Binary::new(

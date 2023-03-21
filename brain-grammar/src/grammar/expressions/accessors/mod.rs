@@ -77,6 +77,8 @@ impl Match for Accessor {
 
 #[cfg(test)]
 mod tests {
+    use brain_token::token::Token;
+
     use crate::grammar::expressions::{map::Map, Expression};
 
     use super::*;
@@ -129,108 +131,108 @@ mod tests {
         assert!(result.is_ok());
     }
 
-    // #[test]
-    // fn parse_accessor_is_collection() {
-    //     let tokens = vec![
-    //         Token::new(0, 0, BrainToken::LeftBracket),
-    //         Token::new(0, 0, BrainToken::Number(0)),
-    //         Token::new(0, 0, BrainToken::RightBracket),
-    //     ];
+    #[test]
+    fn parse_accessor_is_collection() {
+        let tokens = vec![
+            Token::new(0..1, BrainToken::LeftBracket, None),
+            Token::new(1..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(2..3, BrainToken::RightBracket, None),
+        ];
 
-    //     let stream = &mut TokenStream::from_vec(tokens);
+        let stream = &mut TokenStream::from_vec(tokens);
 
-    //     let result = Accessor::parse(stream);
+        let result = Accessor::parse(stream, None);
 
-    //     assert!(result.is_ok());
-    //     assert_eq!(
-    //         result.unwrap(),
-    //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))])
-    //     );
-    // }
+        // assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))])
+        );
+    }
 
-    // #[test]
-    // fn parse_accessor_is_index_accessor() {
-    //     let expression =
-    //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
+    #[test]
+    fn parse_accessor_is_index_accessor() {
+        let expression =
+            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
 
-    //     let tokens = vec![
-    //         Token::new(0, 0, BrainToken::LeftBracket),
-    //         Token::new(0, 0, BrainToken::Number(0)),
-    //         Token::new(0, 0, BrainToken::RightBracket),
-    //     ];
+        let tokens = vec![
+            Token::new(7..8, BrainToken::LeftBracket, None),
+            Token::new(8..9, BrainToken::Number, Some("0".to_string())),
+            Token::new(9..10, BrainToken::RightBracket, None),
+        ];
 
-    //     let stream = &mut TokenStream::from_vec(tokens);
+        let stream = &mut TokenStream::from_vec(tokens);
 
-    //     let result = Accessor::parse(stream);
+        let result = Accessor::parse(stream, Some(expression.clone()));
 
-    //     assert!(result.is_ok());
-    //     assert_eq!(
-    //         result.unwrap(),
-    //         Expression::Accessor(Accessor::Index(Index::new(
-    //             Expression::new_literal(Value::Number(0)),
-    //             expression
-    //         )))
-    //     );
-    // }
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::Accessor(Accessor::Index(Index::new(
+                Expression::new_literal(Value::Number(0)),
+                expression
+            )))
+        );
+    }
 
-    // #[test]
-    // fn parse_accessor_is_index_accessor_with_function_call() {
-    //     let expression =
-    //         Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
+    #[test]
+    fn parse_accessor_is_index_accessor_with_function_call() {
+        let expression =
+            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
 
-    //     let tokens = vec![
-    //         Token::new(0, 0, BrainToken::LeftBracket),
-    //         Token::new(0, 0, BrainToken::Identifier("a".to_string())),
-    //         Token::new(0, 0, BrainToken::LeftParen),
-    //         Token::new(0, 0, BrainToken::RightParen),
-    //         Token::new(0, 0, BrainToken::RightBracket),
-    //     ];
+        let tokens = vec![
+            Token::new(7..8, BrainToken::LeftBracket, None),
+            Token::new(8..11, BrainToken::Identifier, Some("func".to_string())),
+            Token::new(11..12, BrainToken::LeftParen, None),
+            Token::new(12..13, BrainToken::RightParen, None),
+            Token::new(9..10, BrainToken::RightBracket, None),
+        ];
 
-    //     let stream = &mut TokenStream::from_vec(tokens);
+        let stream = &mut TokenStream::from_vec(tokens);
 
-    //     let result = Accessor::parse(stream, Some(expression.clone()));
+        let result = Accessor::parse(stream, Some(expression.clone()));
 
-    //     assert!(result.is_ok());
-    //     assert_eq!(
-    //         result.unwrap(),
-    //         Expression::Accessor(Accessor::Index(Index::new(
-    //             Expression::new_function_call(Expression::new_identifier("a".to_string()), vec![]),
-    //             expression
-    //         )))
-    //     );
-    // }
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::Accessor(Accessor::Index(Index::new(
+                Expression::new_function_call(Expression::new_identifier("func".to_string()), vec![]),
+                expression
+            )))
+        );
+    }
 
-    // #[test]
-    // fn parse_accessor_is_field_accessor() {
-    //     let expression = Expression::new_map(vec![]);
+    #[test]
+    fn parse_accessor_is_field_accessor() {
+        let expression = Expression::new_map(vec![]);
 
-    //     let tokens = vec![
-    //         Token::new(0, 0, BrainToken::Dot),
-    //         Token::new(0, 0, BrainToken::Identifier("a".to_string())),
-    //     ];
+        let tokens = vec![
+            Token::new(7..8, BrainToken::Dot, None),
+            Token::new(8..9, BrainToken::Identifier, Some("a".to_string())),
+        ];
 
-    //     let stream = &mut TokenStream::from_vec(tokens);
+        let stream = &mut TokenStream::from_vec(tokens);
 
-    //     let result = Accessor::parse(stream, Some(expression.clone()));
+        let result = Accessor::parse(stream, Some(expression.clone()));
 
-    //     assert!(result.is_ok());
-    //     assert_eq!(
-    //         result.unwrap(),
-    //         Expression::Accessor(Accessor::Field(Field::new("a".to_string(), expression)))
-    //     );
-    // }
+        assert!(result.is_ok());
+        assert_eq!(
+            result.unwrap(),
+            Expression::Accessor(Accessor::Field(Field::new("a".to_string(), expression)))
+        );
+    }
 
-    // #[test]
-    // fn parse_accessor_is_not_accessor() {
-    //     let expression = Expression::new_map(vec![]);
+    #[test]
+    fn parse_accessor_is_not_accessor() {
+        let expression = Expression::new_map(vec![]);
 
-    //     let tokens = vec![Token::new(0, 0, BrainToken::Semicolon)];
+        let tokens = vec![Token::new(0..1, BrainToken::Semicolon, None)];
 
-    //     let stream = &mut TokenStream::from_vec(tokens);
+        let stream = &mut TokenStream::from_vec(tokens);
 
-    //     let result = Accessor::parse(stream, Some(expression.clone()));
+        let result = Accessor::parse(stream, Some(expression.clone()));
 
-    //     assert!(result.is_ok());
-    //     assert_eq!(result.unwrap(), expression);
-    // }
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), expression);
+    }
 }

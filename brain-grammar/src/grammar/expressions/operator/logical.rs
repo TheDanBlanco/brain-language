@@ -19,7 +19,6 @@ impl Logical {
             }
             _ => Err(Error::new(
                 ErrorKind::InvalidLogicalOperation,
-                // print a better error message
                 format!("cannot do logical comparison on {left} and {right}"),
             )),
         }

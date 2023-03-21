@@ -69,7 +69,6 @@ impl Parse for Literal {
     }
 }
 
-// tests
 #[cfg(test)]
 mod tests {
     use brain_token::token::Token;
