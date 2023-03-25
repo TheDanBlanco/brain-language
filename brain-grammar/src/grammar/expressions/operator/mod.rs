@@ -3,17 +3,19 @@ use brain_token::stream::TokenStream;
 
 use crate::grammar::{context::Context, token::BrainToken, value::Value, Match, Parse};
 
-use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical};
+use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical, bitwise::Bitwise};
 
 pub mod comparison;
 pub mod logical;
 pub mod mathematical;
+pub mod bitwise;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Operator {
     Mathematical(Mathematical),
     Logical(Logical),
     Comparison(Comparison),
+    Bitwise(Bitwise),
 }
 
 impl Operator {
@@ -69,6 +71,14 @@ impl Operator {
         Operator::Comparison(Comparison::LessThanEqual)
     }
 
+    pub fn new_bitwise_and() -> Self {
+        Operator::Bitwise(Bitwise::And)
+    }
+
+    pub fn new_bitwise_or() -> Self {
+        Operator::Bitwise(Bitwise::Or)
+    }
+
     pub fn evaluate(
         &self,
         left: Value,
@@ -79,6 +89,7 @@ impl Operator {
             Operator::Mathematical(mathematical) => mathematical.evaluate(left, right),
             Operator::Logical(logical) => logical.evaluate(left, right),
             Operator::Comparison(comparison) => comparison.evaluate(left, right),
+            Operator::Bitwise(bitwise) => bitwise.evaluate(left, right),
         }
     }
 }
@@ -109,6 +120,10 @@ impl Parse for Operator {
             return Ok(Operator::Comparison(Comparison::parse(token_literal)));
         }
 
+        if Bitwise::matches(token_literal) {
+            return Ok(Operator::Bitwise(Bitwise::parse(token_literal)))
+        }
+
         return Err(Error::new(
             ErrorKind::UnexpectedToken,
             format!(
@@ -121,7 +136,7 @@ impl Parse for Operator {
 
 impl Match for Operator {
     fn matches(token: &BrainToken) -> bool {
-        Comparison::matches(token) || Logical::matches(token) || Mathematical::matches(token)
+        Comparison::matches(token) || Logical::matches(token) || Mathematical::matches(token) || Bitwise::matches(token)
     }
 }
 
