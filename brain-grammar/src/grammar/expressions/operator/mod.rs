@@ -3,12 +3,14 @@ use brain_token::stream::TokenStream;
 
 use crate::grammar::{context::Context, token::BrainToken, value::Value, Match, Parse};
 
-use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical, bitwise::Bitwise};
+use self::{
+    bitwise::Bitwise, comparison::Comparison, logical::Logical, mathematical::Mathematical,
+};
 
+pub mod bitwise;
 pub mod comparison;
 pub mod logical;
 pub mod mathematical;
-pub mod bitwise;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Operator {
@@ -121,7 +123,7 @@ impl Parse for Operator {
         }
 
         if Bitwise::matches(token_literal) {
-            return Ok(Operator::Bitwise(Bitwise::parse(token_literal)))
+            return Ok(Operator::Bitwise(Bitwise::parse(token_literal)));
         }
 
         return Err(Error::new(
@@ -136,7 +138,10 @@ impl Parse for Operator {
 
 impl Match for Operator {
     fn matches(token: &BrainToken) -> bool {
-        Comparison::matches(token) || Logical::matches(token) || Mathematical::matches(token) || Bitwise::matches(token)
+        Comparison::matches(token)
+            || Logical::matches(token)
+            || Mathematical::matches(token)
+            || Bitwise::matches(token)
     }
 }
 

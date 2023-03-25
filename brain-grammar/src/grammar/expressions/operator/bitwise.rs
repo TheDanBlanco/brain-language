@@ -46,11 +46,7 @@ impl Bitwise {
 
 impl Match for Bitwise {
     fn matches(token: &BrainToken) -> bool {
-        matches!(
-            token,
-            BrainToken::BitwiseAnd
-                | BrainToken::BitwiseOr
-        )
+        matches!(token, BrainToken::BitwiseAnd | BrainToken::BitwiseOr)
     }
 }
 
@@ -101,14 +97,8 @@ mod tests {
 
     #[test]
     fn parse_bitwise() {
-        assert_eq!(
-            Bitwise::parse(&BrainToken::BitwiseAnd),
-            Bitwise::And
-        );
-        assert_eq!(
-            Bitwise::parse(&BrainToken::BitwiseOr),
-            Bitwise::Or
-        );
+        assert_eq!(Bitwise::parse(&BrainToken::BitwiseAnd), Bitwise::And);
+        assert_eq!(Bitwise::parse(&BrainToken::BitwiseOr), Bitwise::Or);
     }
 
     #[test]
