@@ -272,6 +272,17 @@ mod tests {
     }
 
     #[test]
+    fn eval_bitwise_operator() {
+        let context = &mut Context::new();
+        let left = Value::Number(1);
+        let right = Value::Number(2);
+        let operator = Operator::Bitwise(Bitwise::And);
+
+        let result = operator.evaluate(left, right, context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn parse_operator_mathematical() {
         let tokens = vec![Token::new(0..1, BrainToken::Plus, None)];
 
@@ -305,6 +316,30 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Operator::new_gt());
+    }
+
+    #[test]
+    fn parse_operator_bitwise_and() {
+        let tokens = vec![Token::new(0..1, BrainToken::BitwiseAnd, None)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_bitwise_and());
+    }
+
+    #[test]
+    fn parse_operator_bitwise_or() {
+        let tokens = vec![Token::new(0..1, BrainToken::BitwiseOr, None)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_bitwise_or());
     }
 
     #[test]
