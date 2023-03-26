@@ -258,6 +258,30 @@ mod tests {
     }
 
     #[test]
+    fn r#bitwise_and() {
+        let source = "let x = 5 & 1;".to_string();
+
+        let result = run(source);
+
+        assert_eq!(
+            result.unwrap().context.symbols.get("x"),
+            Some(&Value::Number(1))
+        );
+    }
+
+    #[test]
+    fn r#bitwise_or() {
+        let source = "let x = 5 | 1;".to_string();
+
+        let result = run(source);
+
+        assert_eq!(
+            result.unwrap().context.symbols.get("x"),
+            Some(&Value::Number(5))
+        );
+    }
+
+    #[test]
     fn print() {
         let source = "print(1)".to_string();
 
