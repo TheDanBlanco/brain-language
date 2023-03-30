@@ -115,6 +115,12 @@ pub enum BrainToken {
     #[token("=")]
     Assign,
 
+    #[token("&")]
+    BitwiseAnd,
+
+    #[token("|")]
+    BitwiseOr,
+
     #[regex(r"[a-zA-Z_][a-zA-Z0-9_]*")]
     Identifier,
 

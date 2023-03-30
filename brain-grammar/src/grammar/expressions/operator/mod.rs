@@ -3,8 +3,11 @@ use brain_token::stream::TokenStream;
 
 use crate::grammar::{context::Context, token::BrainToken, value::Value, Match, Parse};
 
-use self::{comparison::Comparison, logical::Logical, mathematical::Mathematical};
+use self::{
+    bitwise::Bitwise, comparison::Comparison, logical::Logical, mathematical::Mathematical,
+};
 
+pub mod bitwise;
 pub mod comparison;
 pub mod logical;
 pub mod mathematical;
@@ -14,6 +17,7 @@ pub enum Operator {
     Mathematical(Mathematical),
     Logical(Logical),
     Comparison(Comparison),
+    Bitwise(Bitwise),
 }
 
 impl Operator {
@@ -69,6 +73,14 @@ impl Operator {
         Operator::Comparison(Comparison::LessThanEqual)
     }
 
+    pub fn new_bitwise_and() -> Self {
+        Operator::Bitwise(Bitwise::And)
+    }
+
+    pub fn new_bitwise_or() -> Self {
+        Operator::Bitwise(Bitwise::Or)
+    }
+
     pub fn evaluate(
         &self,
         left: Value,
@@ -79,6 +91,7 @@ impl Operator {
             Operator::Mathematical(mathematical) => mathematical.evaluate(left, right),
             Operator::Logical(logical) => logical.evaluate(left, right),
             Operator::Comparison(comparison) => comparison.evaluate(left, right),
+            Operator::Bitwise(bitwise) => bitwise.evaluate(left, right),
         }
     }
 }
@@ -109,6 +122,10 @@ impl Parse for Operator {
             return Ok(Operator::Comparison(Comparison::parse(token_literal)));
         }
 
+        if Bitwise::matches(token_literal) {
+            return Ok(Operator::Bitwise(Bitwise::parse(token_literal)));
+        }
+
         return Err(Error::new(
             ErrorKind::UnexpectedToken,
             format!(
@@ -121,7 +138,10 @@ impl Parse for Operator {
 
 impl Match for Operator {
     fn matches(token: &BrainToken) -> bool {
-        Comparison::matches(token) || Logical::matches(token) || Mathematical::matches(token)
+        Comparison::matches(token)
+            || Logical::matches(token)
+            || Mathematical::matches(token)
+            || Bitwise::matches(token)
     }
 }
 
@@ -257,6 +277,17 @@ mod tests {
     }
 
     #[test]
+    fn eval_bitwise_operator() {
+        let context = &mut Context::new();
+        let left = Value::Number(1);
+        let right = Value::Number(2);
+        let operator = Operator::Bitwise(Bitwise::And);
+
+        let result = operator.evaluate(left, right, context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn parse_operator_mathematical() {
         let tokens = vec![Token::new(0..1, BrainToken::Plus, None)];
 
@@ -290,6 +321,30 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Operator::new_gt());
+    }
+
+    #[test]
+    fn parse_operator_bitwise_and() {
+        let tokens = vec![Token::new(0..1, BrainToken::BitwiseAnd, None)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_bitwise_and());
+    }
+
+    #[test]
+    fn parse_operator_bitwise_or() {
+        let tokens = vec![Token::new(0..1, BrainToken::BitwiseOr, None)];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Operator::parse(stream);
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Operator::new_bitwise_or());
     }
 
     #[test]
