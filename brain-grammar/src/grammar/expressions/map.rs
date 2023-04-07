@@ -59,7 +59,7 @@ impl Parse for Map {
                 _ => {
                     return Err(Error::new(
                         ErrorKind::UnexpectedExpression,
-                        format!("Only string values may be keys."),
+                        format!("Keys may be one of String, Number, Boolean, or Null."),
                     ))
                 }
             }
@@ -220,25 +220,4 @@ mod tests {
             )])
         );
     }
-
-    //  #[test]
-    // fn parse_map_key_not_identifier() {
-    //     let tokens = vec![
-    //         Token::new(0..1, BrainToken::LeftBrace, None),
-    //         Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-    //         Token::new(0..1, BrainToken::Colon, None),
-    //         Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-    //         Token::new(0..1, BrainToken::RightBrace, None),
-    //     ];
-
-    //     let stream = &mut TokenStream::from_vec(tokens);
-
-    //     let result = Map::parse(stream);
-
-    //     assert!(result.is_err());
-    //     assert_eq!(
-    //         result.err().unwrap().to_string(),
-    //         "[UnexpectedExpression]: Only string values may be keys.".to_string()
-    //     );
-    // }
 }
