@@ -26,7 +26,7 @@ impl Evaluate for Map {
             let key = key.evaluate(context)?;
 
             match key {
-                Value::Number(_) | Value::String(_) | Value::Boolean(_) => {}
+                Value::Number(_) | Value::String(_) | Value::Boolean(_) | Value::Null => {}
                 _ => return Err(Error::new(ErrorKind::InvalidMapKey, format!("{key}"))),
             }
 
@@ -47,13 +47,21 @@ impl Parse for Map {
         while !stream.check(BrainToken::RightBrace) {
             let mut key = Expression::parse(stream)?;
 
-            if let Expression::Identifier(identifier) = key {
-                key = Expression::new_literal(Value::String(identifier.name));
-            } else {
-                return Err(Error::new(
-                    ErrorKind::UnexpectedExpression,
-                    format!("Only string values may be keys."),
-                ));
+            match key {
+                Expression::Identifier(identifier) => {
+                    key = Expression::new_literal(Value::String(identifier.name))
+                }
+                Expression::Literal(literal) => {
+                    let context = &mut Context::new();
+                    let value = literal.evaluate(context)?;
+                    key = Expression::new_literal(value)
+                }
+                _ => {
+                    return Err(Error::new(
+                        ErrorKind::UnexpectedExpression,
+                        format!("Only string values may be keys."),
+                    ))
+                }
             }
 
             stream.expect(BrainToken::Colon)?;
@@ -67,7 +75,6 @@ impl Parse for Map {
 
         stream.expect(BrainToken::RightBrace)?;
         stream.skip_if(BrainToken::Semicolon);
-
         Ok(Self::new(entries))
     }
 }
@@ -177,20 +184,6 @@ mod tests {
     }
 
     #[test]
-    fn eval_map_with_invalid_key_null() {
-        let context = &mut Context::new();
-        let pairs = vec![(
-            Expression::new_literal(Value::Null),
-            Expression::new_literal(Value::Number(2)),
-        )];
-        let map = Map::new(pairs);
-
-        let result = map.evaluate(context);
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "[InvalidMapKey]: null",);
-    }
-
-    #[test]
     fn eval_map_with_invalid_key_map() {
         let context = &mut Context::new();
         let pairs = vec![(
@@ -228,24 +221,24 @@ mod tests {
         );
     }
 
-    #[test]
-    fn parse_map_key_not_identifier() {
-        let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::Colon, None),
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::RightBrace, None),
-        ];
+    //  #[test]
+    // fn parse_map_key_not_identifier() {
+    //     let tokens = vec![
+    //         Token::new(0..1, BrainToken::LeftBrace, None),
+    //         Token::new(0..1, BrainToken::Number, Some("0".to_string())),
+    //         Token::new(0..1, BrainToken::Colon, None),
+    //         Token::new(0..1, BrainToken::Number, Some("0".to_string())),
+    //         Token::new(0..1, BrainToken::RightBrace, None),
+    //     ];
 
-        let stream = &mut TokenStream::from_vec(tokens);
+    //     let stream = &mut TokenStream::from_vec(tokens);
 
-        let result = Map::parse(stream);
+    //     let result = Map::parse(stream);
 
-        assert!(result.is_err());
-        assert_eq!(
-            result.err().unwrap().to_string(),
-            "[UnexpectedExpression]: Only string values may be keys.".to_string()
-        );
-    }
+    //     assert!(result.is_err());
+    //     assert_eq!(
+    //         result.err().unwrap().to_string(),
+    //         "[UnexpectedExpression]: Only string values may be keys.".to_string()
+    //     );
+    // }
 }
