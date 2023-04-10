@@ -146,6 +146,24 @@ mod tests {
     }
 
     #[test]
+    fn eval_map_with_key_null() {
+        let mut tree = BTreeMap::new();
+        tree.insert(Value::Null, Value::Number(2));
+
+        let context = &mut Context::new();
+        let pairs = vec![(
+            Expression::new_literal(Value::Null),
+            Expression::new_literal(Value::Number(2)),
+        )];
+        let map = Map::new(pairs);
+
+        let result = map.evaluate(context);
+        assert!(result.is_ok());
+
+        assert_eq!(result.unwrap(), Value::Map(tree));
+    }
+
+    #[test]
     fn eval_map_with_invalid_key_collection() {
         let context = &mut Context::new();
         let pairs = vec![(
