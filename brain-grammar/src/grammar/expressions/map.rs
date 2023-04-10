@@ -47,36 +47,23 @@ impl Parse for Map {
         while !stream.check(BrainToken::RightBrace) {
             let mut key = Expression::parse(stream)?;
 
-            if let Expression::Identifier(identifier) = key {
-                key = Expression::new_literal(Value::String(identifier.name));
-            }
-
-            match key {
-                Expression::FunctionCall(_) => {
-                    return Err(Error::new(
-                        ErrorKind::InvalidMapKey,
-                        format!("cannot use function for key in map"),
-                    ))
+            key = match key {
+                Expression::Identifier(identifier) => {
+                    Expression::new_literal(Value::String(identifier.name))
                 }
-                Expression::Map(_) => {
-                    return Err(Error::new(
-                        ErrorKind::InvalidMapKey,
-                        format!("cannot use map for key in map"),
-                    ))
-                }
-                Expression::Collection(_) => {
-                    return Err(Error::new(
-                        ErrorKind::InvalidMapKey,
-                        format!("cannot use collection for key in map"),
-                    ))
-                }
+                Expression::Literal(_) => key,
                 _ => {
-                    stream.expect(BrainToken::Colon)?;
-                    let value = Expression::parse(stream)?;
-                    stream.skip_if(BrainToken::Comma);
-                    entries.push((key, value));
+                    return Err(Error::new(
+                        ErrorKind::InvalidMapKey,
+                        format!("cannot use {key} for key in map"),
+                    ))
                 }
-            }
+            };
+
+            stream.expect(BrainToken::Colon)?;
+            let value = Expression::parse(stream)?;
+            stream.skip_if(BrainToken::Comma);
+            entries.push((key, value));
         }
 
         stream.expect(BrainToken::RightBrace)?;
