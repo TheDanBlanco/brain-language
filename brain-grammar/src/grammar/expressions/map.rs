@@ -47,30 +47,39 @@ impl Parse for Map {
         while !stream.check(BrainToken::RightBrace) {
             let mut key = Expression::parse(stream)?;
 
-            match key {
-                Expression::Identifier(identifier) => {
-                    key = Expression::new_literal(Value::String(identifier.name))
-                }
-                Expression::Literal(literal) => {
-                    let context = &mut Context::new();
-                    let value = literal.evaluate(context)?;
-                    key = Expression::new_literal(value)
-                }
-                _ => {
-                    return Err(Error::new(
-                        ErrorKind::UnexpectedExpression,
-                        format!("Keys may be one of String, Number, Boolean, or Null."),
-                    ))
-                }
+            if let Expression::Identifier(identifier) = key {
+                key = Expression::new_literal(Value::String(identifier.name));
             }
 
-            stream.expect(BrainToken::Colon)?;
+            match key {
+                Expression::FunctionCall(f) => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidMapKey,
+                        format!("cannot use function for key in map"),
+                    ))
+                }
+                Expression::Map(_) => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidMapKey,
+                        format!("cannot use map for key in map"),
+                    ))
+                }
+                Expression::Collection(_) => {
+                    return Err(Error::new(
+                        ErrorKind::InvalidMapKey,
+                        format!("cannot use collection for key in map"),
+                    ))
+                }
+                _ => {
+                    stream.expect(BrainToken::Colon)?;
 
-            let value = Expression::parse(stream)?;
+                    let value = Expression::parse(stream)?;
 
-            stream.skip_if(BrainToken::Comma);
+                    stream.skip_if(BrainToken::Comma);
 
-            entries.push((key, value));
+                    entries.push((key, value));
+                }
+            }
         }
 
         stream.expect(BrainToken::RightBrace)?;
@@ -218,6 +227,75 @@ mod tests {
                 Expression::new_literal(Value::String("a".to_string())),
                 Expression::new_literal(Value::Number(0))
             )])
+        );
+    }
+
+    #[test]
+    fn parse_map_invalid_key_collection() {
+        let tokens = vec![
+            Token::new(0..1, BrainToken::LeftBrace, None),
+            Token::new(0..1, BrainToken::LeftBracket, None),
+            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(0..1, BrainToken::RightBracket, None),
+            Token::new(0..1, BrainToken::Colon, None),
+            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..1, BrainToken::RightBrace, None),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Map::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "[InvalidMapKey]: cannot use collection for key in map",
+        );
+    }
+
+    #[test]
+    fn parse_map_invalid_key_map() {
+        let tokens = vec![
+            Token::new(0..1, BrainToken::LeftBrace, None),
+            Token::new(0..1, BrainToken::LeftBrace, None),
+            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::Colon, None),
+            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..1, BrainToken::RightBrace, None),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Map::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "[InvalidMapKey]: cannot use map for key in map",
+        );
+    }
+
+    #[test]
+    fn parse_map_invalid_key_function() {
+        let tokens = vec![
+            Token::new(0..1, BrainToken::LeftBrace, None),
+            Token::new(0..1, BrainToken::Identifier, Some("test".to_string())),
+            Token::new(0..1, BrainToken::LeftParen, None),
+            Token::new(0..1, BrainToken::RightParen, None),
+            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::Colon, None),
+            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..1, BrainToken::RightBrace, None),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Map::parse(stream);
+
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "[InvalidMapKey]: cannot use function for key in map",
         );
     }
 }
