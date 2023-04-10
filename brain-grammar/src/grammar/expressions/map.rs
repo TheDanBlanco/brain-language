@@ -52,7 +52,7 @@ impl Parse for Map {
             }
 
             match key {
-                Expression::FunctionCall(f) => {
+                Expression::FunctionCall(_) => {
                     return Err(Error::new(
                         ErrorKind::InvalidMapKey,
                         format!("cannot use function for key in map"),
@@ -72,11 +72,8 @@ impl Parse for Map {
                 }
                 _ => {
                     stream.expect(BrainToken::Colon)?;
-
                     let value = Expression::parse(stream)?;
-
                     stream.skip_if(BrainToken::Comma);
-
                     entries.push((key, value));
                 }
             }
