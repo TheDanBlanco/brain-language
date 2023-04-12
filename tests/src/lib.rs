@@ -110,6 +110,51 @@ mod tests {
     }
 
     #[test]
+    fn map_with_number_key() {
+        let source = r#"let x = { 1: "a", 2: "b" }"#.to_string();
+
+        let result = run(source);
+
+        assert_eq!(
+            result.unwrap().context.symbols.get("x"),
+            Some(&Value::Map(BTreeMap::from_iter(vec![
+                (Value::Number(1), Value::String("a".to_string())),
+                (Value::Number(2), Value::String("b".to_string()))
+            ])))
+        );
+    }
+
+    #[test]
+    fn map_with_bool_key() {
+        let source = r#"let x = { true: "a" }"#.to_string();
+
+        let result = run(source);
+
+        assert_eq!(
+            result.unwrap().context.symbols.get("x"),
+            Some(&Value::Map(BTreeMap::from_iter(vec![(
+                Value::Boolean(true),
+                Value::String("a".to_string())
+            ),])))
+        );
+    }
+
+    #[test]
+    fn map_with_null_key() {
+        let source = r#"let x = { null: "a" }"#.to_string();
+
+        let result = run(source);
+
+        assert_eq!(
+            result.unwrap().context.symbols.get("x"),
+            Some(&Value::Map(BTreeMap::from_iter(vec![(
+                Value::Null,
+                Value::String("a".to_string())
+            ),])))
+        );
+    }
+
+    #[test]
     fn collection() {
         let source = "let x = [1, 2, 3]".to_string();
 

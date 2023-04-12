@@ -1,3 +1,5 @@
+use core::fmt;
+
 use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
@@ -29,6 +31,20 @@ pub enum Expression {
     FunctionCall(FunctionCall),
     Accessor(Accessor),
     Map(Map),
+}
+
+impl fmt::Display for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Expression::Binary(_) => write!(f, "binary"),
+            Expression::Collection(_) => write!(f, "collection"),
+            Expression::Literal(_) => write!(f, "literal"),
+            Expression::Identifier(_) => write!(f, "identifier"),
+            Expression::FunctionCall(_) => write!(f, "function"),
+            Expression::Accessor(_) => write!(f, "accessor"),
+            Expression::Map(_) => write!(f, "map"),
+        }
+    }
 }
 
 impl Expression {
