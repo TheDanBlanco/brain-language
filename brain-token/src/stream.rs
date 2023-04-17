@@ -194,6 +194,33 @@ mod tests {
     }
 
     #[test]
+    fn assert_peek() {
+        let tokens = vec![
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let peek = stream.assert_peek("no error".to_string());
+
+        assert!(peek.is_ok())
+    }
+
+    #[test]
+    fn assert_peek_doesnt_exist() {
+        let tokens: Vec<Token<BrainToken>> = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let peek = stream.assert_peek("for sure error".to_string());
+
+        assert!(peek.is_err())
+    }
+
+    #[test]
     fn next() {
         let tokens = vec![
             Token::new(0..2, BrainToken::Let, "let".to_string()),
@@ -240,6 +267,33 @@ mod tests {
             &Token::new(0..2, BrainToken::Number, "0".to_string())
         );
         assert!(stream.next().is_none());
+    }
+
+    #[test]
+    fn assert_next() {
+        let tokens = vec![
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let token = stream.assert_next("no error".to_string());
+
+        assert!(token.is_ok());
+    }
+
+    #[test]
+    fn assert_next_no_further_tokens() {
+        let tokens: Vec<Token<BrainToken>> = vec![];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let token = stream.assert_next("for sure error".to_string());
+
+        assert!(token.is_err());
     }
 
     #[test]
@@ -291,7 +345,10 @@ mod tests {
 
         let stream = &mut TokenStream::from_vec(tokens);
 
-        assert!(stream.expect(BrainToken::Let).is_ok())
+        let token = stream.expect(BrainToken::Let);
+
+        assert!(token.is_ok());
+        assert_eq!(token.unwrap().data, "let".to_string());
     }
 
     #[test]
