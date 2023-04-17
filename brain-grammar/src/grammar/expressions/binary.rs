@@ -85,9 +85,9 @@ mod test {
     #[test]
     fn parse_binary() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::LessThan, None),
-            Token::new(0..1, BrainToken::Number, Some("1".to_string())),
+            Token::new(0..1, BrainToken::Number, "0".to_string()),
+            Token::new(0..1, BrainToken::LessThan, "<".to_string()),
+            Token::new(0..1, BrainToken::Number, "1".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -110,8 +110,8 @@ mod test {
         let expression = Expression::new_literal(Value::Number(0));
 
         let tokens = vec![
-            Token::new(0..1, BrainToken::LessThan, None),
-            Token::new(0..1, BrainToken::Number, Some("1".to_string())),
+            Token::new(0..1, BrainToken::LessThan, "<".to_string()),
+            Token::new(0..1, BrainToken::Number, "1".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

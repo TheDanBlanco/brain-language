@@ -68,8 +68,8 @@ mod tests {
     #[test]
     fn parse_return() {
         let tokens = vec![
-            Token::new(0..6, BrainToken::Return, None),
-            Token::new(7..8, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..6, BrainToken::Return, "return".to_string()),
+            Token::new(7..8, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

@@ -22,8 +22,8 @@ mod test {
     #[test]
     fn reassignment() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
-            Token::new(2..3, BrainToken::Assign, None),
+            Token::new(0..1, BrainToken::Identifier, "a".to_string()),
+            Token::new(2..3, BrainToken::Assign, "=".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -34,8 +34,8 @@ mod test {
     #[test]
     fn equality() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
-            Token::new(2..3, BrainToken::Equal, None),
+            Token::new(0..1, BrainToken::Identifier, "a".to_string()),
+            Token::new(2..3, BrainToken::Equal, "==".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

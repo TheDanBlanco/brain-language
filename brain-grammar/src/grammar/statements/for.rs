@@ -48,16 +48,7 @@ impl Parse for For {
     fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(BrainToken::For)?;
 
-        let next = stream.next();
-
-        if next.is_none() {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEndOfFile,
-                "Expected identifier, found End of File".to_string(),
-            ));
-        }
-
-        let data = &next.unwrap().clone().data;
+        let identifier = stream.expect(BrainToken::Identifier)?.clone();
 
         stream.expect(BrainToken::In)?;
 
@@ -65,7 +56,7 @@ impl Parse for For {
 
         let block = Statement::parse(stream)?;
 
-        Ok(Self::new(data.clone().unwrap(), collection, block))
+        Ok(Self::new(identifier.data, collection, block))
     }
 }
 
@@ -194,16 +185,12 @@ mod tests {
     #[test]
     fn parse_loop() {
         let tokens = vec![
-            Token::new(0..3, BrainToken::For, None),
-            Token::new(4..8, BrainToken::Identifier, Some("item".to_string())),
-            Token::new(9..11, BrainToken::In, None),
-            Token::new(
-                12..22,
-                BrainToken::Identifier,
-                Some("collection".to_string()),
-            ),
-            Token::new(23..24, BrainToken::LeftBrace, None),
-            Token::new(25..26, BrainToken::RightBrace, None),
+            Token::new(0..3, BrainToken::For, "for".to_string()),
+            Token::new(4..8, BrainToken::Identifier, "item".to_string()),
+            Token::new(9..11, BrainToken::In, "in".to_string()),
+            Token::new(12..22, BrainToken::Identifier, "collection".to_string()),
+            Token::new(23..24, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(25..26, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -223,7 +210,7 @@ mod tests {
 
     #[test]
     fn parse_loop_eof() {
-        let tokens = vec![Token::new(0..3, BrainToken::For, None)];
+        let tokens = vec![Token::new(0..3, BrainToken::For, "for".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -232,7 +219,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected Identifier, but found End of File".to_string()
         );
     }
 }

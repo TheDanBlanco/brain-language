@@ -395,9 +395,9 @@ mod tests {
         let expression = Expression::new_identifier("a".to_string());
 
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBracket, None),
-            Token::new(1..2, BrainToken::Number, Some("0".to_string())),
-            Token::new(2..3, BrainToken::RightBracket, None),
+            Token::new(0..1, BrainToken::LeftBracket, "[".to_string()),
+            Token::new(1..2, BrainToken::Number, "0".to_string()),
+            Token::new(2..3, BrainToken::RightBracket, "]".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

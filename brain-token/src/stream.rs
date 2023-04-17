@@ -32,12 +32,32 @@ where
         next
     }
 
+    pub fn assert_next(&mut self, error: String) -> Result<&Token<T>, Box<dyn std::error::Error>> {
+        let token = self.next();
+
+        if token.is_none() {
+            return Err(Error::new(ErrorKind::UnexpectedEndOfFile, error));
+        }
+
+        return Ok(token.unwrap());
+    }
+
     pub fn skip(&mut self) {
         self.next();
     }
 
     pub fn peek(&self) -> Option<&Token<T>> {
         self.stream.get(self.position)
+    }
+
+    pub fn assert_peek(&self, error: String) -> Result<&Token<T>, Box<dyn std::error::Error>> {
+        let token = self.peek();
+
+        if token.is_none() {
+            return Err(Error::new(ErrorKind::UnexpectedEndOfFile, error));
+        }
+
+        return Ok(token.unwrap());
     }
 
     pub fn double_peek(&self) -> (Option<&Token<T>>, Option<&Token<T>>) {
@@ -51,10 +71,10 @@ where
         self.stream.push(token)
     }
 
-    pub fn expect(&mut self, token: T) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn expect(&mut self, token: T) -> Result<&Token<T>, Box<dyn std::error::Error>> {
         if let Some(next) = self.next() {
             if token == next.token {
-                return Ok(());
+                return Ok(next);
             }
 
             return Err(Error::new(
@@ -117,12 +137,12 @@ mod tests {
     fn push() {
         let stream = &mut TokenStream::<BrainToken>::new();
 
-        stream.push(Token::new(0..2, BrainToken::Let, None));
+        stream.push(Token::new(0..2, BrainToken::Let, "let".to_string()));
 
         assert_eq!(
             stream,
             &mut TokenStream {
-                stream: vec![Token::new(0..2, BrainToken::Let, None)],
+                stream: vec![Token::new(0..2, BrainToken::Let, "let".to_string())],
                 position: 0,
             }
         )
@@ -131,81 +151,93 @@ mod tests {
     #[test]
     fn peek() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let peek = stream.peek();
 
-        assert_eq!(peek.unwrap(), &Token::new(0..2, BrainToken::Let, None));
+        assert_eq!(
+            peek.unwrap(),
+            &Token::new(0..2, BrainToken::Let, "let".to_string())
+        );
     }
 
     #[test]
     fn multiple_peek() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let mut peek = stream.peek();
 
-        assert_eq!(peek.unwrap(), &Token::new(0..2, BrainToken::Let, None));
+        assert_eq!(
+            peek.unwrap(),
+            &Token::new(0..2, BrainToken::Let, "let".to_string())
+        );
 
         peek = stream.peek();
 
-        assert_eq!(peek.unwrap(), &Token::new(0..2, BrainToken::Let, None));
+        assert_eq!(
+            peek.unwrap(),
+            &Token::new(0..2, BrainToken::Let, "let".to_string())
+        );
     }
 
     #[test]
     fn next() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         let next = stream.next();
 
-        assert_eq!(next.unwrap(), &Token::new(0..2, BrainToken::Let, None));
+        assert_eq!(
+            next.unwrap(),
+            &Token::new(0..2, BrainToken::Let, "let".to_string())
+        );
     }
 
     #[test]
     fn next_consume_stream() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
         assert_eq!(
             stream.next().unwrap(),
-            &Token::new(0..2, BrainToken::Let, None)
+            &Token::new(0..2, BrainToken::Let, "let".to_string())
         );
         assert_eq!(
             stream.next().unwrap(),
-            &Token::new(0..2, BrainToken::Identifier, Some("x".to_string()))
+            &Token::new(0..2, BrainToken::Identifier, "x".to_string())
         );
         assert_eq!(
             stream.next().unwrap(),
-            &Token::new(0..2, BrainToken::Assign, None)
+            &Token::new(0..2, BrainToken::Assign, "=".to_string())
         );
         assert_eq!(
             stream.next().unwrap(),
-            &Token::new(0..2, BrainToken::Number, Some("0".to_string()))
+            &Token::new(0..2, BrainToken::Number, "0".to_string())
         );
         assert!(stream.next().is_none());
     }
@@ -213,10 +245,10 @@ mod tests {
     #[test]
     fn skip() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -225,17 +257,17 @@ mod tests {
 
         assert_eq!(
             stream.peek().unwrap(),
-            &Token::new(0..2, BrainToken::Identifier, Some("x".to_string()))
+            &Token::new(0..2, BrainToken::Identifier, "x".to_string())
         );
     }
 
     #[test]
     fn skip_consume_stream() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -251,10 +283,10 @@ mod tests {
     #[test]
     fn expect() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -265,10 +297,10 @@ mod tests {
     #[test]
     fn expect_consume_stream() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -282,10 +314,10 @@ mod tests {
     #[test]
     fn expect_wrong_token() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -317,10 +349,10 @@ mod tests {
     #[test]
     fn check() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -332,10 +364,10 @@ mod tests {
     #[test]
     fn skip_if() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -344,17 +376,17 @@ mod tests {
 
         assert_ne!(
             stream.peek().unwrap(),
-            &Token::new(0..2, BrainToken::Let, None)
+            &Token::new(0..2, BrainToken::Let, "let".to_string())
         );
     }
 
     #[test]
     fn double_peek() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Let, None),
-            Token::new(0..2, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..2, BrainToken::Assign, None),
-            Token::new(0..2, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..2, BrainToken::Let, "let".to_string()),
+            Token::new(0..2, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..2, BrainToken::Assign, "=".to_string()),
+            Token::new(0..2, BrainToken::Number, "0".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -364,12 +396,8 @@ mod tests {
         assert_eq!(
             peek,
             (
-                Some(&Token::new(0..2, BrainToken::Let, None)),
-                Some(&Token::new(
-                    0..2,
-                    BrainToken::Identifier,
-                    Some("x".to_string())
-                ))
+                Some(&Token::new(0..2, BrainToken::Let, "let".to_string())),
+                Some(&Token::new(0..2, BrainToken::Identifier, "x".to_string()))
             )
         )
     }

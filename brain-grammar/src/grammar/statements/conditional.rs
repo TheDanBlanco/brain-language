@@ -488,10 +488,10 @@ mod tests {
     #[test]
     fn parse_conditional() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::If, None),
-            Token::new(3..4, BrainToken::True, None),
-            Token::new(5..6, BrainToken::LeftBrace, None),
-            Token::new(6..7, BrainToken::RightBrace, None),
+            Token::new(0..2, BrainToken::If, "if".to_string()),
+            Token::new(3..4, BrainToken::True, "true".to_string()),
+            Token::new(5..6, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(6..7, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -512,13 +512,13 @@ mod tests {
     #[test]
     fn parse_conditional_with_alternate() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::If, None),
-            Token::new(3..4, BrainToken::True, None),
-            Token::new(5..6, BrainToken::LeftBrace, None),
-            Token::new(6..7, BrainToken::RightBrace, None),
-            Token::new(8..10, BrainToken::Else, None),
-            Token::new(11..12, BrainToken::LeftBrace, None),
-            Token::new(12..13, BrainToken::RightBrace, None),
+            Token::new(0..2, BrainToken::If, "if".to_string()),
+            Token::new(3..4, BrainToken::True, "true".to_string()),
+            Token::new(5..6, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(6..7, BrainToken::RightBrace, "}".to_string()),
+            Token::new(8..10, BrainToken::Else, "else".to_string()),
+            Token::new(11..12, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(12..13, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

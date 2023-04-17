@@ -39,7 +39,11 @@ mod test {
 
     #[test]
     fn parse_continue() {
-        let tokens = vec![Token::new(0..7, BrainToken::Continue, None)];
+        let tokens = vec![Token::new(
+            0..7,
+            BrainToken::Continue,
+            "continue".to_string(),
+        )];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

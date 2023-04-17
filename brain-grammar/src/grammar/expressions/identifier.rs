@@ -29,28 +29,9 @@ impl Evaluate for Identifier {
 
 impl Parse for Identifier {
     fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
-        let next = stream.next();
+        let next = stream.expect(BrainToken::Identifier)?;
 
-        if next.is_none() {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEndOfFile,
-                format!("Expected identifier, found End of File"),
-            ));
-        }
-
-        let token = next.unwrap();
-
-        if let BrainToken::Identifier = &token.token {
-            return Ok(Identifier::new(token.data.clone().unwrap()));
-        }
-
-        return Err(Error::new(
-            ErrorKind::UnexpectedExpression,
-            format!(
-                "Expected identifier, found {} ({} - {})",
-                token.token, token.span.start, token.span.end
-            ),
-        ));
+        return Ok(Identifier::new(next.data.clone()));
     }
 }
 
@@ -93,11 +74,7 @@ mod tests {
 
     #[test]
     fn parse_identifier() {
-        let tokens = vec![Token::new(
-            0..1,
-            BrainToken::Identifier,
-            Some("a".to_string()),
-        )];
+        let tokens = vec![Token::new(0..1, BrainToken::Identifier, "a".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -118,13 +95,13 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected Identifier, but found End of File".to_string()
         );
     }
 
     #[test]
     fn parse_identifier_not_identifier() {
-        let tokens = vec![Token::new(0..3, BrainToken::Null, None)];
+        let tokens = vec![Token::new(0..3, BrainToken::Null, "null".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -133,7 +110,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedExpression]: Expected identifier, found Token::Null (0 - 3)".to_string()
+            "[UnexpectedToken]: Expected Identifier, found Null (0 - 3)".to_string()
         );
     }
 }

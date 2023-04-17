@@ -63,7 +63,7 @@ where
                     self.tokens.push(Token::new(
                         span.clone(),
                         literal.token.clone(),
-                        Some(next.to_string()),
+                        next.to_string(),
                     ));
                     self.current += next.len();
                     self.skip_whitespace();
@@ -89,7 +89,7 @@ where
                     self.tokens.push(Token::new(
                         span.clone(),
                         regex_attribute.token.clone(),
-                        Some(capture.to_string()),
+                        capture.to_string(),
                     ));
                     self.current += capture.len();
                     self.skip_whitespace();
@@ -163,7 +163,7 @@ mod tests {
             TokenStream::<TestToken>::from_vec(vec![Token::new(
                 0..4,
                 TestToken::Literal,
-                Some("test".to_string())
+                "test".to_string()
             )])
         );
     }
@@ -182,7 +182,7 @@ mod tests {
             TokenStream::<TestToken>::from_vec(vec![Token::new(
                 0..4,
                 TestToken::Regex,
-                Some("test".to_string())
+                "test".to_string()
             )])
         );
     }
@@ -201,8 +201,8 @@ mod tests {
         assert_eq!(
             tokens,
             TokenStream::<TestToken>::from_vec(vec![
-                Token::new(0..1, TestToken::Literal, Some("a".to_string())),
-                Token::new(2..8, TestToken::Regex, Some("string".to_string()))
+                Token::new(0..1, TestToken::Literal, "a".to_string()),
+                Token::new(2..8, TestToken::Regex, "string".to_string())
             ])
         );
     }
