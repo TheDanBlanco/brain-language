@@ -24,28 +24,10 @@ impl Field {
         target: Expression,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(BrainToken::Dot)?;
-        let next = stream.next();
 
-        if next.is_none() {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEndOfFile,
-                "Expected identifier, found End of File".to_string(),
-            ));
-        }
+        let token = stream.expect(BrainToken::Identifier)?;
 
-        let token = &next.unwrap();
-
-        if let BrainToken::Identifier = token.token {
-            return Ok(Self::new(token.data.clone().unwrap(), target));
-        }
-
-        Err(Error::new(
-            ErrorKind::UnexpectedToken,
-            format!(
-                "Expected identifier, found {} ({} - {})",
-                token.token, token.span.start, token.span.end
-            ),
-        ))
+        Ok(Self::new(token.data.clone(), target))
     }
 }
 
@@ -173,8 +155,8 @@ mod tests {
         let expression = Expression::new_map(vec![]);
 
         let tokens = vec![
-            Token::new(0..1, BrainToken::Dot, None),
-            Token::new(1..2, BrainToken::Identifier, Some("a".to_string())),
+            Token::new(0..1, BrainToken::Dot, ".".to_string()),
+            Token::new(1..2, BrainToken::Identifier, "a".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -189,7 +171,7 @@ mod tests {
     fn parse_field_accessor_eof() {
         let expression = Expression::new_map(vec![]);
 
-        let tokens = vec![Token::new(0..1, BrainToken::Dot, None)];
+        let tokens = vec![Token::new(0..1, BrainToken::Dot, ".".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -198,7 +180,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected Identifier, but found End of File".to_string()
         )
     }
 
@@ -207,8 +189,8 @@ mod tests {
         let expression = Expression::new_map(vec![]);
 
         let tokens = vec![
-            Token::new(0..1, BrainToken::Dot, None),
-            Token::new(1..2, BrainToken::Null, None),
+            Token::new(0..1, BrainToken::Dot, ".".to_string()),
+            Token::new(1..2, BrainToken::Null, "null".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -218,7 +200,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedToken]: Expected identifier, found Token::Null (1 - 2)".to_string()
+            "[UnexpectedToken]: Expected Identifier, found Null (1 - 2)".to_string()
         )
     }
 }

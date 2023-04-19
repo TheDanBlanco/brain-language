@@ -39,7 +39,7 @@ mod test {
 
     #[test]
     fn parse_break() {
-        let tokens = vec![Token::new(0..5, BrainToken::Break, None)];
+        let tokens = vec![Token::new(0..5, BrainToken::Break, "break".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

@@ -40,22 +40,13 @@ impl Resolve for Reassignment {
 
 impl Parse for Reassignment {
     fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
-        let next = stream.next();
-
-        if next.is_none() {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEndOfFile,
-                "Expected identifier, found End of File".to_string(),
-            ));
-        }
-
-        let token = next.unwrap().clone();
+        let identifier = stream.expect(BrainToken::Identifier)?.clone();
 
         stream.expect(BrainToken::Assign)?;
 
         let expression = Expression::parse(stream)?;
 
-        let reassignment = Self::new(token.data.expect("Identifier should have data"), expression);
+        let reassignment = Self::new(identifier.data, expression);
 
         stream.skip_if(BrainToken::Semicolon);
 
@@ -220,9 +211,9 @@ mod tests {
     #[test]
     fn parse_assignment() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..1, BrainToken::Assign, None),
-            Token::new(0..1, BrainToken::String, Some("hello".to_string())),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..1, BrainToken::Assign, "=".to_string()),
+            Token::new(0..1, BrainToken::String, "hello".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -242,9 +233,9 @@ mod tests {
     #[test]
     fn parse_reassignment_number() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..1, BrainToken::Assign, None),
-            Token::new(0..1, BrainToken::Number, Some("1".to_string())),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..1, BrainToken::Assign, "=".to_string()),
+            Token::new(0..1, BrainToken::Number, "1".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -261,9 +252,9 @@ mod tests {
     #[test]
     fn parse_reassignment_null() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..1, BrainToken::Assign, None),
-            Token::new(0..1, BrainToken::Null, None),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..1, BrainToken::Assign, "=".to_string()),
+            Token::new(0..1, BrainToken::Null, "null".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -280,9 +271,9 @@ mod tests {
     #[test]
     fn parse_reassignment_bool() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..1, BrainToken::Assign, None),
-            Token::new(0..1, BrainToken::True, None),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..1, BrainToken::Assign, "=".to_string()),
+            Token::new(0..1, BrainToken::True, "true".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -302,10 +293,10 @@ mod tests {
     #[test]
     fn parse_reassignment_collection() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..1, BrainToken::Assign, None),
-            Token::new(0..1, BrainToken::LeftBracket, None),
-            Token::new(0..1, BrainToken::RightBracket, None),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..1, BrainToken::Assign, "=".to_string()),
+            Token::new(0..1, BrainToken::LeftBracket, "[".to_string()),
+            Token::new(0..1, BrainToken::RightBracket, "]".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -322,10 +313,10 @@ mod tests {
     #[test]
     fn parse_reassignment_map() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(0..1, BrainToken::Assign, None),
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(0..1, BrainToken::Assign, "=".to_string()),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -350,7 +341,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected identifier, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected Identifier, but found End of File".to_string()
         );
     }
 }

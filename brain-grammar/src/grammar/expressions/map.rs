@@ -211,11 +211,11 @@ mod tests {
     #[test]
     fn parse_map() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
-            Token::new(0..1, BrainToken::Colon, None),
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(0..1, BrainToken::Identifier, "a".to_string()),
+            Token::new(0..1, BrainToken::Colon, ":".to_string()),
+            Token::new(0..1, BrainToken::Number, "0".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -235,13 +235,13 @@ mod tests {
     #[test]
     fn parse_map_invalid_key_collection() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::LeftBracket, None),
-            Token::new(0..1, BrainToken::Identifier, Some("a".to_string())),
-            Token::new(0..1, BrainToken::RightBracket, None),
-            Token::new(0..1, BrainToken::Colon, None),
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(0..1, BrainToken::LeftBracket, "[".to_string()),
+            Token::new(0..1, BrainToken::Identifier, "a".to_string()),
+            Token::new(0..1, BrainToken::RightBracket, "]".to_string()),
+            Token::new(0..1, BrainToken::Colon, ":".to_string()),
+            Token::new(0..1, BrainToken::Number, "0".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -258,12 +258,12 @@ mod tests {
     #[test]
     fn parse_map_invalid_key_map() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::RightBrace, None),
-            Token::new(0..1, BrainToken::Colon, None),
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
+            Token::new(0..1, BrainToken::Colon, ":".to_string()),
+            Token::new(0..1, BrainToken::Number, "0".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -280,14 +280,14 @@ mod tests {
     #[test]
     fn parse_map_invalid_key_function() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(0..1, BrainToken::Identifier, Some("test".to_string())),
-            Token::new(0..1, BrainToken::LeftParen, None),
-            Token::new(0..1, BrainToken::RightParen, None),
-            Token::new(0..1, BrainToken::RightBrace, None),
-            Token::new(0..1, BrainToken::Colon, None),
-            Token::new(0..1, BrainToken::Number, Some("0".to_string())),
-            Token::new(0..1, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(0..1, BrainToken::Identifier, "test".to_string()),
+            Token::new(0..1, BrainToken::LeftParen, "(".to_string()),
+            Token::new(0..1, BrainToken::RightParen, ")".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
+            Token::new(0..1, BrainToken::Colon, ":".to_string()),
+            Token::new(0..1, BrainToken::Number, "0".to_string()),
+            Token::new(0..1, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

@@ -98,39 +98,31 @@ impl Operator {
 
 impl Parse for Operator {
     fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
-        let next = stream.next();
+        let next = stream.assert_next("Expected operator, found End of File".to_string())?;
 
-        if next.is_none() {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEndOfFile,
-                "Expected operator, found End of File".to_string(),
-            ));
+        let token = &next.token;
+
+        if Mathematical::matches(token) {
+            return Ok(Operator::Mathematical(Mathematical::parse(token)));
         }
 
-        let token = &next.unwrap();
-        let token_literal = &token.token;
-
-        if Mathematical::matches(token_literal) {
-            return Ok(Operator::Mathematical(Mathematical::parse(token_literal)));
+        if Logical::matches(token) {
+            return Ok(Operator::Logical(Logical::parse(token)));
         }
 
-        if Logical::matches(token_literal) {
-            return Ok(Operator::Logical(Logical::parse(token_literal)));
+        if Comparison::matches(token) {
+            return Ok(Operator::Comparison(Comparison::parse(token)));
         }
 
-        if Comparison::matches(token_literal) {
-            return Ok(Operator::Comparison(Comparison::parse(token_literal)));
-        }
-
-        if Bitwise::matches(token_literal) {
-            return Ok(Operator::Bitwise(Bitwise::parse(token_literal)));
+        if Bitwise::matches(token) {
+            return Ok(Operator::Bitwise(Bitwise::parse(token)));
         }
 
         return Err(Error::new(
             ErrorKind::UnexpectedToken,
             format!(
-                "Expected operator, found {token_literal} ({} - {})",
-                token.span.start, token.span.end
+                "Expected operator, found {token} ({} - {})",
+                &next.span.start, &next.span.end
             ),
         ));
     }
@@ -289,7 +281,7 @@ mod tests {
 
     #[test]
     fn parse_operator_mathematical() {
-        let tokens = vec![Token::new(0..1, BrainToken::Plus, None)];
+        let tokens = vec![Token::new(0..1, BrainToken::Plus, "+".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -301,7 +293,7 @@ mod tests {
 
     #[test]
     fn parse_operator_logical() {
-        let tokens = vec![Token::new(0..2, BrainToken::And, None)];
+        let tokens = vec![Token::new(0..2, BrainToken::And, "and".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -313,7 +305,7 @@ mod tests {
 
     #[test]
     fn parse_operator_comparison() {
-        let tokens = vec![Token::new(0..1, BrainToken::GreaterThan, None)];
+        let tokens = vec![Token::new(0..1, BrainToken::GreaterThan, ">".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -325,7 +317,7 @@ mod tests {
 
     #[test]
     fn parse_operator_bitwise_and() {
-        let tokens = vec![Token::new(0..1, BrainToken::BitwiseAnd, None)];
+        let tokens = vec![Token::new(0..1, BrainToken::BitwiseAnd, "&".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -337,7 +329,7 @@ mod tests {
 
     #[test]
     fn parse_operator_bitwise_or() {
-        let tokens = vec![Token::new(0..1, BrainToken::BitwiseOr, None)];
+        let tokens = vec![Token::new(0..1, BrainToken::BitwiseOr, "|".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -364,7 +356,7 @@ mod tests {
 
     #[test]
     fn parse_operator_not_operator() {
-        let tokens = vec![Token::new(0..1, BrainToken::LeftBrace, None)];
+        let tokens = vec![Token::new(0..1, BrainToken::LeftBrace, "{".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

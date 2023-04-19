@@ -78,9 +78,9 @@ mod tests {
     #[test]
     fn parse_loop() {
         let tokens = vec![
-            Token::new(0..4, BrainToken::Loop, None),
-            Token::new(5..6, BrainToken::LeftBrace, None),
-            Token::new(11..12, BrainToken::RightBrace, None),
+            Token::new(0..4, BrainToken::Loop, "loop".to_string()),
+            Token::new(5..6, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(11..12, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn parse_node_statement() {
-        let tokens = vec![Token::new(0..4, BrainToken::Break, None)];
+        let tokens = vec![Token::new(0..4, BrainToken::Break, "break".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -154,11 +154,7 @@ mod tests {
 
     #[test]
     fn parse_node_expression() {
-        let tokens = vec![Token::new(
-            0..1,
-            BrainToken::String,
-            Some(r#""a""#.to_string()),
-        )];
+        let tokens = vec![Token::new(0..1, BrainToken::String, r#""a""#.to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 

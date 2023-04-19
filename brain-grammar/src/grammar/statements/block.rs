@@ -134,8 +134,8 @@ mod tests {
     #[test]
     fn parse_block() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBrace, None),
-            Token::new(1..2, BrainToken::RightBrace, None),
+            Token::new(0..1, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(1..2, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);

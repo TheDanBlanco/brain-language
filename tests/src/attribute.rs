@@ -29,10 +29,10 @@ mod tests {
         let input = "let first = 0".to_string();
 
         let expected_tokens = vec![
-            Token::new(0..3, BrainToken::Let, Some("let".to_string())),
-            Token::new(4..9, BrainToken::Identifier, Some("first".to_string())),
-            Token::new(10..11, BrainToken::Assign, Some("=".to_string())),
-            Token::new(12..13, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..3, BrainToken::Let, "let".to_string()),
+            Token::new(4..9, BrainToken::Identifier, "first".to_string()),
+            Token::new(10..11, BrainToken::Assign, "=".to_string()),
+            Token::new(12..13, BrainToken::Number, "0".to_string()),
         ];
 
         let expected_stream = TokenStream::from_vec(expected_tokens);
@@ -47,9 +47,9 @@ mod tests {
         let input = "x = 0".to_string();
 
         let expected_tokens = vec![
-            Token::new(0..1, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(2..3, BrainToken::Assign, Some("=".to_string())),
-            Token::new(4..5, BrainToken::Number, Some("0".to_string())),
+            Token::new(0..1, BrainToken::Identifier, "x".to_string()),
+            Token::new(2..3, BrainToken::Assign, "=".to_string()),
+            Token::new(4..5, BrainToken::Number, "0".to_string()),
         ];
 
         let expected_stream = TokenStream::from_vec(expected_tokens);
@@ -64,10 +64,10 @@ mod tests {
         let input = r#"let x = "hello""#.to_string();
 
         let expected_tokens = vec![
-            Token::new(0..3, BrainToken::Let, Some("let".to_string())),
-            Token::new(4..5, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(6..7, BrainToken::Assign, Some("=".to_string())),
-            Token::new(8..15, BrainToken::String, Some(r#""hello""#.to_string())),
+            Token::new(0..3, BrainToken::Let, "let".to_string()),
+            Token::new(4..5, BrainToken::Identifier, "x".to_string()),
+            Token::new(6..7, BrainToken::Assign, "=".to_string()),
+            Token::new(8..15, BrainToken::String, r#""hello""#.to_string()),
         ];
 
         let expected_stream = TokenStream::from_vec(expected_tokens);

@@ -39,34 +39,17 @@ impl Parse for FunctionDefinition {
     fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
         stream.expect(BrainToken::Function)?;
 
-        let next = stream.next();
-
-        if next.is_none() {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEndOfFile,
-                "Expected function identifier, found End of File".to_string(),
-            ));
-        }
-
-        let token = next.unwrap().clone();
+        let identifier = stream.expect(BrainToken::Identifier)?.clone();
 
         stream.expect(BrainToken::LeftParen)?;
 
         let mut arguments = vec![];
 
         while !stream.check(BrainToken::RightParen) {
-            let next = stream.next();
+            let next = stream.expect(BrainToken::Identifier)?.clone();
 
-            if next.is_none() {
-                return Err(Error::new(
-                    ErrorKind::UnexpectedEndOfFile,
-                    "Expected function argument, found End of File".to_string(),
-                ));
-            }
+            arguments.push(next.data);
 
-            let token = next.unwrap().clone();
-
-            arguments.push(token.data.unwrap());
             stream.skip_if(BrainToken::Comma);
         }
 
@@ -74,7 +57,7 @@ impl Parse for FunctionDefinition {
 
         let block = Statement::parse(stream)?;
 
-        let definition = Self::new(token.data.unwrap(), arguments, block);
+        let definition = Self::new(identifier.data, arguments, block);
 
         stream.skip_if(BrainToken::Semicolon);
 
@@ -146,12 +129,12 @@ mod tests {
     #[test]
     fn parse_function_definition() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Function, None),
-            Token::new(3..4, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(5..6, BrainToken::LeftParen, None),
-            Token::new(7..8, BrainToken::RightParen, None),
-            Token::new(9..10, BrainToken::LeftBrace, None),
-            Token::new(11..12, BrainToken::RightBrace, None),
+            Token::new(0..2, BrainToken::Function, "fn".to_string()),
+            Token::new(3..4, BrainToken::Identifier, "x".to_string()),
+            Token::new(5..6, BrainToken::LeftParen, "(".to_string()),
+            Token::new(7..8, BrainToken::RightParen, ")".to_string()),
+            Token::new(9..10, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(11..12, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -168,15 +151,15 @@ mod tests {
     #[test]
     fn parse_function_definition_with_args() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Function, None),
-            Token::new(3..4, BrainToken::Identifier, Some("adder".to_string())),
-            Token::new(5..6, BrainToken::LeftParen, None),
-            Token::new(7..8, BrainToken::Identifier, Some("x".to_string())),
-            Token::new(9..10, BrainToken::Comma, None),
-            Token::new(11..12, BrainToken::Identifier, Some("y".to_string())),
-            Token::new(13..14, BrainToken::RightParen, None),
-            Token::new(15..16, BrainToken::LeftBrace, None),
-            Token::new(17..18, BrainToken::RightBrace, None),
+            Token::new(0..2, BrainToken::Function, "fn".to_string()),
+            Token::new(3..4, BrainToken::Identifier, "adder".to_string()),
+            Token::new(5..6, BrainToken::LeftParen, "(".to_string()),
+            Token::new(7..8, BrainToken::Identifier, "x".to_string()),
+            Token::new(9..10, BrainToken::Comma, ",".to_string()),
+            Token::new(11..12, BrainToken::Identifier, "y".to_string()),
+            Token::new(13..14, BrainToken::RightParen, ")".to_string()),
+            Token::new(15..16, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(17..18, BrainToken::RightBrace, "}".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -196,7 +179,7 @@ mod tests {
 
     #[test]
     fn parse_function_definition_with_eof() {
-        let tokens = vec![Token::new(0..2, BrainToken::Function, None)];
+        let tokens = vec![Token::new(0..2, BrainToken::Function, "fn".to_string())];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
@@ -205,16 +188,16 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected function identifier, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected Identifier, but found End of File".to_string()
         );
     }
 
     #[test]
     fn parse_function_definition_with_eof_args() {
         let tokens = vec![
-            Token::new(0..2, BrainToken::Function, None),
-            Token::new(3..4, BrainToken::Identifier, Some("adder".to_string())),
-            Token::new(5..6, BrainToken::LeftParen, None),
+            Token::new(0..2, BrainToken::Function, "fn".to_string()),
+            Token::new(3..4, BrainToken::Identifier, "adder".to_string()),
+            Token::new(5..6, BrainToken::LeftParen, "(".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
@@ -224,7 +207,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected function argument, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected Identifier, but found End of File".to_string()
         );
     }
 }
