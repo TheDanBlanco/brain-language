@@ -72,6 +72,20 @@ impl Comparison {
             (Comparison::NotEqual, Value::Boolean(left), Value::Boolean(right)) => {
                 Ok(Value::Boolean(left != right))
             }
+            (
+                Comparison::Equal,
+                Value::EnumVariant(left_name, left_variant),
+                Value::EnumVariant(right_name, right_variant),
+            ) => Ok(Value::Boolean(
+                left_name == right_name && left_variant == right_variant,
+            )),
+            (
+                Comparison::NotEqual,
+                Value::EnumVariant(left_name, left_variant),
+                Value::EnumVariant(right_name, right_variant),
+            ) => Ok(Value::Boolean(
+                left_name != right_name || left_variant != right_variant,
+            )),
             _ => Err(Error::new(
                 ErrorKind::InvalidComparisonOperation,
                 format!("Cannot do {self} comparison on {left} and {right}"),

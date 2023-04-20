@@ -11,6 +11,8 @@ pub enum Value {
     Collection(Vec<Value>),
     Function(Vec<String>, Box<Statement>),
     Map(BTreeMap<Value, Value>),
+    EnumVariant(String, String),
+    EnumDefinition(String, Vec<String>),
     Null,
 }
 
@@ -28,6 +30,8 @@ impl fmt::Display for Value {
             Value::Boolean(bool) => write!(f, "{bool}"),
             Value::Null => write!(f, "null"),
             Value::Function(_, _) => write!(f, "[function]"),
+            Value::EnumDefinition(name, _) => write!(f, "[enum {name}]"),
+            Value::EnumVariant(name, variant) => write!(f, "{name}::{variant}"),
             Value::Map(map) => {
                 let mut output = String::new();
                 for (i, (key, value)) in map.iter().enumerate() {
