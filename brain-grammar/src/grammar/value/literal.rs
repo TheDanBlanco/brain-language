@@ -101,3 +101,185 @@ impl Parse for bool {
         ));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use brain_token::token::Token;
+
+    use super::*;
+
+    #[test]
+    fn matches() {
+        assert!(LiteralValue::matches(&BrainToken::String));
+        assert!(LiteralValue::matches(&BrainToken::Number));
+        assert!(LiteralValue::matches(&BrainToken::True));
+        assert!(LiteralValue::matches(&BrainToken::False));
+        assert!(LiteralValue::matches(&BrainToken::Null));
+        assert!(!LiteralValue::matches(&BrainToken::Identifier));
+    }
+
+    #[test]
+    fn parse_string() {
+        let tokens = vec![Token::new(0..2, BrainToken::String, r#""oh""#.to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), LiteralValue::String("oh".to_string()));
+    }
+
+    #[test]
+    fn parse_number() {
+        let tokens = vec![Token::new(0..1, BrainToken::Number, "1".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), LiteralValue::Number(1));
+    }
+
+    #[test]
+    fn parse_boolean_true() {
+        let tokens = vec![Token::new(0..4, BrainToken::True, "true".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), LiteralValue::Boolean(true));
+    }
+
+    #[test]
+    fn parse_boolean_false() {
+        let tokens = vec![Token::new(0..5, BrainToken::False, "false".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), LiteralValue::Boolean(false));
+    }
+
+    #[test]
+    fn parse_null() {
+        let tokens = vec![Token::new(0..4, BrainToken::Null, "null".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), LiteralValue::Null);
+    }
+
+    #[test]
+    fn parse_eof() {
+        let tokens = vec![];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert!(val.is_err());
+    }
+
+    #[test]
+    fn parse_unexpected_token() {
+        let tokens = vec![Token::new(0..1, BrainToken::Identifier, "oh".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert!(val.is_err());
+    }
+
+    #[test]
+    fn display_string() {
+        let val = LiteralValue::String("oh".to_string());
+
+        assert_eq!(val.to_string(), "oh");
+    }
+
+    #[test]
+    fn display_number() {
+        let val = LiteralValue::Number(1);
+
+        assert_eq!(val.to_string(), "1");
+    }
+
+    #[test]
+    fn display_boolean_true() {
+        let val = LiteralValue::Boolean(true);
+
+        assert_eq!(val.to_string(), "true");
+    }
+
+    #[test]
+    fn display_boolean_false() {
+        let val = LiteralValue::Boolean(false);
+
+        assert_eq!(val.to_string(), "false");
+    }
+
+    #[test]
+    fn display_null() {
+        let val = LiteralValue::Null;
+
+        assert_eq!(val.to_string(), "null");
+    }
+
+    #[test]
+    fn parse_string_value() {
+        let tokens = vec![Token::new(0..2, BrainToken::String, r#""oh""#.to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = String::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), "oh".to_string());
+    }
+
+    #[test]
+    fn parse_number_value() {
+        let tokens = vec![Token::new(0..1, BrainToken::Number, "1".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = i64::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), 1);
+    }
+
+    #[test]
+    fn parse_boolean_value_true() {
+        let tokens = vec![Token::new(0..4, BrainToken::True, "true".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = bool::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), true);
+    }
+
+    #[test]
+    fn parse_boolean_value_false() {
+        let tokens = vec![Token::new(0..5, BrainToken::False, "false".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = bool::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), false);
+    }
+
+    #[test]
+    fn parse_boolean_value_unexpected_token() {
+        let tokens = vec![Token::new(0..1, BrainToken::Number, "1".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = bool::parse(&mut stream);
+
+        assert!(val.is_err());
+    }
+
+    #[test]
+    fn parse_null_value() {
+        let tokens = vec![Token::new(0..4, BrainToken::Null, "null".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let val = LiteralValue::parse(&mut stream);
+
+        assert_eq!(val.unwrap(), LiteralValue::Null);
+    }
+}

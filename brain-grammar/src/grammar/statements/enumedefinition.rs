@@ -49,7 +49,7 @@ impl Resolve for EnumDefinition {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         context.symbols.insert(
             self.name.clone(),
-            Value::EnumDefinition(self.name.clone(), self.variants.clone()),
+            Value::new_enum_definition(self.name.clone(), self.variants.clone()),
         );
 
         Ok(Output::None)
@@ -85,7 +85,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("test").unwrap(),
-            &Value::EnumDefinition(name, variants)
+            &Value::new_enum_definition(name, variants)
         )
     }
 

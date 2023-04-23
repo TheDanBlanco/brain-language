@@ -29,3 +29,26 @@ impl fmt::Display for Map {
         write!(f, "{{ {output} }}")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::grammar::value::Value;
+
+    #[test]
+    fn test_map() {
+        let mut map = BTreeMap::new();
+        map.insert(
+            Value::new_string("key".to_string()),
+            Value::new_string("value".to_string()),
+        );
+        let map = Map::new(map);
+        assert_eq!(map.to_string(), "{ key: value }");
+    }
+
+    #[test]
+    fn test_map_empty() {
+        let map = Map::new(BTreeMap::new());
+        assert_eq!(map.to_string(), "{}");
+    }
+}

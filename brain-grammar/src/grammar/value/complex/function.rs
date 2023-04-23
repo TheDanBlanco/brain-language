@@ -22,3 +22,34 @@ impl fmt::Display for Function {
         write!(f, "[function]")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_function() {
+        let function = Function::new(
+            vec!["a".to_string(), "b".to_string()],
+            Statement::new_break(),
+        );
+
+        assert_eq!(
+            function,
+            Function {
+                arguments: vec!["a".to_string(), "b".to_string()],
+                body: Box::new(Statement::new_break()),
+            }
+        );
+    }
+
+    #[test]
+    fn display_function() {
+        let function = Function::new(
+            vec!["a".to_string(), "b".to_string()],
+            Statement::new_break(),
+        );
+
+        assert_eq!(format!("{}", function), "[function]");
+    }
+}

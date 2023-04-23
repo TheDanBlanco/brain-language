@@ -4,7 +4,7 @@ use brain_error::{Error, ErrorKind};
 
 use crate::grammar::{
     token::BrainToken,
-    value::{literal::LiteralValue, Value},
+    value::{complex::ComplexValue, literal::LiteralValue, Value},
     Match,
 };
 
@@ -104,6 +104,16 @@ impl Comparison {
                 Value::Literal(LiteralValue::Boolean(left)),
                 Value::Literal(LiteralValue::Boolean(right)),
             ) => Ok(Value::new_boolean(left != right)),
+            (
+                Comparison::Equal,
+                Value::Complex(ComplexValue::Enum(lhs)),
+                Value::Complex(ComplexValue::Enum(rhs)),
+            ) => Ok(Value::new_boolean(lhs == rhs)),
+            (
+                Comparison::NotEqual,
+                Value::Complex(ComplexValue::Enum(lhs)),
+                Value::Complex(ComplexValue::Enum(rhs)),
+            ) => Ok(Value::new_boolean(lhs != rhs)),
             _ => Err(Error::new(
                 ErrorKind::InvalidComparisonOperation,
                 format!("Cannot do {self} comparison on {left} and {right}"),

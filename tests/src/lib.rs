@@ -345,7 +345,7 @@ mod tests {
 
         assert_eq!(
             context.symbols.get("Test").unwrap(),
-            &Value::EnumDefinition(
+            &Value::new_enum_definition(
                 "Test".to_string(),
                 vec!["One".to_string(), "Two".to_string()]
             )
@@ -353,12 +353,12 @@ mod tests {
 
         assert_eq!(
             context.symbols.get("variant").unwrap(),
-            &Value::EnumVariant("Test".to_string(), "One".to_string())
+            &Value::new_enum_variant("Test".to_string(), "One".to_string())
         );
 
         assert_eq!(
             context.symbols.get("conditional").unwrap(),
-            &Value::Boolean(true)
+            &Value::new_boolean(true)
         );
     }
 }

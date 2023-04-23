@@ -25,3 +25,24 @@ impl fmt::Display for Collection {
         write!(f, "[{}]", output)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_display() {
+        let collection = Collection::new(vec![
+            Value::new_number(1),
+            Value::new_number(2),
+            Value::new_number(3),
+        ]);
+        assert_eq!(collection.to_string(), "[1, 2, 3]");
+    }
+
+    #[test]
+    fn test_display_empty() {
+        let collection = Collection::new(vec![]);
+        assert_eq!(collection.to_string(), "[]");
+    }
+}

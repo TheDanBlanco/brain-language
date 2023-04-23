@@ -8,8 +8,10 @@ use crate::grammar::value::complex::ComplexValue;
 use crate::grammar::value::literal::LiteralValue;
 
 use self::complex::collection::Collection;
+use self::complex::enumdefinition::EnumDefinition;
 use self::complex::function::Function;
 use self::complex::map::Map;
+use self::complex::r#enum::Enum;
 
 use super::statements::Statement;
 use super::token::BrainToken;
@@ -52,6 +54,16 @@ impl Value {
     pub fn new_function(args: Vec<String>, body: Statement) -> Self {
         Value::Complex(ComplexValue::Function(Function::new(args, body)))
     }
+
+    pub fn new_enum_variant(name: String, variant: String) -> Self {
+        Value::Complex(ComplexValue::Enum(Enum::new(name, variant)))
+    }
+
+    pub fn new_enum_definition(name: String, variants: Vec<String>) -> Self {
+        Value::Complex(ComplexValue::EnumDefinition(EnumDefinition::new(
+            name, variants,
+        )))
+    }
 }
 
 impl Parse for Value {
@@ -78,5 +90,44 @@ impl fmt::Display for Value {
             Value::Literal(literal) => write!(f, "{}", literal),
             Value::Complex(complex) => write!(f, "{}", complex),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use brain_token::token::Token;
+
+    use super::*;
+
+    #[test]
+    fn test_literal() {
+        let tokens = vec![Token::new(0..2, BrainToken::Number, "10".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let value = Value::parse(&mut stream);
+
+        assert!(value.is_ok());
+    }
+
+    #[test]
+    fn test_complex() {
+        let tokens = vec![Token::new(0..2, BrainToken::Identifier, "map".to_string())];
+        let mut stream = TokenStream::from_vec(tokens);
+
+        let value = Value::parse(&mut stream);
+
+        assert!(value.is_err());
+    }
+
+    #[test]
+    fn test_display_literal() {
+        let value = Value::new_string("Hello World".to_string());
+        assert_eq!(value.to_string(), "Hello World".to_string());
+    }
+
+    #[test]
+    fn test_display_complex() {
+        let value = Value::new_enum_variant("test".to_string(), "one".to_string());
+        assert_eq!(value.to_string(), "test::one".to_string());
     }
 }

@@ -1,7 +1,12 @@
 use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
-use crate::grammar::{context::Context, token::BrainToken, value::Value, Evaluate, Parse};
+use crate::grammar::{
+    context::Context,
+    token::BrainToken,
+    value::{complex::ComplexValue, Value},
+    Evaluate, Parse,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Enum {
@@ -38,8 +43,8 @@ impl Evaluate for Enum {
             ));
         }
 
-        if let Value::EnumDefinition(_, variants) = definition.unwrap() {
-            if !variants.contains(&self.variant) {
+        if let Value::Complex(ComplexValue::EnumDefinition(definition)) = definition.unwrap() {
+            if !definition.variants.contains(&self.variant) {
                 return Err(Error::new(
                     ErrorKind::UnknownEnumVariant,
                     format!(
@@ -49,7 +54,10 @@ impl Evaluate for Enum {
                 ));
             }
 
-            return Ok(Value::EnumVariant(self.name.clone(), self.variant.clone()));
+            return Ok(Value::new_enum_variant(
+                self.name.clone(),
+                self.variant.clone(),
+            ));
         }
 
         return Err(Error::new(
@@ -102,7 +110,7 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "test".to_string(),
-            Value::EnumDefinition("test".to_string(), vec!["a".to_string(), "b".to_string()]),
+            Value::new_enum_definition("test".to_string(), vec!["a".to_string(), "b".to_string()]),
         );
 
         let r#enum = Enum::new("test".to_string(), "a".to_string());
@@ -111,7 +119,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap(),
-            Value::EnumVariant("test".to_string(), "a".to_string())
+            Value::new_enum_variant("test".to_string(), "a".to_string())
         )
     }
 
@@ -120,7 +128,7 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "foo".to_string(),
-            Value::EnumDefinition("foo".to_string(), vec!["a".to_string(), "b".to_string()]),
+            Value::new_enum_definition("foo".to_string(), vec!["a".to_string(), "b".to_string()]),
         );
 
         let r#enum = Enum::new("test".to_string(), "a".to_string());
@@ -138,7 +146,7 @@ mod tests {
         let context = &mut Context::new();
         context
             .symbols
-            .insert("test".to_string(), Value::String("foo".to_string()));
+            .insert("test".to_string(), Value::new_string("foo".to_string()));
 
         let r#enum = Enum::new("test".to_string(), "a".to_string());
 
@@ -155,7 +163,7 @@ mod tests {
         let context = &mut Context::new();
         context.symbols.insert(
             "test".to_string(),
-            Value::EnumDefinition("foo".to_string(), vec!["a".to_string(), "b".to_string()]),
+            Value::new_enum_definition("foo".to_string(), vec!["a".to_string(), "b".to_string()]),
         );
 
         let r#enum = Enum::new("test".to_string(), "c".to_string());
