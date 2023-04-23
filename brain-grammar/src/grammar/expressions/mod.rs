@@ -7,7 +7,7 @@ use crate::grammar::{context::Context, value::Value};
 
 use self::{
     accessors::Accessor, binary::Binary, collection::Collection, functioncall::FunctionCall,
-    identifier::Identifier, literal::Literal, map::Map, operator::Operator,
+    identifier::Identifier, literal::Literal, map::Map, operator::Operator, r#enum::Enum,
 };
 
 use super::{token::BrainToken, Evaluate, Match, Parse};
@@ -16,6 +16,7 @@ pub mod accessors;
 pub mod binary;
 pub mod builtin;
 pub mod collection;
+pub mod r#enum;
 pub mod functioncall;
 pub mod identifier;
 pub mod literal;
@@ -30,6 +31,7 @@ pub enum Expression {
     Identifier(Identifier),
     FunctionCall(FunctionCall),
     Accessor(Accessor),
+    Enum(Enum),
     Map(Map),
 }
 
@@ -43,6 +45,7 @@ impl fmt::Display for Expression {
             Expression::FunctionCall(_) => write!(f, "function"),
             Expression::Accessor(_) => write!(f, "accessor"),
             Expression::Map(_) => write!(f, "map"),
+            Expression::Enum(_) => write!(f, "enum"),
         }
     }
 }
@@ -91,6 +94,7 @@ impl Evaluate for Expression {
             Expression::Identifier(identifier) => identifier.evaluate(context),
             Expression::Map(map) => map.evaluate(context),
             Expression::Accessor(accessor) => accessor.evaluate(context),
+            Expression::Enum(r#enum) => r#enum.evaluate(context),
         }
     }
 }
@@ -128,6 +132,12 @@ impl Parse for Expression {
         }
 
         if let &BrainToken::Identifier = &next.token {
+            if let (_, Some(following)) = stream.double_peek() {
+                if BrainToken::Separator == following.token {
+                    return Ok(Self::Enum(Enum::parse(stream)?));
+                }
+            }
+
             let mut expression = Self::Identifier(Identifier::parse(stream)?);
             while let Some(next) = stream.peek() {
                 if Operator::matches(&next.token) {

@@ -1,4 +1,3 @@
-use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{

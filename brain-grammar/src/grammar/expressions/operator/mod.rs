@@ -131,9 +131,9 @@ impl Parse for Operator {
 impl Match for Operator {
     fn matches(token: &BrainToken) -> bool {
         Comparison::matches(token)
-            || Logical::matches(token)
-            || Mathematical::matches(token)
-            || Bitwise::matches(token)
+            | Logical::matches(token)
+            | Mathematical::matches(token)
+            | Bitwise::matches(token)
     }
 }
 
