@@ -90,7 +90,7 @@ pub struct Nodes {
 
 impl Nodes {
     pub fn new(nodes: Vec<Node>) -> Self {
-        Nodes { nodes: nodes }
+        Nodes { nodes }
     }
 }
 

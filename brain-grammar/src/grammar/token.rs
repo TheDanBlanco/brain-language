@@ -10,6 +10,9 @@ pub enum BrainToken {
     #[token("fn")]
     Function,
 
+    #[token("enum")]
+    Enum,
+
     #[token("if")]
     If,
 
@@ -105,6 +108,9 @@ pub enum BrainToken {
 
     #[token(".")]
     Dot,
+
+    #[token("::")]
+    Separator,
 
     #[token(":")]
     Colon,

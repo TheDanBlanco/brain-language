@@ -5,8 +5,8 @@ use crate::grammar::{context::Context, expressions::Expression, output::Output, 
 
 use self::{
     assignment::Assignment, block::Block, conditional::Conditional,
-    functiondefinition::FunctionDefinition, r#break::Break, r#continue::Continue, r#for::For,
-    r#loop::Loop, r#return::Return, reassignment::Reassignment,
+    enumedefinition::EnumDefinition, functiondefinition::FunctionDefinition, r#break::Break,
+    r#continue::Continue, r#for::For, r#loop::Loop, r#return::Return, reassignment::Reassignment,
 };
 
 use super::{token::BrainToken, Match, Parse};
@@ -16,6 +16,7 @@ pub mod block;
 pub mod r#break;
 pub mod conditional;
 pub mod r#continue;
+pub mod enumedefinition;
 pub mod r#for;
 pub mod functiondefinition;
 pub mod r#loop;
@@ -28,6 +29,7 @@ pub enum Statement {
     Reassignment(Reassignment),
     Conditional(Conditional),
     FunctionDefinition(FunctionDefinition),
+    EnumDefinition(EnumDefinition),
     Return(Return),
     Break(Break),
     Continue(Continue),
@@ -99,6 +101,7 @@ impl Resolve for Statement {
             Statement::For(r#for) => r#for.resolve(context),
             Statement::Conditional(conditional) => r#conditional.resolve(context),
             Statement::FunctionDefinition(definition) => definition.resolve(context),
+            Statement::EnumDefinition(definition) => definition.resolve(context),
         }
     }
 }
@@ -121,10 +124,11 @@ impl Parse for Statement {
             BrainToken::Break => Statement::Break(Break::parse(stream)?),
             BrainToken::Continue => Statement::Continue(Continue::parse(stream)?),
             BrainToken::Return => Statement::Return(Return::parse(stream)?),
+            BrainToken::Enum => Statement::EnumDefinition(EnumDefinition::parse(stream)?),
             _ => return Err(
                 Error::new(
                 ErrorKind::UnexpectedToken,
-                format!("Expected let, fn, if, an identifier, loop, for, {{, break, continue, or return, found {token} ({} - {})", next.span.start, next.span.end)
+                format!("Expected let, fn, if, an identifier, loop, for, {{, break, continue, enum, or return, found {token} ({} - {})", next.span.start, next.span.end)
                 )
             )
         };
@@ -146,6 +150,7 @@ impl Match for Statement {
                 | BrainToken::Break
                 | BrainToken::Continue
                 | BrainToken::Return
+                | BrainToken::Enum
         )
     }
 }
@@ -600,6 +605,25 @@ mod tests {
     }
 
     #[test]
+    fn parse_statement_enum() {
+        let tokens = vec![
+            Token::new(0..3, BrainToken::Enum, "enum".to_string()),
+            Token::new(4..7, BrainToken::Identifier, "test".to_string()),
+            Token::new(8..9, BrainToken::LeftBrace, "{".to_string()),
+            Token::new(9..10, BrainToken::Identifier, "a".to_string()),
+            Token::new(10..11, BrainToken::Comma, ",".to_string()),
+            Token::new(12..13, BrainToken::Identifier, "b".to_string()),
+            Token::new(14..15, BrainToken::RightBrace, "}".to_string()),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Statement::parse(stream);
+
+        assert!(result.is_ok())
+    }
+
+    #[test]
     fn parse_statement_eof() {
         let tokens = vec![];
 
@@ -625,7 +649,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedToken]: Expected let, fn, if, an identifier, loop, for, {, break, continue, or return, found Token::Plus (0 - 1)".to_string()
+            "[UnexpectedToken]: Expected let, fn, if, an identifier, loop, for, {, break, continue, enum, or return, found Token::Plus (0 - 1)".to_string()
         )
     }
 }

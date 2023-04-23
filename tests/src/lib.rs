@@ -14,7 +14,7 @@ mod tests {
 
     fn run(source: String) -> Result<Program, Box<dyn std::error::Error>> {
         let stream = BrainToken::lex(source);
-        let mut program = Program::new(stream.unwrap(), false);
+        let mut program = Program::new(stream.unwrap(), true);
         program.run()?;
         Ok(program)
     }
@@ -333,5 +333,32 @@ mod tests {
         let result = run(source);
 
         assert!(result.is_ok())
+    }
+
+    #[test]
+
+    fn r#enum() {
+        let source = "enum Test { One, Two }; let variant = Test::One; if variant == Test::One { let conditional = true }".to_string();
+        let result = run(source);
+
+        let context = &result.unwrap().context;
+
+        assert_eq!(
+            context.symbols.get("Test").unwrap(),
+            &Value::EnumDefinition(
+                "Test".to_string(),
+                vec!["One".to_string(), "Two".to_string()]
+            )
+        );
+
+        assert_eq!(
+            context.symbols.get("variant").unwrap(),
+            &Value::EnumVariant("Test".to_string(), "One".to_string())
+        );
+
+        assert_eq!(
+            context.symbols.get("conditional").unwrap(),
+            &Value::Boolean(true)
+        );
     }
 }
