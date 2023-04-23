@@ -30,7 +30,7 @@ mod tests {
 
         assert_eq!(
             program.context.symbols.get("first"),
-            Some(&Value::Number(0))
+            Some(&Value::new_number(0))
         );
     }
 
@@ -42,7 +42,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("first"),
-            Some(&Value::Number(0))
+            Some(&Value::new_number(0))
         );
     }
 
@@ -54,7 +54,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("first"),
-            Some(&Value::Number(1))
+            Some(&Value::new_number(1))
         );
     }
 
@@ -66,7 +66,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("first"),
-            Some(&Value::String("ab".to_string()))
+            Some(&Value::new_string("ab".to_string()))
         );
     }
 
@@ -78,7 +78,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("first"),
-            Some(&Value::Boolean(false))
+            Some(&Value::new_boolean(false))
         );
     }
 
@@ -90,7 +90,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(3))
+            Some(&Value::new_number(3))
         );
     }
 
@@ -102,9 +102,9 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Map(BTreeMap::from_iter(vec![
-                (Value::String("a".to_string()), Value::Number(1)),
-                (Value::String("b".to_string()), Value::Number(2))
+            Some(&Value::new_map(BTreeMap::from_iter(vec![
+                (Value::new_string("a".to_string()), Value::new_number(1)),
+                (Value::new_string("b".to_string()), Value::new_number(2))
             ])))
         );
     }
@@ -117,9 +117,9 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Map(BTreeMap::from_iter(vec![
-                (Value::Number(1), Value::String("a".to_string())),
-                (Value::Number(2), Value::String("b".to_string()))
+            Some(&Value::new_map(BTreeMap::from_iter(vec![
+                (Value::new_number(1), Value::new_string("a".to_string())),
+                (Value::new_number(2), Value::new_string("b".to_string()))
             ])))
         );
     }
@@ -132,9 +132,9 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Map(BTreeMap::from_iter(vec![(
-                Value::Boolean(true),
-                Value::String("a".to_string())
+            Some(&Value::new_map(BTreeMap::from_iter(vec![(
+                Value::new_boolean(true),
+                Value::new_string("a".to_string())
             ),])))
         );
     }
@@ -147,9 +147,9 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Map(BTreeMap::from_iter(vec![(
-                Value::Null,
-                Value::String("a".to_string())
+            Some(&Value::new_map(BTreeMap::from_iter(vec![(
+                Value::new_null(),
+                Value::new_string("a".to_string())
             ),])))
         );
     }
@@ -162,10 +162,10 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Collection(vec![
-                Value::Number(1),
-                Value::Number(2),
-                Value::Number(3)
+            Some(&Value::new_collection(vec![
+                Value::new_number(1),
+                Value::new_number(2),
+                Value::new_number(3)
             ]))
         );
     }
@@ -178,9 +178,9 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Collection(vec![
-                Value::Collection(vec![Value::Number(1), Value::Number(2)]),
-                Value::Collection(vec![Value::Number(3), Value::Number(4)])
+            Some(&Value::new_collection(vec![
+                Value::new_collection(vec![Value::new_number(1), Value::new_number(2)]),
+                Value::new_collection(vec![Value::new_number(3), Value::new_number(4)])
             ]))
         );
     }
@@ -193,14 +193,14 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Collection(vec![
-                Value::Map(BTreeMap::from_iter(vec![
-                    (Value::String("a".to_string()), Value::Number(1)),
-                    (Value::String("b".to_string()), Value::Number(2))
+            Some(&Value::new_collection(vec![
+                Value::new_map(BTreeMap::from_iter(vec![
+                    (Value::new_string("a".to_string()), Value::new_number(1)),
+                    (Value::new_string("b".to_string()), Value::new_number(2))
                 ])),
-                Value::Map(BTreeMap::from_iter(vec![
-                    (Value::String("a".to_string()), Value::Number(3)),
-                    (Value::String("b".to_string()), Value::Number(4))
+                Value::new_map(BTreeMap::from_iter(vec![
+                    (Value::new_string("a".to_string()), Value::new_number(3)),
+                    (Value::new_string("b".to_string()), Value::new_number(4))
                 ]))
             ]))
         );
@@ -214,7 +214,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("y"),
-            Some(&Value::Number(1))
+            Some(&Value::new_number(1))
         );
     }
 
@@ -226,7 +226,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("y"),
-            Some(&Value::Number(1))
+            Some(&Value::new_number(1))
         );
     }
 
@@ -238,7 +238,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("y"),
-            Some(&Value::Number(1))
+            Some(&Value::new_number(1))
         );
     }
 
@@ -250,7 +250,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(10))
+            Some(&Value::new_number(10))
         );
     }
 
@@ -262,7 +262,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(1))
+            Some(&Value::new_number(1))
         );
     }
 
@@ -274,7 +274,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(2))
+            Some(&Value::new_number(2))
         );
     }
 
@@ -286,7 +286,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(6))
+            Some(&Value::new_number(6))
         );
     }
 
@@ -298,7 +298,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(3))
+            Some(&Value::new_number(3))
         );
     }
 
@@ -310,7 +310,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(1))
+            Some(&Value::new_number(1))
         );
     }
 
@@ -322,7 +322,7 @@ mod tests {
 
         assert_eq!(
             result.unwrap().context.symbols.get("x"),
-            Some(&Value::Number(5))
+            Some(&Value::new_number(5))
         );
     }
 

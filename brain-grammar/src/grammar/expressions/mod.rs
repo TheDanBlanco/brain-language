@@ -107,6 +107,8 @@ impl Parse for Expression {
         if Literal::matches(token) {
             let literal = Literal::parse(stream)?;
 
+            println!("Literal: {:?}", literal);
+
             let next = stream.peek();
 
             if next.is_some() && Operator::matches(&next.unwrap().token) {
@@ -176,17 +178,17 @@ mod tests {
 
     #[test]
     fn new_expression_literal() {
-        let expression = Expression::new_literal(Value::Number(1));
+        let expression = Expression::new_literal(Value::new_number(1));
         assert_eq!(
             expression,
-            Expression::Literal(Literal::new(Value::Number(1)))
+            Expression::Literal(Literal::new(Value::new_number(1)))
         );
     }
 
     #[test]
     fn eval_expression_literal() {
         let context = &mut Context::new();
-        let expression = Expression::new_literal(Value::Number(1));
+        let expression = Expression::new_literal(Value::new_number(1));
 
         let result = expression.evaluate(context);
         assert!(result.is_ok());
@@ -215,7 +217,9 @@ mod tests {
     #[test]
     fn eval_expression_identifier() {
         let context = &mut Context::new();
-        context.symbols.insert("foo".to_string(), Value::Number(1));
+        context
+            .symbols
+            .insert("foo".to_string(), Value::new_number(1));
         let expression = Expression::new_identifier("foo".to_string());
 
         let result = expression.evaluate(context);
@@ -237,13 +241,13 @@ mod tests {
     fn new_expression_function_call() {
         let expression = Expression::new_function_call(
             Expression::new_identifier("foo".to_string()),
-            vec![Expression::new_literal(Value::Number(1))],
+            vec![Expression::new_literal(Value::new_number(1))],
         );
         assert_eq!(
             expression,
             Expression::FunctionCall(FunctionCall::new(
                 Expression::new_identifier("foo".to_string()),
-                vec![Expression::new_literal(Value::Number(1))]
+                vec![Expression::new_literal(Value::new_number(1))]
             ))
         );
     }
@@ -257,7 +261,7 @@ mod tests {
         );
         let expression = Expression::new_function_call(
             Expression::new_identifier("foo".to_string()),
-            vec![Expression::new_literal(Value::Number(1))],
+            vec![Expression::new_literal(Value::new_number(1))],
         );
 
         let result = expression.evaluate(context);
@@ -283,16 +287,16 @@ mod tests {
     #[test]
     fn new_expression_binary() {
         let expression = Expression::new_binary(
-            Expression::new_literal(Value::Number(1)),
+            Expression::new_literal(Value::new_number(1)),
             Operator::new_addition(),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_number(2)),
         );
         assert_eq!(
             expression,
             Expression::Binary(Binary::new(
-                Expression::new_literal(Value::Number(1)),
+                Expression::new_literal(Value::new_number(1)),
                 Operator::new_addition(),
-                Expression::new_literal(Value::Number(2)),
+                Expression::new_literal(Value::new_number(2)),
             ))
         );
     }
@@ -301,9 +305,9 @@ mod tests {
     fn eval_expression_binary() {
         let context = &mut Context::new();
         let expression = Expression::new_binary(
-            Expression::new_literal(Value::Number(1)),
+            Expression::new_literal(Value::new_number(1)),
             Operator::new_addition(),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_number(2)),
         );
 
         let result = expression.evaluate(context);
@@ -328,14 +332,14 @@ mod tests {
     #[test]
     fn new_expression_collection() {
         let expression = Expression::new_collection(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
         ]);
         assert_eq!(
             expression,
             Expression::Collection(Collection::new(vec![
-                Expression::new_literal(Value::Number(1)),
-                Expression::new_literal(Value::Number(2)),
+                Expression::new_literal(Value::new_number(1)),
+                Expression::new_literal(Value::new_number(2)),
             ]))
         );
     }
@@ -344,8 +348,8 @@ mod tests {
     fn eval_expression_collection() {
         let context = &mut Context::new();
         let expression = Expression::new_collection(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
         ]);
 
         let result = expression.evaluate(context);
@@ -373,24 +377,24 @@ mod tests {
     fn new_expression_map() {
         let expression = Expression::new_map(vec![
             (
-                Expression::new_literal(Value::Number(1)),
-                Expression::new_literal(Value::Number(2)),
+                Expression::new_literal(Value::new_number(1)),
+                Expression::new_literal(Value::new_number(2)),
             ),
             (
-                Expression::new_literal(Value::Number(3)),
-                Expression::new_literal(Value::Number(4)),
+                Expression::new_literal(Value::new_number(3)),
+                Expression::new_literal(Value::new_number(4)),
             ),
         ]);
         assert_eq!(
             expression,
             Expression::Map(Map::new(vec![
                 (
-                    Expression::new_literal(Value::Number(1)),
-                    Expression::new_literal(Value::Number(2)),
+                    Expression::new_literal(Value::new_number(1)),
+                    Expression::new_literal(Value::new_number(2)),
                 ),
                 (
-                    Expression::new_literal(Value::Number(3)),
-                    Expression::new_literal(Value::Number(4)),
+                    Expression::new_literal(Value::new_number(3)),
+                    Expression::new_literal(Value::new_number(4)),
                 ),
             ]))
         );
@@ -401,12 +405,12 @@ mod tests {
         let context = &mut Context::new();
         let expression = Expression::new_map(vec![
             (
-                Expression::new_literal(Value::Number(1)),
-                Expression::new_literal(Value::Number(2)),
+                Expression::new_literal(Value::new_number(1)),
+                Expression::new_literal(Value::new_number(2)),
             ),
             (
-                Expression::new_literal(Value::Number(3)),
-                Expression::new_literal(Value::Number(4)),
+                Expression::new_literal(Value::new_number(3)),
+                Expression::new_literal(Value::new_number(4)),
             ),
         ]);
 
@@ -438,14 +442,14 @@ mod tests {
     #[test]
     fn new_index_accessor() {
         let expression = Expression::new_index_accessor(
-            Expression::new_literal(Value::Number(0)),
-            Expression::new_collection(vec![Expression::new_literal(Value::Null)]),
+            Expression::new_literal(Value::new_number(0)),
+            Expression::new_collection(vec![Expression::new_literal(Value::new_null())]),
         );
         assert_eq!(
             expression,
             Expression::Accessor(Accessor::Index(Index::new(
-                Expression::new_literal(Value::Number(0)),
-                Expression::new_collection(vec![Expression::new_literal(Value::Null)])
+                Expression::new_literal(Value::new_number(0)),
+                Expression::new_collection(vec![Expression::new_literal(Value::new_null())])
             )))
         );
     }
@@ -454,8 +458,8 @@ mod tests {
     fn eval_index_accessor() {
         let context = &mut Context::new();
         let expression = Expression::Accessor(Accessor::Index(Index::new(
-            Expression::new_literal(Value::Number(0)),
-            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]),
+            Expression::new_literal(Value::new_number(0)),
+            Expression::new_collection(vec![Expression::new_literal(Value::new_number(0))]),
         )));
 
         let result = expression.evaluate(context);
@@ -483,8 +487,8 @@ mod tests {
         let expression = Expression::new_field_accessor(
             "a".to_string(),
             Expression::new_map(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(0)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(0)),
             )]),
         );
         assert_eq!(
@@ -492,8 +496,8 @@ mod tests {
             Expression::Accessor(Accessor::Field(Field::new(
                 "a".to_string(),
                 Expression::new_map(vec![(
-                    Expression::new_literal(Value::String("a".to_string())),
-                    Expression::new_literal(Value::Number(0))
+                    Expression::new_literal(Value::new_string("a".to_string())),
+                    Expression::new_literal(Value::new_number(0))
                 )])
             )))
         );
@@ -505,8 +509,8 @@ mod tests {
         let expression = Expression::new_field_accessor(
             "a".to_string(),
             Expression::new_map(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(0)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(0)),
             )]),
         );
 
@@ -605,7 +609,7 @@ mod tests {
             result.unwrap(),
             Expression::new_function_call(
                 Expression::new_index_accessor(
-                    Expression::new_literal(Value::Number(0)),
+                    Expression::new_literal(Value::new_number(0)),
                     Expression::new_identifier("a".to_string())
                 ),
                 vec![]
@@ -636,12 +640,12 @@ mod tests {
             result.unwrap(),
             Expression::new_binary(
                 Expression::new_index_accessor(
-                    Expression::new_literal(Value::Number(0)),
+                    Expression::new_literal(Value::new_number(0)),
                     Expression::new_identifier("a".to_string())
                 ),
                 Operator::new_addition(),
                 Expression::new_index_accessor(
-                    Expression::new_literal(Value::Number(0)),
+                    Expression::new_literal(Value::new_number(0)),
                     Expression::new_identifier("b".to_string())
                 ),
             )

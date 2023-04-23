@@ -85,7 +85,7 @@ mod tests {
 
     #[test]
     fn new_index() {
-        let index = Expression::new_literal(Value::Number(0));
+        let index = Expression::new_literal(Value::new_number(0));
         let target = Expression::new_collection(vec![]);
 
         let accessor = Accessor::new_index(index.clone(), target.clone());
@@ -107,8 +107,11 @@ mod tests {
     fn eval_index_accessor() {
         let context = &mut Context::new();
         let accessor = Accessor::Index(Index::new(
-            Expression::new_literal(Value::Number(0)),
-            Expression::new_literal(Value::Collection(vec![Value::Number(1), Value::Number(2)])),
+            Expression::new_literal(Value::new_number(0)),
+            Expression::new_literal(Value::new_collection(vec![
+                Value::new_number(1),
+                Value::new_number(2),
+            ])),
         ));
 
         let result = accessor.evaluate(context);
@@ -121,8 +124,8 @@ mod tests {
         let accessor = Accessor::Field(Field::new(
             "a".to_string(),
             Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(1)),
             )])),
         ));
 
@@ -146,14 +149,14 @@ mod tests {
         // assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))])
+            Expression::new_collection(vec![Expression::new_literal(Value::new_number(0))])
         );
     }
 
     #[test]
     fn parse_accessor_is_index_accessor() {
         let expression =
-            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
+            Expression::new_collection(vec![Expression::new_literal(Value::new_number(0))]);
 
         let tokens = vec![
             Token::new(7..8, BrainToken::LeftBracket, "[".to_string()),
@@ -169,7 +172,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Expression::Accessor(Accessor::Index(Index::new(
-                Expression::new_literal(Value::Number(0)),
+                Expression::new_literal(Value::new_number(0)),
                 expression
             )))
         );
@@ -178,7 +181,7 @@ mod tests {
     #[test]
     fn parse_accessor_is_index_accessor_with_function_call() {
         let expression =
-            Expression::new_collection(vec![Expression::new_literal(Value::Number(0))]);
+            Expression::new_collection(vec![Expression::new_literal(Value::new_number(0))]);
 
         let tokens = vec![
             Token::new(7..8, BrainToken::LeftBracket, "[".to_string()),

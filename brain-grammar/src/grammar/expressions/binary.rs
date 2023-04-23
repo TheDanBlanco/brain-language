@@ -53,18 +53,18 @@ mod test {
 
     #[test]
     fn new_binary() {
-        let lhs = Expression::new_literal(Value::Number(1));
-        let rhs = Expression::new_literal(Value::Number(2));
+        let lhs = Expression::new_literal(Value::new_number(1));
+        let rhs = Expression::new_literal(Value::new_number(2));
         let operator = Operator::new_addition();
 
         let binary = Binary::new(lhs, operator, rhs);
         assert_eq!(
             binary.lhs,
-            Box::new(Expression::new_literal(Value::Number(1)))
+            Box::new(Expression::new_literal(Value::new_number(1)))
         );
         assert_eq!(
             binary.rhs,
-            Box::new(Expression::new_literal(Value::Number(2)))
+            Box::new(Expression::new_literal(Value::new_number(2)))
         );
         assert_eq!(binary.operator, Operator::new_addition());
     }
@@ -72,8 +72,8 @@ mod test {
     #[test]
     fn eval_binary() {
         let context = &mut Context::new();
-        let lhs = Expression::new_literal(Value::Number(1));
-        let rhs = Expression::new_literal(Value::Number(2));
+        let lhs = Expression::new_literal(Value::new_number(1));
+        let rhs = Expression::new_literal(Value::new_number(2));
         let operator = Operator::new_addition();
         let binary = Binary::new(lhs, operator, rhs);
 
@@ -98,16 +98,16 @@ mod test {
         assert_eq!(
             result.unwrap(),
             Expression::Binary(Binary::new(
-                Expression::new_literal(Value::Number(0)),
+                Expression::new_literal(Value::new_number(0)),
                 Operator::new_lt(),
-                Expression::new_literal(Value::Number(1))
+                Expression::new_literal(Value::new_number(1))
             ))
         );
     }
 
     #[test]
     fn parse_binary_with_initial() {
-        let expression = Expression::new_literal(Value::Number(0));
+        let expression = Expression::new_literal(Value::new_number(0));
 
         let tokens = vec![
             Token::new(0..1, BrainToken::LessThan, "<".to_string()),
@@ -122,9 +122,9 @@ mod test {
         assert_eq!(
             result.unwrap(),
             Binary::new(
-                Expression::new_literal(Value::Number(0)),
+                Expression::new_literal(Value::new_number(0)),
                 Operator::new_lt(),
-                Expression::new_literal(Value::Number(1))
+                Expression::new_literal(Value::new_number(1))
             )
         );
     }

@@ -53,11 +53,11 @@ mod tests {
         let mut context = Context::new();
         context
             .symbols
-            .insert("hello".to_string(), Value::Number(1));
+            .insert("hello".to_string(), Value::new_number(1));
         let identifier = Identifier::new("hello".to_string());
         let result = identifier.evaluate(&mut context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(1));
+        assert_eq!(result.unwrap(), Value::new_number(1));
     }
 
     #[test]

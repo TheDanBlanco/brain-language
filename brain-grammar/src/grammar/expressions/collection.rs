@@ -24,7 +24,7 @@ impl Evaluate for Collection {
             values.push(value.clone());
         }
 
-        Ok(Value::Collection(values))
+        Ok(Value::new_collection(values))
     }
 }
 
@@ -60,16 +60,16 @@ mod tests {
     #[test]
     fn create_new_collection() {
         let collection = Collection::new(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
-            Expression::new_literal(Value::Number(3)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+            Expression::new_literal(Value::new_number(3)),
         ]);
         assert_eq!(
             collection.elements,
             vec![
-                Expression::new_literal(Value::Number(1)),
-                Expression::new_literal(Value::Number(2)),
-                Expression::new_literal(Value::Number(3)),
+                Expression::new_literal(Value::new_number(1)),
+                Expression::new_literal(Value::new_number(2)),
+                Expression::new_literal(Value::new_number(3)),
             ]
         );
     }
@@ -78,16 +78,20 @@ mod tests {
     fn eval_collection() {
         let context = &mut Context::new();
         let collection = Collection::new(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
-            Expression::new_literal(Value::Number(3)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+            Expression::new_literal(Value::new_number(3)),
         ]);
 
         let result = collection.evaluate(context);
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::Collection(vec![Value::Number(1), Value::Number(2), Value::Number(3),])
+            Value::new_collection(vec![
+                Value::new_number(1),
+                Value::new_number(2),
+                Value::new_number(3),
+            ])
         );
     }
 
@@ -106,7 +110,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Collection::new(vec![Expression::new_literal(Value::Number(0))])
+            Collection::new(vec![Expression::new_literal(Value::new_number(0))])
         );
     }
 }

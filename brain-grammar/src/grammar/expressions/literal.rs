@@ -1,7 +1,11 @@
-use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
-use crate::grammar::{context::Context, token::BrainToken, value::Value, Evaluate, Match, Parse};
+use crate::grammar::{
+    context::Context,
+    token::BrainToken,
+    value::{literal::LiteralValue, Value},
+    Evaluate, Match, Parse,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Literal {
@@ -16,14 +20,7 @@ impl Literal {
 
 impl Match for Literal {
     fn matches(token: &BrainToken) -> bool {
-        matches!(
-            token,
-            BrainToken::Number
-                | BrainToken::String
-                | BrainToken::True
-                | BrainToken::False
-                | BrainToken::Null,
-        )
+        LiteralValue::matches(token)
     }
 }
 
@@ -35,33 +32,16 @@ impl Evaluate for Literal {
 
 impl Parse for Literal {
     fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
-        let next = stream.assert_next("Expected literal, found End of File".to_string())?;
+        let value = Value::parse(stream)?;
 
-        let literal = match (&next.token, &next.data) {
-            (BrainToken::Number, data) => Self::new(Value::Number(data.parse()?)),
-            (BrainToken::String, data) => {
-                Self::new(Value::String(data.replace("\"", "").replace("\'", "")))
-            }
-            (BrainToken::True, _) => Self::new(Value::Boolean(true)),
-            (BrainToken::False, _) => Self::new(Value::Boolean(false)),
-            (BrainToken::Null, _) => Self::new(Value::Null),
-            _ => {
-                return Err(Error::new(
-                    ErrorKind::UnexpectedToken,
-                    format!(
-                        "Expected literal, found {} ({} - {})",
-                        &next.token, &next.span.start, &next.span.end
-                    ),
-                ))
-            }
-        };
-
-        Ok(literal)
+        Ok(Self::new(value))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use brain_token::token::Token;
 
     use super::*;
@@ -69,80 +49,80 @@ mod tests {
 
     #[test]
     fn create_new_number_literal() {
-        let literal = Literal::new(Value::Number(1));
-        assert_eq!(literal.value, Value::Number(1));
+        let literal = Literal::new(Value::new_number(1));
+        assert_eq!(literal.value, Value::new_number(1));
     }
 
     #[test]
     fn eval_number_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::Number(1));
+        let literal = Literal::new(Value::new_number(1));
         let result = literal.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(1));
+        assert_eq!(result.unwrap(), Value::new_number(1));
     }
 
     #[test]
     fn create_new_string_literal() {
-        let literal = Literal::new(Value::String("hello".to_string()));
-        assert_eq!(literal.value, Value::String("hello".to_string()));
+        let literal = Literal::new(Value::new_string("hello".to_string()));
+        assert_eq!(literal.value, Value::new_string("hello".to_string()));
     }
 
     #[test]
     fn eval_string_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::String("hello".to_string()));
+        let literal = Literal::new(Value::new_string("hello".to_string()));
         let result = literal.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::String("hello".to_string()));
+        assert_eq!(result.unwrap(), Value::new_string("hello".to_string()));
     }
 
     #[test]
     fn create_new_boolean_literal() {
-        let literal = Literal::new(Value::Boolean(true));
-        assert_eq!(literal.value, Value::Boolean(true));
+        let literal = Literal::new(Value::new_boolean(true));
+        assert_eq!(literal.value, Value::new_boolean(true));
     }
 
     #[test]
     fn eval_boolean_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::Boolean(true));
+        let literal = Literal::new(Value::new_boolean(true));
         let result = literal.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn create_new_map_literal() {
-        let literal = Literal::new(Value::Map(std::collections::BTreeMap::new()));
-        assert_eq!(literal.value, Value::Map(std::collections::BTreeMap::new()));
+        let literal = Literal::new(Value::new_map(BTreeMap::new()));
+        assert_eq!(
+            literal.value,
+            Value::new_map(std::collections::BTreeMap::new())
+        );
     }
 
     #[test]
     fn eval_map_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::Map(std::collections::BTreeMap::new()));
+        let literal = Literal::new(Value::new_map(BTreeMap::new()));
         let result = literal.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(
-            result.unwrap(),
-            Value::Map(std::collections::BTreeMap::new())
-        );
+        assert_eq!(result.unwrap(), Value::new_map(BTreeMap::new()));
     }
 
     #[test]
     fn create_new_collection_literal() {
-        let literal = Literal::new(Value::Collection(vec![]));
-        assert_eq!(literal.value, Value::Collection(vec![]));
+        let literal = Literal::new(Value::new_collection(vec![]));
+        assert_eq!(literal.value, Value::new_collection(vec![]));
     }
 
     #[test]
     fn eval_collection_literal() {
         let context = &mut Context::new();
-        let literal = Literal::new(Value::Collection(vec![]));
+        let literal = Literal::new(Value::new_collection(vec![]));
         let result = literal.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Collection(vec![]));
+        assert_eq!(result.unwrap(), Value::new_collection(vec![]));
     }
 
     #[test]
@@ -177,7 +157,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Literal::new(Value::String("hey".to_string()))
+            Literal::new(Value::new_string("hey".to_string()))
         );
     }
 
@@ -190,7 +170,7 @@ mod tests {
         let result = Literal::parse(stream);
 
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Literal::new(Value::Number(0)));
+        assert_eq!(result.unwrap(), Literal::new(Value::new_number(0)));
     }
 
     #[test]
@@ -202,7 +182,7 @@ mod tests {
         let result = Literal::parse(stream);
 
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Literal::new(Value::Null));
+        assert_eq!(result.unwrap(), Literal::new(Value::new_null()));
     }
 
     #[test]
@@ -214,7 +194,7 @@ mod tests {
         let result = Literal::parse(stream);
 
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Literal::new(Value::Boolean(true)));
+        assert_eq!(result.unwrap(), Literal::new(Value::new_boolean(true)));
     }
 
     #[test]
@@ -226,7 +206,7 @@ mod tests {
         let result = Literal::parse(stream);
 
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Literal::new(Value::Boolean(false)));
+        assert_eq!(result.unwrap(), Literal::new(Value::new_boolean(false)));
     }
 
     #[test]
@@ -240,7 +220,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedEndOfFile]: Expected literal, found End of File".to_string()
+            "[UnexpectedEndOfFile]: Expected token, found End of File".to_string()
         );
     }
 
@@ -255,7 +235,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err().unwrap().to_string(),
-            "[UnexpectedToken]: Expected literal, found Token::Plus (0 - 1)".to_string()
+            "[UnexpectedToken]: Expected value, found Token::Plus (0 - 1)".to_string()
         );
     }
 }

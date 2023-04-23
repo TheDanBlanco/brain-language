@@ -2,7 +2,11 @@ use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{
-    context::Context, expressions::Expression, token::BrainToken, value::Value, Evaluate,
+    context::Context,
+    expressions::Expression,
+    token::BrainToken,
+    value::{complex::ComplexValue, literal::LiteralValue, Value},
+    Evaluate,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -14,7 +18,7 @@ pub struct Field {
 impl Field {
     pub fn new(field: String, target: Expression) -> Self {
         Field {
-            field: Value::String(field),
+            field: Value::new_string(field),
             target: Box::new(target),
         }
     }
@@ -35,7 +39,7 @@ impl Evaluate for Field {
     fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
         let target = self.target.evaluate(context)?;
 
-        if let Value::String(_) = &self.field {
+        if let Value::Literal(LiteralValue::String(_)) = &self.field {
         } else {
             return Err(Error::new(
                 ErrorKind::InvalidType,
@@ -44,7 +48,7 @@ impl Evaluate for Field {
         }
 
         match &target {
-            Value::Map(map) => match map.get(&self.field) {
+            Value::Complex(ComplexValue::Map(map)) => match map.value.get(&self.field) {
                 Some(value) => Ok(value.clone()),
                 None => Err(Error::new(
                     ErrorKind::KeyNotFound,
@@ -72,16 +76,16 @@ mod tests {
         let field = Field::new(
             "a".to_string(),
             Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(1)),
             )])),
         );
-        assert_eq!(field.field, Value::String("a".to_string()));
+        assert_eq!(field.field, Value::new_string("a".to_string()));
         assert_eq!(
             field.target,
             Box::new(Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(1)),
             )],)))
         );
     }
@@ -92,14 +96,14 @@ mod tests {
         let field = Field::new(
             "a".to_string(),
             Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(1)),
             )])),
         );
 
         let result = field.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(1));
+        assert_eq!(result.unwrap(), Value::new_number(1));
     }
 
     #[test]
@@ -108,8 +112,8 @@ mod tests {
         let field = Field::new(
             "b".to_string(),
             Expression::Map(Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(1)),
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(1)),
             )])),
         );
 
@@ -124,7 +128,10 @@ mod tests {
     #[test]
     fn field_access_target_not_map() {
         let context = &mut Context::new();
-        let field = Field::new("a".to_string(), Expression::new_literal(Value::Number(1)));
+        let field = Field::new(
+            "a".to_string(),
+            Expression::new_literal(Value::new_number(1)),
+        );
 
         let result = field.evaluate(context);
         assert!(result.is_err());
@@ -138,8 +145,8 @@ mod tests {
     fn field_accessor_type_not_string() {
         let context = &mut Context::new();
         let field = Field {
-            field: Value::Null,
-            target: Box::new(Expression::new_literal(Value::Number(1))),
+            field: Value::new_null(),
+            target: Box::new(Expression::new_literal(Value::new_number(1))),
         };
 
         let result = field.evaluate(context);

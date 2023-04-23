@@ -2,7 +2,11 @@ use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{
-    context::Context, expressions::Expression, output::Output, token::BrainToken, value::Value,
+    context::Context,
+    expressions::Expression,
+    output::Output,
+    token::BrainToken,
+    value::{literal::LiteralValue, Value},
     Evaluate, Parse, Resolve,
 };
 
@@ -33,10 +37,7 @@ impl Resolve for Conditional {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         let condition = self.condition.evaluate(context)?;
 
-        if !matches!(
-            condition,
-            Value::Null | Value::Boolean(_) | Value::Number(_) | Value::String(_)
-        ) {
+        if !matches!(condition, Value::Literal(_)) {
             return Err(Error::new(
                 ErrorKind::InvalidType,
                 format!("'{condition}' cannot be used as a boolean."),
@@ -44,9 +45,9 @@ impl Resolve for Conditional {
         }
 
         let truthy = match condition {
-            Value::Boolean(true) => true,
-            Value::String(string) if string.len() != 0 => true,
-            Value::Number(number) if number != 0 => true,
+            Value::Literal(LiteralValue::Boolean(true)) => true,
+            Value::Literal(LiteralValue::String(string)) if string.len() != 0 => true,
+            Value::Literal(LiteralValue::Number(number)) if number != 0 => true,
             _ => false,
         };
 
@@ -91,14 +92,14 @@ mod tests {
 
     #[test]
     fn new_conditional() {
-        let condition = Expression::new_literal(Value::Boolean(true));
+        let condition = Expression::new_literal(Value::new_boolean(true));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -116,14 +117,14 @@ mod tests {
 
     #[test]
     fn new_conditional_with_alternate() {
-        let condition = Expression::new_literal(Value::Boolean(true));
+        let condition = Expression::new_literal(Value::new_boolean(true));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -133,7 +134,7 @@ mod tests {
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_subtraction(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -156,16 +157,18 @@ mod tests {
     #[test]
     fn resolve_conditional_null() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Null);
+        let condition = Expression::new_literal(Value::new_null());
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -175,7 +178,7 @@ mod tests {
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_subtraction(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -186,23 +189,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(-1)
+            &Value::new_number(-1)
         )
     }
 
     #[test]
     fn resolve_conditional_true_no_alternate() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Boolean(true));
+        let condition = Expression::new_literal(Value::new_boolean(true));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -213,23 +218,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(1)
+            &Value::new_number(1)
         )
     }
 
     #[test]
     fn resolve_conditional_false_no_alternate() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Boolean(false));
+        let condition = Expression::new_literal(Value::new_boolean(false));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -240,23 +247,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(0)
+            &Value::new_number(0)
         )
     }
 
     #[test]
     fn resolve_conditional_true_alternate() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Boolean(true));
+        let condition = Expression::new_literal(Value::new_boolean(true));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -266,7 +275,7 @@ mod tests {
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_subtraction(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -277,23 +286,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(1)
+            &Value::new_number(1)
         )
     }
 
     #[test]
     fn resolve_conditional_false_alternate() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Boolean(false));
+        let condition = Expression::new_literal(Value::new_boolean(false));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -303,7 +314,7 @@ mod tests {
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_subtraction(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -314,23 +325,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(-1)
+            &Value::new_number(-1)
         )
     }
 
     #[test]
     fn resolve_conditional_string_not_empty() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::String("test".to_string()));
+        let condition = Expression::new_literal(Value::new_string("test".to_string()));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -341,23 +354,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(1)
+            &Value::new_number(1)
         )
     }
 
     #[test]
     fn resolve_conditional_string_empty() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::String("".to_string()));
+        let condition = Expression::new_literal(Value::new_string("".to_string()));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -367,7 +382,7 @@ mod tests {
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_subtraction(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -378,23 +393,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(-1)
+            &Value::new_number(-1)
         )
     }
 
     #[test]
     fn resolve_conditional_number_not_zero() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Number(1));
+        let condition = Expression::new_literal(Value::new_number(1));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -405,23 +422,25 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(1)
+            &Value::new_number(1)
         )
     }
 
     #[test]
     fn resolve_conditional_number_zero() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
-        let condition = Expression::new_literal(Value::Number(0));
+        let condition = Expression::new_literal(Value::new_number(0));
         let consequence =
             Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
                 "x".to_string(),
                 Expression::new_binary(
                     Expression::new_identifier("x".to_string()),
                     Operator::new_addition(),
-                    Expression::new_literal(Value::Number(1)),
+                    Expression::new_literal(Value::new_number(1)),
                 ),
             ))]);
 
@@ -432,7 +451,7 @@ mod tests {
         assert_eq!(result.unwrap(), Output::None);
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(0)
+            &Value::new_number(0)
         )
     }
 
@@ -502,7 +521,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Conditional::new(
-                Expression::new_literal(Value::Boolean(true)),
+                Expression::new_literal(Value::new_boolean(true)),
                 Statement::new_block(vec![]),
                 None
             )
@@ -529,7 +548,7 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Conditional::new(
-                Expression::new_literal(Value::Boolean(true)),
+                Expression::new_literal(Value::new_boolean(true)),
                 Statement::new_block(vec![]),
                 Some(Statement::new_block(vec![]))
             )
