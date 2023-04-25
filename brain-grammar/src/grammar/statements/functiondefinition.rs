@@ -121,7 +121,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("adder").unwrap(),
-            &Value::Function(arguments, Box::new(block))
+            &Value::new_function(arguments, block)
         )
     }
 

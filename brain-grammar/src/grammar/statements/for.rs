@@ -1,7 +1,11 @@
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{
-    context::Context, expressions::Expression, output::Output, token::BrainToken, value::Value,
+    context::Context,
+    expressions::Expression,
+    output::Output,
+    token::BrainToken,
+    value::{complex::ComplexValue, Value},
     Evaluate, Parse, Resolve,
 };
 
@@ -28,8 +32,8 @@ impl Resolve for For {
     fn resolve(&self, context: &mut Context) -> Result<Output, Box<dyn std::error::Error>> {
         let iterable = self.iterable.evaluate(context)?;
 
-        if let Value::Collection(collection) = iterable {
-            for value in collection {
+        if let Value::Complex(ComplexValue::Collection(collection)) = iterable {
+            for value in collection.value {
                 context.symbols.insert(self.identifier.clone(), value);
                 let out = self.block.resolve(context)?;
 
@@ -71,9 +75,9 @@ mod tests {
     fn new_for() {
         let identifier = "item".to_string();
         let iterable = Expression::new_collection(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
-            Expression::new_literal(Value::Number(3)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+            Expression::new_literal(Value::new_number(3)),
         ]);
         let block =
             Statement::new_block(vec![Node::from_expression(Expression::new_function_call(
@@ -99,9 +103,9 @@ mod tests {
 
         let identifier = "item".to_string();
         let iterable = Expression::new_collection(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
-            Expression::new_literal(Value::Number(3)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+            Expression::new_literal(Value::new_number(3)),
         ]);
         let block = Statement::new_block(vec![]);
 
@@ -115,13 +119,15 @@ mod tests {
     #[test]
     fn resolve_for_loop_count() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
         let identifier = "item".to_string();
         let iterable = Expression::new_collection(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
-            Expression::new_literal(Value::Number(3)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+            Expression::new_literal(Value::new_number(3)),
         ]);
 
         let block = Statement::new_block(vec![Node::from_statement(Statement::new_reassignment(
@@ -141,20 +147,22 @@ mod tests {
 
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(6),
+            &Value::new_number(6),
         )
     }
 
     #[test]
     fn resolve_early_break() {
         let context = &mut Context::new();
-        context.symbols.insert("x".to_string(), Value::Number(0));
+        context
+            .symbols
+            .insert("x".to_string(), Value::new_number(0));
 
         let identifier = "item".to_string();
         let iterable = Expression::new_collection(vec![
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
-            Expression::new_literal(Value::Number(3)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+            Expression::new_literal(Value::new_number(3)),
         ]);
 
         let block = Statement::new_block(vec![
@@ -177,7 +185,7 @@ mod tests {
 
         assert_eq!(
             context.symbols.get(&"x".to_string()).unwrap(),
-            &Value::Number(1),
+            &Value::new_number(1),
         )
     }
 

@@ -2,7 +2,11 @@ use core::fmt;
 
 use brain_error::{Error, ErrorKind};
 
-use crate::grammar::{token::BrainToken, value::Value, Match};
+use crate::grammar::{
+    token::BrainToken,
+    value::{complex::ComplexValue, literal::LiteralValue, Value},
+    Match,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Comparison {
@@ -30,62 +34,86 @@ impl fmt::Display for Comparison {
 impl Comparison {
     pub fn evaluate(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
         match (self, left.clone(), right.clone()) {
-            (Comparison::Equal, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Boolean(left == right))
-            }
-            (Comparison::NotEqual, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Boolean(left != right))
-            }
-            (Comparison::GreaterThan, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Boolean(left > right))
-            }
-            (Comparison::GreaterThanEqual, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Boolean(left >= right))
-            }
-            (Comparison::LessThan, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Boolean(left < right))
-            }
-            (Comparison::LessThanEqual, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Boolean(left <= right))
-            }
-            (Comparison::Equal, Value::String(left), Value::String(right)) => {
-                Ok(Value::Boolean(left == right))
-            }
-            (Comparison::NotEqual, Value::String(left), Value::String(right)) => {
-                Ok(Value::Boolean(left != right))
-            }
-            (Comparison::GreaterThan, Value::String(left), Value::String(right)) => {
-                Ok(Value::Boolean(left > right))
-            }
-            (Comparison::GreaterThanEqual, Value::String(left), Value::String(right)) => {
-                Ok(Value::Boolean(left >= right))
-            }
-            (Comparison::LessThan, Value::String(left), Value::String(right)) => {
-                Ok(Value::Boolean(left < right))
-            }
-            (Comparison::LessThanEqual, Value::String(left), Value::String(right)) => {
-                Ok(Value::Boolean(left <= right))
-            }
-            (Comparison::Equal, Value::Boolean(left), Value::Boolean(right)) => {
-                Ok(Value::Boolean(left == right))
-            }
-            (Comparison::NotEqual, Value::Boolean(left), Value::Boolean(right)) => {
-                Ok(Value::Boolean(left != right))
-            }
             (
                 Comparison::Equal,
-                Value::EnumVariant(left_name, left_variant),
-                Value::EnumVariant(right_name, right_variant),
-            ) => Ok(Value::Boolean(
-                left_name == right_name && left_variant == right_variant,
-            )),
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_boolean(left == right)),
             (
                 Comparison::NotEqual,
-                Value::EnumVariant(left_name, left_variant),
-                Value::EnumVariant(right_name, right_variant),
-            ) => Ok(Value::Boolean(
-                left_name != right_name || left_variant != right_variant,
-            )),
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_boolean(left != right)),
+            (
+                Comparison::GreaterThan,
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_boolean(left > right)),
+            (
+                Comparison::GreaterThanEqual,
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_boolean(left >= right)),
+            (
+                Comparison::LessThan,
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_boolean(left < right)),
+            (
+                Comparison::LessThanEqual,
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_boolean(left <= right)),
+            (
+                Comparison::Equal,
+                Value::Literal(LiteralValue::String(left)),
+                Value::Literal(LiteralValue::String(right)),
+            ) => Ok(Value::new_boolean(left == right)),
+            (
+                Comparison::NotEqual,
+                Value::Literal(LiteralValue::String(left)),
+                Value::Literal(LiteralValue::String(right)),
+            ) => Ok(Value::new_boolean(left != right)),
+            (
+                Comparison::GreaterThan,
+                Value::Literal(LiteralValue::String(left)),
+                Value::Literal(LiteralValue::String(right)),
+            ) => Ok(Value::new_boolean(left > right)),
+            (
+                Comparison::GreaterThanEqual,
+                Value::Literal(LiteralValue::String(left)),
+                Value::Literal(LiteralValue::String(right)),
+            ) => Ok(Value::new_boolean(left >= right)),
+            (
+                Comparison::LessThan,
+                Value::Literal(LiteralValue::String(left)),
+                Value::Literal(LiteralValue::String(right)),
+            ) => Ok(Value::new_boolean(left < right)),
+            (
+                Comparison::LessThanEqual,
+                Value::Literal(LiteralValue::String(left)),
+                Value::Literal(LiteralValue::String(right)),
+            ) => Ok(Value::new_boolean(left <= right)),
+            (
+                Comparison::Equal,
+                Value::Literal(LiteralValue::Boolean(left)),
+                Value::Literal(LiteralValue::Boolean(right)),
+            ) => Ok(Value::new_boolean(left == right)),
+            (
+                Comparison::NotEqual,
+                Value::Literal(LiteralValue::Boolean(left)),
+                Value::Literal(LiteralValue::Boolean(right)),
+            ) => Ok(Value::new_boolean(left != right)),
+            (
+                Comparison::Equal,
+                Value::Complex(ComplexValue::Enum(lhs)),
+                Value::Complex(ComplexValue::Enum(rhs)),
+            ) => Ok(Value::new_boolean(lhs == rhs)),
+            (
+                Comparison::NotEqual,
+                Value::Complex(ComplexValue::Enum(lhs)),
+                Value::Complex(ComplexValue::Enum(rhs)),
+            ) => Ok(Value::new_boolean(lhs != rhs)),
             _ => Err(Error::new(
                 ErrorKind::InvalidComparisonOperation,
                 format!("Cannot do {self} comparison on {left} and {right}"),
@@ -127,123 +155,125 @@ mod tests {
 
     #[test]
     fn equal_numbers() {
-        let result = Comparison::Equal.evaluate(Value::Number(1), Value::Number(1));
+        let result = Comparison::Equal.evaluate(Value::new_number(1), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn not_equal_numbers() {
-        let result = Comparison::NotEqual.evaluate(Value::Number(1), Value::Number(1));
+        let result = Comparison::NotEqual.evaluate(Value::new_number(1), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(false));
+        assert_eq!(result.unwrap(), Value::new_boolean(false));
     }
 
     #[test]
     fn greater_than_numbers() {
-        let result = Comparison::GreaterThan.evaluate(Value::Number(1), Value::Number(1));
+        let result = Comparison::GreaterThan.evaluate(Value::new_number(1), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(false));
+        assert_eq!(result.unwrap(), Value::new_boolean(false));
     }
 
     #[test]
     fn greater_than_or_equal_to_numbers() {
-        let result = Comparison::GreaterThanEqual.evaluate(Value::Number(1), Value::Number(1));
+        let result =
+            Comparison::GreaterThanEqual.evaluate(Value::new_number(1), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn less_than_numbers() {
-        let result = Comparison::LessThan.evaluate(Value::Number(1), Value::Number(1));
+        let result = Comparison::LessThan.evaluate(Value::new_number(1), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(false));
+        assert_eq!(result.unwrap(), Value::new_boolean(false));
     }
 
     #[test]
     fn less_than_or_equal_to_numbers() {
-        let result = Comparison::LessThanEqual.evaluate(Value::Number(1), Value::Number(1));
+        let result = Comparison::LessThanEqual.evaluate(Value::new_number(1), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn equal_strings() {
         let result = Comparison::Equal.evaluate(
-            Value::String("a".to_string()),
-            Value::String("a".to_string()),
+            Value::new_string("a".to_string()),
+            Value::new_string("a".to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn not_equal_strings() {
         let result = Comparison::NotEqual.evaluate(
-            Value::String("a".to_string()),
-            Value::String("a".to_string()),
+            Value::new_string("a".to_string()),
+            Value::new_string("a".to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(false));
+        assert_eq!(result.unwrap(), Value::new_boolean(false));
     }
 
     #[test]
     fn greater_than_strings() {
         let result = Comparison::GreaterThan.evaluate(
-            Value::String("b".to_string()),
-            Value::String("a".to_string()),
+            Value::new_string("b".to_string()),
+            Value::new_string("a".to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn greater_than_equal_to_string() {
         let result = Comparison::GreaterThanEqual.evaluate(
-            Value::String("b".to_string()),
-            Value::String("b".to_string()),
+            Value::new_string("b".to_string()),
+            Value::new_string("b".to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn less_than_strings() {
         let result = Comparison::LessThan.evaluate(
-            Value::String("a".to_string()),
-            Value::String("b".to_string()),
+            Value::new_string("a".to_string()),
+            Value::new_string("b".to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn less_than_equal_to_strings() {
         let result = Comparison::LessThanEqual.evaluate(
-            Value::String("b".to_string()),
-            Value::String("b".to_string()),
+            Value::new_string("b".to_string()),
+            Value::new_string("b".to_string()),
         );
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn equal_booleans() {
-        let result = Comparison::Equal.evaluate(Value::Boolean(true), Value::Boolean(true));
+        let result = Comparison::Equal.evaluate(Value::new_boolean(true), Value::new_boolean(true));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn not_equal_booleans() {
-        let result = Comparison::NotEqual.evaluate(Value::Boolean(true), Value::Boolean(true));
+        let result =
+            Comparison::NotEqual.evaluate(Value::new_boolean(true), Value::new_boolean(true));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(false));
+        assert_eq!(result.unwrap(), Value::new_boolean(false));
     }
 
     #[test]
     fn invalid_comparison() {
-        let result = Comparison::Equal.evaluate(Value::Boolean(true), Value::Number(1));
+        let result = Comparison::Equal.evaluate(Value::new_boolean(true), Value::new_number(1));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

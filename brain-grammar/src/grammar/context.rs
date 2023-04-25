@@ -52,10 +52,10 @@ mod tests {
     #[test]
     fn clone_and_merge_symbols() {
         let context = &mut Context::new();
-        context.symbols.insert("x".into(), Value::Number(0));
+        context.symbols.insert("x".into(), Value::new_number(0));
 
         let strings = ["x".to_string()];
-        let expressions = [Expression::new_literal(Value::Number(1))];
+        let expressions = [Expression::new_literal(Value::new_number(1))];
         let mut zipped = strings.iter().zip(expressions);
 
         let cloned_context = context.clone_and_merge_symbols(&mut zipped);

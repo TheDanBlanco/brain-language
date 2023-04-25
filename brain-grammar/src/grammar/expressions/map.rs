@@ -26,7 +26,7 @@ impl Evaluate for Map {
             let key = key.evaluate(context)?;
 
             match key {
-                Value::Number(_) | Value::String(_) | Value::Boolean(_) | Value::Null => {}
+                Value::Literal(_) => {}
                 _ => return Err(Error::new(ErrorKind::InvalidMapKey, format!("{key}"))),
             }
 
@@ -34,7 +34,7 @@ impl Evaluate for Map {
             map.insert(key.clone(), value.clone());
         }
 
-        Ok(Value::Map(map))
+        Ok(Value::new_map(map))
     }
 }
 
@@ -49,7 +49,7 @@ impl Parse for Map {
 
             key = match key {
                 Expression::Identifier(identifier) => {
-                    Expression::new_literal(Value::String(identifier.name))
+                    Expression::new_literal(Value::new_string(identifier.name))
                 }
                 Expression::Literal(_) => key,
                 _ => {
@@ -82,93 +82,93 @@ mod tests {
     #[test]
     fn create_new_map() {
         let pairs = vec![(
-            Expression::new_literal(Value::String("a".to_string())),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_string("a".to_string())),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
         assert_eq!(map.pairs.len(), 1);
         assert_eq!(
             map.pairs[0].0,
-            Expression::new_literal(Value::String("a".to_string()))
+            Expression::new_literal(Value::new_string("a".to_string()))
         );
     }
 
     #[test]
     fn eval_map_string_key() {
         let mut tree = BTreeMap::new();
-        tree.insert(Value::String("a".to_string()), Value::Number(2));
+        tree.insert(Value::new_string("a".to_string()), Value::new_number(2));
 
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::String("a".to_string())),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_string("a".to_string())),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
         let result = map.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Map(tree));
+        assert_eq!(result.unwrap(), Value::new_map(tree));
     }
 
     #[test]
     fn eval_map_number_key() {
         let mut tree = BTreeMap::new();
-        tree.insert(Value::Number(1), Value::Number(2));
+        tree.insert(Value::new_number(1), Value::new_number(2));
 
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Number(1)),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
         let result = map.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Map(tree));
+        assert_eq!(result.unwrap(), Value::new_map(tree));
     }
 
     #[test]
     fn eval_map_boolean_key() {
         let mut tree = BTreeMap::new();
-        tree.insert(Value::Boolean(true), Value::Number(2));
+        tree.insert(Value::new_boolean(true), Value::new_number(2));
 
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Boolean(true)),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_boolean(true)),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
         let result = map.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Map(tree));
+        assert_eq!(result.unwrap(), Value::new_map(tree));
     }
 
     #[test]
     fn eval_map_with_key_null() {
         let mut tree = BTreeMap::new();
-        tree.insert(Value::Null, Value::Number(2));
+        tree.insert(Value::new_null(), Value::new_number(2));
 
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Null),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_null()),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
         let result = map.evaluate(context);
         assert!(result.is_ok());
 
-        assert_eq!(result.unwrap(), Value::Map(tree));
+        assert_eq!(result.unwrap(), Value::new_map(tree));
     }
 
     #[test]
     fn eval_map_with_invalid_key_collection() {
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Collection(vec![])),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_collection(vec![])),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
@@ -182,7 +182,7 @@ mod tests {
         let context = &mut Context::new();
         let pairs = vec![(
             Expression::new_literal(Value::new_function(vec![], Statement::new_break())),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
@@ -198,8 +198,8 @@ mod tests {
     fn eval_map_with_invalid_key_map() {
         let context = &mut Context::new();
         let pairs = vec![(
-            Expression::new_literal(Value::Map(BTreeMap::new())),
-            Expression::new_literal(Value::Number(2)),
+            Expression::new_literal(Value::new_map(BTreeMap::new())),
+            Expression::new_literal(Value::new_number(2)),
         )];
         let map = Map::new(pairs);
 
@@ -226,8 +226,8 @@ mod tests {
         assert_eq!(
             result.unwrap(),
             Map::new(vec![(
-                Expression::new_literal(Value::String("a".to_string())),
-                Expression::new_literal(Value::Number(0))
+                Expression::new_literal(Value::new_string("a".to_string())),
+                Expression::new_literal(Value::new_number(0))
             )])
         );
     }

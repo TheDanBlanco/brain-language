@@ -165,14 +165,16 @@ mod tests {
 
     #[test]
     fn new_statement_assignment() {
-        let statement =
-            Statement::new_assignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
+        let statement = Statement::new_assignment(
+            "foo".to_string(),
+            Expression::new_literal(Value::new_number(0)),
+        );
 
         assert_eq!(
             statement,
             Statement::Assignment(Assignment::new(
                 "foo".to_string(),
-                Expression::new_literal(Value::Number(0))
+                Expression::new_literal(Value::new_number(0))
             ))
         );
     }
@@ -180,8 +182,10 @@ mod tests {
     #[test]
     fn eval_statement_assignment() {
         let context = &mut Context::new();
-        let statement =
-            Statement::new_assignment("foo".to_string(), Expression::new_literal(Value::Number(0)));
+        let statement = Statement::new_assignment(
+            "foo".to_string(),
+            Expression::new_literal(Value::new_number(0)),
+        );
         let result = statement.resolve(context);
 
         assert!(result.is_ok())
@@ -207,14 +211,14 @@ mod tests {
     fn new_statement_reassignment() {
         let statement = Statement::new_reassignment(
             "foo".to_string(),
-            Expression::new_literal(Value::Number(0)),
+            Expression::new_literal(Value::new_number(0)),
         );
 
         assert_eq!(
             statement,
             Statement::Reassignment(Reassignment::new(
                 "foo".to_string(),
-                Expression::new_literal(Value::Number(0))
+                Expression::new_literal(Value::new_number(0))
             ))
         );
     }
@@ -222,11 +226,13 @@ mod tests {
     #[test]
     fn eval_statement_reassignment() {
         let context = &mut Context::new();
-        context.symbols.insert("foo".to_string(), Value::Number(1));
+        context
+            .symbols
+            .insert("foo".to_string(), Value::new_number(1));
 
         let statement = Statement::new_reassignment(
             "foo".to_string(),
-            Expression::new_literal(Value::Number(0)),
+            Expression::new_literal(Value::new_number(0)),
         );
         let result = statement.resolve(context);
 
@@ -251,7 +257,7 @@ mod tests {
     #[test]
     fn new_statement_conditional() {
         let statement = Statement::new_conditional(
-            Expression::new_literal(Value::Boolean(true)),
+            Expression::new_literal(Value::new_boolean(true)),
             Statement::new_break(),
             Some(Statement::new_break()),
         );
@@ -259,7 +265,7 @@ mod tests {
         assert_eq!(
             statement,
             Statement::Conditional(Conditional::new(
-                Expression::new_literal(Value::Boolean(true)),
+                Expression::new_literal(Value::new_boolean(true)),
                 Statement::new_break(),
                 Some(Statement::new_break())
             ))
@@ -271,7 +277,7 @@ mod tests {
         let context = &mut Context::new();
 
         let statement = Statement::new_conditional(
-            Expression::new_literal(Value::Boolean(true)),
+            Expression::new_literal(Value::new_boolean(true)),
             Statement::new_break(),
             Some(Statement::new_break()),
         );
@@ -371,11 +377,11 @@ mod tests {
 
     #[test]
     fn new_statement_return() {
-        let statement = Statement::new_return(Expression::new_literal(Value::Number(0)));
+        let statement = Statement::new_return(Expression::new_literal(Value::new_number(0)));
 
         assert_eq!(
             statement,
-            Statement::Return(Return::new(Expression::new_literal(Value::Number(0))))
+            Statement::Return(Return::new(Expression::new_literal(Value::new_number(0))))
         );
     }
 
@@ -383,7 +389,7 @@ mod tests {
     fn eval_statement_return() {
         let context = &mut Context::new();
 
-        let statement = Statement::new_return(Expression::new_literal(Value::Number(0)));
+        let statement = Statement::new_return(Expression::new_literal(Value::new_number(0)));
 
         let result = statement.resolve(context);
 
@@ -509,7 +515,7 @@ mod tests {
     fn new_statement_for() {
         let statement = Statement::new_for(
             "item".into(),
-            Expression::new_literal(Value::Collection(vec![])),
+            Expression::new_literal(Value::new_collection(vec![])),
             Statement::new_break(),
         );
 
@@ -517,7 +523,7 @@ mod tests {
             statement,
             Statement::For(For::new(
                 "item".into(),
-                Expression::new_literal(Value::Collection(vec![])),
+                Expression::new_literal(Value::new_collection(vec![])),
                 Statement::new_break(),
             ))
         );
@@ -529,7 +535,7 @@ mod tests {
 
         let statement = Statement::new_for(
             "item".into(),
-            Expression::new_literal(Value::Collection(vec![])),
+            Expression::new_literal(Value::new_collection(vec![])),
             Statement::new_break(),
         );
 

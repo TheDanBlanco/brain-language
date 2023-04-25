@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn new_block() {
-        let expression = Expression::new_literal(Value::Number(1));
+        let expression = Expression::new_literal(Value::new_number(1));
         let node = Node::from_expression(expression);
         let block = Block::new(vec![node.clone()]);
 
@@ -77,7 +77,7 @@ mod tests {
     fn resolve_block_expression() {
         let context = &mut Context::new();
 
-        let expression = Expression::new_literal(Value::Number(1));
+        let expression = Expression::new_literal(Value::new_number(1));
         let node = Node::from_expression(expression);
         let block = Block::new(vec![node.clone()]);
 
@@ -120,7 +120,7 @@ mod tests {
         let context = &mut Context::new();
 
         let target = "foo".to_string();
-        let expression = Expression::new_literal(Value::Number(1));
+        let expression = Expression::new_literal(Value::new_number(1));
         let statement = Statement::new_assignment(target, expression);
         let node = Node::from_statement(statement);
         let block = Block::new(vec![node.clone()]);

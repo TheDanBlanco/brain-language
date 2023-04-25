@@ -2,7 +2,11 @@ use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{
-    context::Context, output::Output, token::BrainToken, value::Value, Evaluate, Parse, Resolve,
+    context::Context,
+    output::Output,
+    token::BrainToken,
+    value::{complex::ComplexValue, literal::LiteralValue, Value},
+    Evaluate, Parse, Resolve,
 };
 
 use super::{builtin::Builtin, identifier::Identifier, Expression};
@@ -62,31 +66,33 @@ impl Evaluate for FunctionCall {
                     return Ok(value);
                 }
 
-                return Ok(Value::Null);
+                return Ok(Value::new_null());
             }
         }
 
         let identifier = self.identifier.evaluate(context)?;
 
         let function = match identifier.clone() {
-            Value::Function(_, _) => identifier,
-            Value::String(fn_identifier) => match context.symbols.get(&fn_identifier) {
-                Some(Value::Function(function, args)) => {
-                    Value::Function(function.clone(), args.clone())
+            Value::Complex(ComplexValue::Function(_)) => identifier,
+            Value::Literal(LiteralValue::String(fn_identifier)) => {
+                match context.symbols.get(&fn_identifier) {
+                    Some(Value::Complex(ComplexValue::Function(function))) => {
+                        Value::new_function(function.arguments.clone(), *function.body.clone())
+                    }
+                    Some(_) => {
+                        return Err(Error::new(
+                            ErrorKind::InvalidType,
+                            format!("'{}' is not a function", fn_identifier),
+                        ))
+                    }
+                    None => {
+                        return Err(Error::new(
+                            ErrorKind::UnknownIdentifier,
+                            format!("'{fn_identifier}'"),
+                        ))
+                    }
                 }
-                Some(_) => {
-                    return Err(Error::new(
-                        ErrorKind::InvalidType,
-                        format!("'{}' is not a function", fn_identifier),
-                    ))
-                }
-                None => {
-                    return Err(Error::new(
-                        ErrorKind::UnknownIdentifier,
-                        format!("'{fn_identifier}'"),
-                    ))
-                }
-            },
+            }
             _ => {
                 return Err(Error::new(
                     ErrorKind::InvalidType,
@@ -95,16 +101,17 @@ impl Evaluate for FunctionCall {
             }
         };
 
-        if let Value::Function(function_arguments, block) = function {
-            let mut zipped_arguments = function_arguments.iter().zip(self.arguments.clone());
+        if let Value::Complex(ComplexValue::Function(func)) = function {
+            let mut zipped_arguments = func.arguments.iter().zip(self.arguments.clone());
             let local_context = &mut context.clone_and_merge_symbols(&mut zipped_arguments)?;
+            let body = *func.body;
 
-            if let Output::Value(value) = block.resolve(local_context)? {
+            if let Output::Value(value) = body.resolve(local_context)? {
                 return Ok(value);
             }
         }
 
-        Ok(Value::Null)
+        Ok(Value::new_null())
     }
 }
 
@@ -119,16 +126,18 @@ mod tests {
     #[test]
     fn create_new_function_call() {
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::String("foo".to_string())),
-            vec![Expression::new_literal(Value::Number(1))],
+            Expression::new_literal(Value::new_string("foo".to_string())),
+            vec![Expression::new_literal(Value::new_number(1))],
         );
         assert_eq!(
             function_call.identifier,
-            Box::new(Expression::new_literal(Value::String("foo".to_string())))
+            Box::new(Expression::new_literal(Value::new_string(
+                "foo".to_string()
+            )))
         );
         assert_eq!(
             function_call.arguments,
-            vec![Expression::new_literal(Value::Number(1))]
+            vec![Expression::new_literal(Value::new_number(1))]
         );
     }
 
@@ -141,13 +150,13 @@ mod tests {
         );
 
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::String("foo".to_string())),
+            Expression::new_literal(Value::new_string("foo".to_string())),
             vec![],
         );
 
         let result = function_call.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Null);
+        assert_eq!(result.unwrap(), Value::new_null());
     }
 
     #[test]
@@ -156,22 +165,22 @@ mod tests {
         let function_call = FunctionCall::new(
             Expression::new_literal(Value::new_function(
                 vec![],
-                Statement::new_return(Expression::new_literal(Value::Number(0))),
+                Statement::new_return(Expression::new_literal(Value::new_number(0))),
             )),
-            vec![Expression::new_literal(Value::Number(1))],
+            vec![Expression::new_literal(Value::new_number(1))],
         );
 
         let result = function_call.evaluate(context);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(0),);
+        assert_eq!(result.unwrap(), Value::new_number(0),);
     }
 
     #[test]
     fn eval_function_call_unknown_identifier() {
         let context = &mut Context::new();
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::String("foo".to_string())),
-            vec![Expression::new_literal(Value::Number(1))],
+            Expression::new_literal(Value::new_string("foo".to_string())),
+            vec![Expression::new_literal(Value::new_number(1))],
         );
 
         let result = function_call.evaluate(context);
@@ -187,8 +196,8 @@ mod tests {
     fn eval_function_call_invalid_type() {
         let context = &mut Context::new();
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::Number(1)),
-            vec![Expression::new_literal(Value::Number(1))],
+            Expression::new_literal(Value::new_number(1)),
+            vec![Expression::new_literal(Value::new_number(1))],
         );
 
         let result = function_call.evaluate(context);
@@ -203,10 +212,12 @@ mod tests {
     #[test]
     fn eval_function_type_in_symbol_table_not_a_function() {
         let context = &mut Context::new();
-        context.symbols.insert("foo".to_string(), Value::Number(1));
+        context
+            .symbols
+            .insert("foo".to_string(), Value::new_number(1));
         let function_call = FunctionCall::new(
-            Expression::new_literal(Value::String("foo".to_string())),
-            vec![Expression::new_literal(Value::Number(1))],
+            Expression::new_literal(Value::new_string("foo".to_string())),
+            vec![Expression::new_literal(Value::new_number(1))],
         );
 
         let result = function_call.evaluate(context);
@@ -343,9 +354,9 @@ mod tests {
                 vec![
                     Expression::new_identifier("a".to_string()),
                     Expression::new_binary(
-                        Expression::new_literal(Value::Number(0)),
+                        Expression::new_literal(Value::new_number(0)),
                         Operator::new_addition(),
-                        Expression::new_literal(Value::Number(1)),
+                        Expression::new_literal(Value::new_number(1)),
                     )
                 ]
             )

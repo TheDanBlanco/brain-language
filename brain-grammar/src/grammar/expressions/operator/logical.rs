@@ -1,6 +1,10 @@
 use brain_error::{Error, ErrorKind};
 
-use crate::grammar::{token::BrainToken, value::Value, Match};
+use crate::grammar::{
+    token::BrainToken,
+    value::{literal::LiteralValue, Value},
+    Match,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Logical {
@@ -11,12 +15,16 @@ pub enum Logical {
 impl Logical {
     pub fn evaluate(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
         match (self, left.clone(), right.clone()) {
-            (Logical::And, Value::Boolean(left), Value::Boolean(right)) => {
-                Ok(Value::Boolean(left && right))
-            }
-            (Logical::Or, Value::Boolean(left), Value::Boolean(right)) => {
-                Ok(Value::Boolean(left || right))
-            }
+            (
+                Logical::And,
+                Value::Literal(LiteralValue::Boolean(left)),
+                Value::Literal(LiteralValue::Boolean(right)),
+            ) => Ok(Value::new_boolean(left && right)),
+            (
+                Logical::Or,
+                Value::Literal(LiteralValue::Boolean(left)),
+                Value::Literal(LiteralValue::Boolean(right)),
+            ) => Ok(Value::new_boolean(left || right)),
             _ => Err(Error::new(
                 ErrorKind::InvalidLogicalOperation,
                 format!("cannot do logical comparison on {left} and {right}"),
@@ -45,35 +53,35 @@ mod tests {
 
     #[test]
     fn evaluate_and() {
-        let result = Logical::And.evaluate(Value::Boolean(true), Value::Boolean(true));
+        let result = Logical::And.evaluate(Value::new_boolean(true), Value::new_boolean(true));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn evaluate_or() {
-        let result = Logical::Or.evaluate(Value::Boolean(true), Value::Boolean(false));
+        let result = Logical::Or.evaluate(Value::new_boolean(true), Value::new_boolean(false));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn evaluate_or_both_false() {
-        let result = Logical::Or.evaluate(Value::Boolean(false), Value::Boolean(false));
+        let result = Logical::Or.evaluate(Value::new_boolean(false), Value::new_boolean(false));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(false));
+        assert_eq!(result.unwrap(), Value::new_boolean(false));
     }
 
     #[test]
     fn evaluate_or_both_true() {
-        let result = Logical::Or.evaluate(Value::Boolean(true), Value::Boolean(true));
+        let result = Logical::Or.evaluate(Value::new_boolean(true), Value::new_boolean(true));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Boolean(true));
+        assert_eq!(result.unwrap(), Value::new_boolean(true));
     }
 
     #[test]
     fn evaluate_with_invalid_value() {
-        let result = Logical::Or.evaluate(Value::Number(1), Value::Boolean(true));
+        let result = Logical::Or.evaluate(Value::new_number(1), Value::new_boolean(true));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

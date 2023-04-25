@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn new_return() {
-        let expression = Expression::new_literal(Value::String("hello".to_string()));
+        let expression = Expression::new_literal(Value::new_string("hello".to_string()));
         let statement = Return::new(expression.clone());
 
         assert_eq!(statement, Return { value: expression })
@@ -53,7 +53,7 @@ mod tests {
     #[test]
     fn resolve_return() {
         let context = &mut Context::new();
-        let expression = Expression::new_literal(Value::String("hello".to_string()));
+        let expression = Expression::new_literal(Value::new_string("hello".to_string()));
         let statement = Return::new(expression.clone());
 
         let result = statement.resolve(context);
@@ -61,7 +61,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Output::Value(Value::String("hello".to_string()))
+            Output::Value(Value::new_string("hello".to_string()))
         );
     }
 
@@ -79,7 +79,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Return::new(Expression::new_literal(Value::Number(0)))
+            Return::new(Expression::new_literal(Value::new_number(0)))
         );
     }
 }

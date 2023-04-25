@@ -2,7 +2,11 @@ use core::fmt;
 
 use brain_error::{Error, ErrorKind};
 
-use crate::grammar::{token::BrainToken, value::Value, Match};
+use crate::grammar::{
+    token::BrainToken,
+    value::{literal::LiteralValue, Value},
+    Match,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Bitwise {
@@ -22,12 +26,16 @@ impl fmt::Display for Bitwise {
 impl Bitwise {
     pub fn evaluate(&self, left: Value, right: Value) -> Result<Value, Box<dyn std::error::Error>> {
         match (self, left.clone(), right.clone()) {
-            (Bitwise::And, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Number(left & right))
-            }
-            (Bitwise::Or, Value::Number(left), Value::Number(right)) => {
-                Ok(Value::Number(left | right))
-            }
+            (
+                Bitwise::And,
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_number(left & right)),
+            (
+                Bitwise::Or,
+                Value::Literal(LiteralValue::Number(left)),
+                Value::Literal(LiteralValue::Number(right)),
+            ) => Ok(Value::new_number(left | right)),
             _ => Err(Error::new(
                 ErrorKind::InvalidBitwiseOperation,
                 format!("Cannot do {self} operation on {left} and {right}"),
@@ -57,16 +65,16 @@ mod tests {
 
     #[test]
     fn bitwise_and() {
-        let result = Bitwise::And.evaluate(Value::Number(5), Value::Number(1));
+        let result = Bitwise::And.evaluate(Value::new_number(5), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(1));
+        assert_eq!(result.unwrap(), Value::new_number(1));
     }
 
     #[test]
     fn bitwise_or() {
-        let result = Bitwise::Or.evaluate(Value::Number(5), Value::Number(1));
+        let result = Bitwise::Or.evaluate(Value::new_number(5), Value::new_number(1));
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Value::Number(5));
+        assert_eq!(result.unwrap(), Value::new_number(5));
     }
 
     #[test]
@@ -77,7 +85,7 @@ mod tests {
 
     #[test]
     fn invalid_bitwise_and_operation() {
-        let result = Bitwise::And.evaluate(Value::Boolean(true), Value::Number(1));
+        let result = Bitwise::And.evaluate(Value::new_boolean(true), Value::new_number(1));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -87,7 +95,7 @@ mod tests {
 
     #[test]
     fn invalid_bitwise_or_operation() {
-        let result = Bitwise::Or.evaluate(Value::Boolean(true), Value::Number(1));
+        let result = Bitwise::Or.evaluate(Value::new_boolean(true), Value::new_number(1));
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

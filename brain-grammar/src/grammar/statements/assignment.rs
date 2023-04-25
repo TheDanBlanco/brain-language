@@ -69,7 +69,7 @@ mod tests {
     #[test]
     fn new_assignment() {
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Number(1));
+        let value = Expression::new_literal(Value::new_number(1));
 
         let assignment = Assignment::new(target.clone(), value.clone());
         assert_eq!(assignment.target, target);
@@ -80,20 +80,20 @@ mod tests {
     fn resolve_assignemnt_number() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Number(1));
+        let value = Expression::new_literal(Value::new_number(1));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
 
         assert!(result.is_ok());
-        assert_eq!(context.symbols.get("foo").unwrap(), &Value::Number(1));
+        assert_eq!(context.symbols.get("foo").unwrap(), &Value::new_number(1));
     }
 
     #[test]
     fn resolve_assignemnt_string() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::String("a".to_string()));
+        let value = Expression::new_literal(Value::new_string("a".to_string()));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
@@ -101,7 +101,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("foo").unwrap(),
-            &Value::String("a".to_string())
+            &Value::new_string("a".to_string())
         );
     }
 
@@ -109,20 +109,20 @@ mod tests {
     fn resolve_assignemnt_null() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Null);
+        let value = Expression::new_literal(Value::new_null());
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
 
         assert!(result.is_ok());
-        assert_eq!(context.symbols.get("foo").unwrap(), &Value::Null);
+        assert_eq!(context.symbols.get("foo").unwrap(), &Value::new_null());
     }
 
     #[test]
     fn resolve_assignemnt_collection() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Collection(vec![]));
+        let value = Expression::new_literal(Value::new_collection(vec![]));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
@@ -130,7 +130,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("foo").unwrap(),
-            &Value::Collection(vec![])
+            &Value::new_collection(vec![])
         );
     }
 
@@ -138,7 +138,7 @@ mod tests {
     fn resolve_assignemnt_map() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Map(BTreeMap::new()));
+        let value = Expression::new_literal(Value::new_map(BTreeMap::new()));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
@@ -146,7 +146,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("foo").unwrap(),
-            &Value::Map(BTreeMap::new())
+            &Value::new_map(BTreeMap::new())
         );
     }
 
@@ -154,8 +154,7 @@ mod tests {
     fn resolve_assignment_function() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value =
-            Expression::new_literal(Value::Function(vec![], Box::new(Statement::new_break())));
+        let value = Expression::new_literal(Value::new_function(vec![], Statement::new_break()));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
@@ -163,7 +162,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             context.symbols.get("foo").unwrap(),
-            &Value::Function(vec![], Box::new(Statement::new_break()))
+            &Value::new_function(vec![], Statement::new_break())
         );
     }
 
@@ -171,22 +170,25 @@ mod tests {
     fn resolve_assignment_boolean() {
         let context = &mut Context::new();
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Boolean(true));
+        let value = Expression::new_literal(Value::new_boolean(true));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
 
         assert!(result.is_ok());
-        assert_eq!(context.symbols.get("foo").unwrap(), &Value::Boolean(true));
+        assert_eq!(
+            context.symbols.get("foo").unwrap(),
+            &Value::new_boolean(true)
+        );
     }
 
     #[test]
     fn resolve_assignment_identifier_already_exists() {
         let context = &mut Context::new();
-        context.symbols.insert("foo".to_string(), Value::Null);
+        context.symbols.insert("foo".to_string(), Value::new_null());
 
         let target = "foo".to_string();
-        let value = Expression::new_literal(Value::Boolean(true));
+        let value = Expression::new_literal(Value::new_boolean(true));
 
         let assignment = Assignment::new(target, value);
         let result = assignment.resolve(context);
@@ -216,7 +218,7 @@ mod tests {
             result.unwrap(),
             Assignment::new(
                 "x".to_string(),
-                Expression::new_literal(Value::String("hello".to_string())),
+                Expression::new_literal(Value::new_string("hello".to_string())),
             )
         );
     }
@@ -237,7 +239,10 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Assignment::new("x".to_string(), Expression::new_literal(Value::Number(0)),)
+            Assignment::new(
+                "x".to_string(),
+                Expression::new_literal(Value::new_number(0)),
+            )
         );
     }
 
@@ -257,7 +262,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Assignment::new("x".to_string(), Expression::new_literal(Value::Null),)
+            Assignment::new("x".to_string(), Expression::new_literal(Value::new_null()),)
         );
     }
 
@@ -279,7 +284,7 @@ mod tests {
             result.unwrap(),
             Assignment::new(
                 "x".to_string(),
-                Expression::new_literal(Value::Boolean(true)),
+                Expression::new_literal(Value::new_boolean(true)),
             )
         );
     }

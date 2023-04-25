@@ -134,7 +134,7 @@ mod tests {
 
     #[test]
     fn new_node_from_expression() {
-        let expression = Expression::new_literal(Value::Null);
+        let expression = Expression::new_literal(Value::new_null());
         let node = Node::from_expression(expression.clone());
 
         assert_eq!(node, Node::Expression(expression))
@@ -163,7 +163,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Node::Expression(Expression::new_literal(Value::String("a".to_string())))
+            Node::Expression(Expression::new_literal(Value::new_string("a".to_string())))
         );
     }
 

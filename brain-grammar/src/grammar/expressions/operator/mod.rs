@@ -238,8 +238,8 @@ mod tests {
     #[test]
     fn eval_mathematical_operator() {
         let context = &mut Context::new();
-        let left = Value::Number(1);
-        let right = Value::Number(2);
+        let left = Value::new_number(1);
+        let right = Value::new_number(2);
         let operator = Operator::new_addition();
 
         let result = operator.evaluate(left, right, context);
@@ -249,8 +249,8 @@ mod tests {
     #[test]
     fn eval_logical_operator() {
         let context = &mut Context::new();
-        let left = Value::Boolean(true);
-        let right = Value::Boolean(false);
+        let left = Value::new_boolean(true);
+        let right = Value::new_boolean(false);
         let operator = Operator::Logical(Logical::And);
 
         let result = operator.evaluate(left, right, context);
@@ -260,8 +260,8 @@ mod tests {
     #[test]
     fn eval_comparison_operator() {
         let context = &mut Context::new();
-        let left = Value::Number(1);
-        let right = Value::Number(2);
+        let left = Value::new_number(1);
+        let right = Value::new_number(2);
         let operator = Operator::Comparison(Comparison::Equal);
 
         let result = operator.evaluate(left, right, context);
@@ -271,8 +271,8 @@ mod tests {
     #[test]
     fn eval_bitwise_operator() {
         let context = &mut Context::new();
-        let left = Value::Number(1);
-        let right = Value::Number(2);
+        let left = Value::new_number(1);
+        let right = Value::new_number(2);
         let operator = Operator::Bitwise(Bitwise::And);
 
         let result = operator.evaluate(left, right, context);
