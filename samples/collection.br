@@ -9,3 +9,7 @@ for collection in collections {
         print(item);
     }
 }
+
+let appended = append(collections, [10, 11, 12]);
+
+print(appended);

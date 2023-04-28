@@ -8,3 +8,4 @@ let map = {
 print(map.a);
 print(map["b"]);
 print(map.c[2]);
+print(len(map));

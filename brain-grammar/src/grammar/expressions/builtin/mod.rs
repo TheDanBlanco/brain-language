@@ -1,10 +1,14 @@
 use crate::grammar::{context::Context, output::Output};
 
+use self::len::{Len, LEN};
 use self::print::{Print, PRINT};
+use self::append::{Append, APPEND};
 
 use super::Expression;
 
+mod len;
 mod print;
+mod append;
 
 pub enum Builtin {
     Print(Print),
@@ -18,6 +22,8 @@ impl Builtin {
     ) -> Result<Output, Box<dyn std::error::Error>> {
         let out = match name.as_str() {
             PRINT => Print.resolve(context, arguments),
+            LEN => Len.resolve(context, arguments),
+            APPEND => Append.resolve(context, arguments),
             _ => Err(format!("Unknown builtin: {}", name).into()),
         }?;
 
@@ -27,6 +33,8 @@ impl Builtin {
     pub fn matches(name: String) -> bool {
         match name.as_str() {
             PRINT => true,
+            LEN => true,
+            APPEND => true,
             _ => false,
         }
     }
