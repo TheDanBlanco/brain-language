@@ -92,7 +92,7 @@ impl Evaluate for FunctionCall {
                         ))
                     }
                 }
-            },
+            }
             _ => {
                 return Err(Error::new(
                     ErrorKind::InvalidType,

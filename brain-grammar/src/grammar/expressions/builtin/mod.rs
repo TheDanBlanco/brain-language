@@ -1,14 +1,14 @@
 use crate::grammar::{context::Context, output::Output};
 
+use self::append::{Append, APPEND};
 use self::len::{Len, LEN};
 use self::print::{Print, PRINT};
-use self::append::{Append, APPEND};
 
 use super::Expression;
 
+mod append;
 mod len;
 mod print;
-mod append;
 
 pub enum Builtin {
     Print(Print),

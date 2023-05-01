@@ -2,10 +2,10 @@ let map = {
     "a": 1,
     "b": "bee",
     "c": [1, 2, 3],
-	[1]: "swag", 
 }
 
 print(map.a);
 print(map["b"]);
 print(map.c[2]);
 print(len(map));
+print(append(map, { "e": 1 }, { "f": 30 }));

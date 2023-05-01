@@ -1,4 +1,12 @@
-use crate::grammar::{context::Context, expressions::Expression, output::Output, Evaluate, value::{Value, complex::ComplexValue, literal::LiteralValue}};
+use crate::grammar::{
+    context::Context,
+    expressions::Expression,
+    output::Output,
+    value::{complex::ComplexValue, literal::LiteralValue, Value},
+    Evaluate,
+};
+
+use brain_error::{Error, ErrorKind};
 
 pub const LEN: &str = "len";
 
@@ -12,7 +20,10 @@ impl Len {
     ) -> Result<Output, Box<dyn std::error::Error>> {
         let mut out = 0;
         if arguments.len() != 1 {
-            panic!("incorrect number of arguments to len(). expected: 1");
+            return Err(Error::new(
+                ErrorKind::InvalidArguments,
+                format!("Invalid type to append to map. Expected map"),
+            ));
         }
 
         let argument = arguments.first().unwrap();
