@@ -1,0 +1,2 @@
+let inline = "a string";
+print(inline);

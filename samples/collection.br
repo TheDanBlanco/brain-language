@@ -11,5 +11,12 @@ for collection in collections {
 }
 
 let appended = append(collections, [10, 11, 12]);
+let merged = merge(collections, [10, 11, 12]);
+
+let new = [1, 2, 3, { 3: "one" }];
+print("new", new);
+let removed = remove(new, { 3: "one" });
 
 print(appended);
+print(merged);
+print(removed);

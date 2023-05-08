@@ -8,11 +8,11 @@ use crate::grammar::{
 
 use brain_error::{Error, ErrorKind};
 
-pub const APPEND: &str = "append";
+pub const REMOVE: &str = "remove";
 
-pub struct Append;
+pub struct Remove;
 
-impl Append {
+impl Remove {
     pub fn resolve(
         &self,
         context: &mut Context,
@@ -21,7 +21,7 @@ impl Append {
         if arguments.len() < 2 {
             return Err(Error::new(
                 ErrorKind::InvalidArguments,
-                "Cannot call append with less than 2 arguments".to_string(),
+                "Cannot call remove with less than 2 arguments".to_string(),
             ));
         }
 
@@ -32,7 +32,10 @@ impl Append {
                 let mut out = c.value.clone();
                 for argument in arguments[1..].iter() {
                     let value = argument.evaluate(context)?;
-                    out.push(value)
+                    let item = value.clone();
+                    if let Some(index) = out.iter().position(|i| *i == item) {
+                        out.remove(index); 
+                    }
                 }
 
                 return Ok(Output::Value(Value::new_collection(out)));
@@ -43,19 +46,12 @@ impl Append {
                     let value = argument.evaluate(context)?;
                     match value {
                         Value::Complex(ComplexValue::Map(a)) => {
-                            if a.value.len() > 1 {
-                                return Err(Error::new(
-                                    ErrorKind::InvalidArguments,
-                                    "Map should contain only 1 key / value pair when calling append".to_string(),
-                                ));
-                            }
-
                             out.extend(a.value.clone())
                         }
                         _ => {
                             return Err(Error::new(
                                 ErrorKind::InvalidArguments,
-                                "Invalid type to append to map. Expected map".to_string(),
+                                "Invalid type for remove to map. Expected map".to_string(),
                             ))
                         }
                     }
@@ -65,7 +61,7 @@ impl Append {
             }
             _ => Err(Error::new(
                 ErrorKind::InvalidArguments,
-                "Invalid type for append. Expected collection or map".to_string(),
+                "Invalid type for remove. Expected collection or map".to_string(),
             )),
         }
     }

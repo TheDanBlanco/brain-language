@@ -22,7 +22,7 @@ impl Len {
         if arguments.len() != 1 {
             return Err(Error::new(
                 ErrorKind::InvalidArguments,
-                format!("Invalid type to append to map. Expected map"),
+                format!("Expected 1 argument to len"),
             ));
         }
 
@@ -39,7 +39,10 @@ impl Len {
             Value::Complex(ComplexValue::Map(m)) => {
                 out += m.value.len() as i64;
             }
-            _ => panic!("invalid type for `len`"),
+            _ => return Err(Error::new(
+                ErrorKind::InvalidArguments,
+                "Invalid type for len".to_string(),
+            )),
         }
 
         Ok(Output::Value(Value::Literal(LiteralValue::Number(out))))

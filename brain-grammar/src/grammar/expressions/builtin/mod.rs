@@ -1,14 +1,18 @@
 use crate::grammar::{context::Context, output::Output};
 
 use self::append::{Append, APPEND};
+use self::merge::{Merge, MERGE};
+use self::remove::{Remove, REMOVE};
 use self::len::{Len, LEN};
 use self::print::{Print, PRINT};
 
 use super::Expression;
 
 mod append;
+mod merge;
 mod len;
 mod print;
+mod remove;
 
 pub enum Builtin {
     Print(Print),
@@ -24,6 +28,8 @@ impl Builtin {
             PRINT => Print.resolve(context, arguments),
             LEN => Len.resolve(context, arguments),
             APPEND => Append.resolve(context, arguments),
+            MERGE => Merge.resolve(context, arguments),
+            REMOVE => Remove.resolve(context, arguments),
             _ => Err(format!("Unknown builtin: {}", name).into()),
         }?;
 
@@ -35,6 +41,8 @@ impl Builtin {
             PRINT => true,
             LEN => true,
             APPEND => true,
+            MERGE => true,
+            REMOVE => true,
             _ => false,
         }
     }

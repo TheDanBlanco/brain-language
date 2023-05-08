@@ -8,11 +8,11 @@ use crate::grammar::{
 
 use brain_error::{Error, ErrorKind};
 
-pub const APPEND: &str = "append";
+pub const MERGE: &str = "merge";
 
-pub struct Append;
+pub struct Merge;
 
-impl Append {
+impl Merge {
     pub fn resolve(
         &self,
         context: &mut Context,
@@ -21,7 +21,7 @@ impl Append {
         if arguments.len() < 2 {
             return Err(Error::new(
                 ErrorKind::InvalidArguments,
-                "Cannot call append with less than 2 arguments".to_string(),
+                "Cannot call merge with less than 2 arguments".to_string(),
             ));
         }
 
@@ -32,7 +32,17 @@ impl Append {
                 let mut out = c.value.clone();
                 for argument in arguments[1..].iter() {
                     let value = argument.evaluate(context)?;
-                    out.push(value)
+                    match value {
+                        Value::Complex(ComplexValue::Collection(v)) => {
+                            out.extend(v.value.clone())
+                        }
+                        _ => {
+                            return Err(Error::new(
+                                ErrorKind::InvalidArguments,
+                                "Invalid type for merge to collection. Expected collection".to_string(),
+                            ))
+                        }
+                    }
                 }
 
                 return Ok(Output::Value(Value::new_collection(out)));
@@ -43,19 +53,12 @@ impl Append {
                     let value = argument.evaluate(context)?;
                     match value {
                         Value::Complex(ComplexValue::Map(a)) => {
-                            if a.value.len() > 1 {
-                                return Err(Error::new(
-                                    ErrorKind::InvalidArguments,
-                                    "Map should contain only 1 key / value pair when calling append".to_string(),
-                                ));
-                            }
-
                             out.extend(a.value.clone())
                         }
                         _ => {
                             return Err(Error::new(
                                 ErrorKind::InvalidArguments,
-                                "Invalid type to append to map. Expected map".to_string(),
+                                "Invalid type for merge to map. Expected map".to_string(),
                             ))
                         }
                     }
@@ -65,7 +68,7 @@ impl Append {
             }
             _ => Err(Error::new(
                 ErrorKind::InvalidArguments,
-                "Invalid type for append. Expected collection or map".to_string(),
+                "Invalid type for merge. Expected collection or map".to_string(),
             )),
         }
     }
