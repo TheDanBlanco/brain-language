@@ -22,6 +22,7 @@ pub mod identifier;
 pub mod literal;
 pub mod map;
 pub mod operator;
+pub mod tuple;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Expression {
