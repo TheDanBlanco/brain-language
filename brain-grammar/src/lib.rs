@@ -4,6 +4,7 @@ use self::grammar::{context::Context, output::Output, token::BrainToken, Nodes, 
 
 pub mod grammar;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Program {
     pub stream: TokenStream<BrainToken>,
     pub context: Context,
@@ -17,9 +18,9 @@ impl Program {
         }
 
         Program {
-            stream: stream,
+            stream,
+            verbose,
             context: Context::new(),
-            verbose: verbose,
         }
     }
 

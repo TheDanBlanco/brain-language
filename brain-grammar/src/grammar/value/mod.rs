@@ -12,6 +12,7 @@ use self::complex::enumdefinition::EnumDefinition;
 use self::complex::function::Function;
 use self::complex::map::Map;
 use self::complex::r#enum::Enum;
+use self::complex::tuple::Tuple;
 
 use super::statements::Statement;
 use super::token::BrainToken;
@@ -63,6 +64,10 @@ impl Value {
         Value::Complex(ComplexValue::EnumDefinition(EnumDefinition::new(
             name, variants,
         )))
+    }
+
+    pub fn new_tuple(tuple: Vec<Value>) -> Self {
+        Value::Complex(ComplexValue::Tuple(Tuple::new(tuple)))
     }
 }
 

@@ -52,7 +52,6 @@ impl Parse for Collection {
 
 #[cfg(test)]
 mod tests {
-
     use brain_token::token::Token;
 
     use super::*;

@@ -77,6 +77,42 @@ impl Evaluate for Index {
                     )),
                 }
             }
+            Value::Complex(ComplexValue::Tuple(tuple)) => {
+                let index = self.index.evaluate(context)?;
+                let values = tuple.values.clone();
+
+                match index {
+                    Value::Literal(LiteralValue::Number(index)) => {
+                        if index < 0 {
+                            return Err(Error::new(
+                                ErrorKind::IndexOutOfBounds,
+                                format!(
+                                    "Index {} is out of bounds (length of {})",
+                                    index,
+                                    values.len()
+                                ),
+                            ));
+                        }
+
+                        if index >= (values.len() as i64) {
+                            return Err(Error::new(
+                                ErrorKind::IndexOutOfBounds,
+                                format!(
+                                    "Index {} is out of bounds (length of {})",
+                                    index,
+                                    values.len()
+                                ),
+                            ));
+                        }
+
+                        Ok(values[index as usize].clone())
+                    }
+                    _ => Err(Error::new(
+                        ErrorKind::InvalidType,
+                        format!("Index must be a number, not '{index}'"),
+                    )),
+                }
+            }
             Value::Complex(ComplexValue::Map(map)) => {
                 let key = self.index.evaluate(context)?;
 
