@@ -10,4 +10,5 @@ brain-error = { path = "../brain-error" }
 quote = "1.0.23"
 proc-macro2 = "1.0.24"
 regex = "1"
-syn = { version = "1.0.109", features = ["full"] }
+syn = { version = "2.0.51", features = ["full"] }
+indoc = "2"
