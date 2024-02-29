@@ -18,6 +18,7 @@ pub enum ErrorKind {
     UnexpectedToken,
     UnexpectedEndOfFile,
     ParseError,
+    ImmutableValue,
 }
 
 impl fmt::Display for ErrorKind {
@@ -39,6 +40,7 @@ impl fmt::Display for ErrorKind {
             ErrorKind::UnexpectedEndOfFile => write!(f, "UnexpectedEndOfFile"),
             ErrorKind::UnexpectedExpression => write!(f, "UnexpectedExpression"),
             ErrorKind::ParseError => write!(f, "ParseError"),
+            ErrorKind::ImmutableValue => write!(f, "ImmutableValue"),
         }
     }
 }

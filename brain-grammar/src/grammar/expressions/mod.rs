@@ -8,6 +8,7 @@ use crate::grammar::{context::Context, value::Value};
 use self::{
     accessors::Accessor, binary::Binary, collection::Collection, functioncall::FunctionCall,
     identifier::Identifier, literal::Literal, map::Map, operator::Operator, r#enum::Enum,
+    tuple::Tuple,
 };
 
 use super::{token::BrainToken, Evaluate, Match, Parse};
@@ -22,6 +23,7 @@ pub mod identifier;
 pub mod literal;
 pub mod map;
 pub mod operator;
+pub mod tuple;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Expression {
@@ -33,6 +35,7 @@ pub enum Expression {
     Accessor(Accessor),
     Enum(Enum),
     Map(Map),
+    Tuple(Tuple),
 }
 
 impl fmt::Display for Expression {
@@ -46,6 +49,7 @@ impl fmt::Display for Expression {
             Expression::Accessor(_) => write!(f, "accessor"),
             Expression::Map(_) => write!(f, "map"),
             Expression::Enum(_) => write!(f, "enum"),
+            Expression::Tuple(_) => write!(f, "tuple"),
         }
     }
 }
@@ -82,6 +86,10 @@ impl Expression {
     pub fn new_index_accessor(index: Expression, target: Expression) -> Self {
         Expression::Accessor(Accessor::new_index(index, target))
     }
+
+    pub fn new_tuple(values: Vec<Expression>) -> Self {
+        Expression::Tuple(Tuple::new(values))
+    }
 }
 
 impl Evaluate for Expression {
@@ -95,6 +103,7 @@ impl Evaluate for Expression {
             Expression::Map(map) => map.evaluate(context),
             Expression::Accessor(accessor) => accessor.evaluate(context),
             Expression::Enum(r#enum) => r#enum.evaluate(context),
+            Expression::Tuple(tuple) => tuple.evaluate(context),
         }
     }
 }
@@ -110,8 +119,6 @@ impl Parse for Expression {
 
         if Literal::matches(token) {
             let literal = Literal::parse(stream)?;
-
-            println!("Literal: {:?}", literal);
 
             let next = stream.peek();
 
@@ -131,6 +138,10 @@ impl Parse for Expression {
 
         if stream.check(BrainToken::LeftBrace) {
             return Ok(Self::Map(Map::parse(stream)?));
+        }
+
+        if stream.check(BrainToken::LeftParen) {
+            return Ok(Self::Tuple(Tuple::parse(stream)?));
         }
 
         if let &BrainToken::Identifier = &next.token {
@@ -445,6 +456,50 @@ mod tests {
         let stream = &mut TokenStream::from_vec(tokens);
 
         let result = Map::parse(stream);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_expression_tuple() {
+        let expression = Expression::new_tuple(vec![
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+        ]);
+        assert_eq!(
+            expression,
+            Expression::Tuple(Tuple::new(vec![
+                Expression::new_literal(Value::new_number(1)),
+                Expression::new_literal(Value::new_number(2)),
+            ]))
+        );
+    }
+
+    #[test]
+    fn eval_expression_tuple() {
+        let context = &mut Context::new();
+        let expression = Expression::new_tuple(vec![
+            Expression::new_literal(Value::new_number(1)),
+            Expression::new_literal(Value::new_number(2)),
+        ]);
+
+        let result = expression.evaluate(context);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn parse_tuple() {
+        let tokens = vec![
+            Token::new(0..1, BrainToken::LeftParen, "(".to_string()),
+            Token::new(1..2, BrainToken::Number, "1".to_string()),
+            Token::new(2..3, BrainToken::Comma, ",".to_string()),
+            Token::new(3..4, BrainToken::Number, "2".to_string()),
+            Token::new(4..5, BrainToken::RightParen, ")".to_string()),
+        ];
+
+        let stream = &mut TokenStream::from_vec(tokens);
+
+        let result = Tuple::parse(stream);
 
         assert!(result.is_ok());
     }

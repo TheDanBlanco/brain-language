@@ -361,4 +361,55 @@ mod tests {
             &Value::new_boolean(true)
         );
     }
+
+    #[test]
+    fn tuple() {
+        let source = "let tuple = (1, 2, 3)".to_string();
+        let result = run(source);
+
+        let context = &result.unwrap().context;
+
+        assert_eq!(
+            context.symbols.get("tuple").unwrap(),
+            &Value::new_tuple(vec![
+                Value::new_number(1),
+                Value::new_number(2),
+                Value::new_number(3)
+            ])
+        );
+    }
+
+    #[test]
+    fn tuple_with_index_accessor() {
+        let source = "let tuple = (1, 2, 3); let x = tuple[0]".to_string();
+        let result = run(source);
+
+        let context = &result.unwrap().context;
+
+        assert_eq!(context.symbols.get("x").unwrap(), &Value::new_number(1));
+    }
+
+    #[test]
+    fn tuple_with_index_accessor_with_index_accessor() {
+        let source =
+            "let collection_of_tuples = [(1, 2, 3), (4, 5, 6)]; let x = collection_of_tuples[0][0]"
+                .to_string();
+        let result = run(source);
+
+        let context = &result.unwrap().context;
+
+        assert_eq!(context.symbols.get("x").unwrap(), &Value::new_number(1));
+    }
+
+    #[test]
+    // this should error as tuples are immutable
+    fn reassign_tuple() {
+        let source = "let tuple = (1, 2, 3); tuple = (4, 5, 6)".to_string();
+        let result = run(source);
+
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Cannot reassign immutable value"));
+    }
 }

@@ -2,8 +2,12 @@ use brain_error::{Error, ErrorKind};
 use brain_token::stream::TokenStream;
 
 use crate::grammar::{
-    context::Context, expressions::Expression, output::Output, token::BrainToken, Evaluate, Parse,
-    Resolve,
+    context::Context,
+    expressions::Expression,
+    output::Output,
+    token::BrainToken,
+    value::{complex::ComplexValue, Value},
+    Evaluate, Parse, Resolve,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -14,10 +18,7 @@ pub struct Reassignment {
 
 impl Reassignment {
     pub fn new(target: String, value: Expression) -> Self {
-        Reassignment {
-            target: target,
-            value: value,
-        }
+        Reassignment { target, value }
     }
 }
 
@@ -29,6 +30,13 @@ impl Resolve for Reassignment {
             return Err(Error::new(
                 ErrorKind::UnknownIdentifier,
                 format!("'{}'", self.target),
+            ));
+        }
+
+        if let Value::Complex(ComplexValue::Tuple(_)) = value {
+            return Err(Error::new(
+                ErrorKind::ImmutableValue,
+                format!("Cannot reassign immutable value"),
             ));
         }
 

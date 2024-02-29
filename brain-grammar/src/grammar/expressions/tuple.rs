@@ -4,49 +4,46 @@ use crate::grammar::{context::Context, token::BrainToken, value::Value, Evaluate
 
 use super::Expression;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Collection {
-    elements: Vec<Expression>,
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+pub struct Tuple {
+    pub values: Vec<Expression>,
 }
 
-impl Collection {
-    pub fn new(elements: Vec<Expression>) -> Self {
-        Collection { elements }
+impl Tuple {
+    pub fn new(values: Vec<Expression>) -> Self {
+        Self { values }
     }
 }
 
-impl Evaluate for Collection {
-    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+impl Parse for Tuple {
+    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
+        stream.expect(BrainToken::LeftParen)?;
+
         let mut values = Vec::new();
 
-        for element in &self.elements {
-            let value = element.evaluate(context)?;
-            values.push(value.clone());
-        }
-
-        Ok(Value::new_collection(values))
-    }
-}
-
-impl Parse for Collection {
-    fn parse(stream: &mut TokenStream<BrainToken>) -> Result<Self, Box<dyn std::error::Error>> {
-        stream.expect(BrainToken::LeftBracket)?;
-
-        let mut elements = vec![];
-
-        while !stream.check(BrainToken::RightBracket) {
-            let expression = Expression::parse(stream)?;
-
-            elements.push(expression);
+        while !stream.check(BrainToken::RightParen) {
+            values.push(Expression::parse(stream)?);
 
             stream.skip_if(BrainToken::Comma);
         }
 
-        stream.expect(BrainToken::RightBracket)?;
+        stream.expect(BrainToken::RightParen)?;
 
         stream.skip_if(BrainToken::Semicolon);
 
-        Ok(Self::new(elements))
+        Ok(Self::new(values))
+    }
+}
+
+impl Evaluate for Tuple {
+    fn evaluate(&self, context: &mut Context) -> Result<Value, Box<dyn std::error::Error>> {
+        let mut values = Vec::new();
+
+        for value in &self.values {
+            values.push(value.evaluate(context)?);
+        }
+
+        Ok(Value::new_tuple(values))
     }
 }
 
@@ -57,14 +54,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn create_new_collection() {
-        let collection = Collection::new(vec![
+    fn create_new_tuple() {
+        let tuple = Tuple::new(vec![
             Expression::new_literal(Value::new_number(1)),
             Expression::new_literal(Value::new_number(2)),
             Expression::new_literal(Value::new_number(3)),
         ]);
         assert_eq!(
-            collection.elements,
+            tuple.values,
             vec![
                 Expression::new_literal(Value::new_number(1)),
                 Expression::new_literal(Value::new_number(2)),
@@ -74,9 +71,9 @@ mod tests {
     }
 
     #[test]
-    fn eval_collection() {
+    fn eval_tuple() {
         let context = &mut Context::new();
-        let collection = Collection::new(vec![
+        let collection = Tuple::new(vec![
             Expression::new_literal(Value::new_number(1)),
             Expression::new_literal(Value::new_number(2)),
             Expression::new_literal(Value::new_number(3)),
@@ -86,7 +83,7 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Value::new_collection(vec![
+            Value::new_tuple(vec![
                 Value::new_number(1),
                 Value::new_number(2),
                 Value::new_number(3),
@@ -95,21 +92,20 @@ mod tests {
     }
 
     #[test]
-    fn parse_collection() {
+    fn parse_tuple() {
         let tokens = vec![
-            Token::new(0..1, BrainToken::LeftBracket, "[".to_string()),
+            Token::new(0..1, BrainToken::LeftParen, "(".to_string()),
             Token::new(1..2, BrainToken::Number, "0".to_string()),
-            Token::new(2..3, BrainToken::RightBracket, "]".to_string()),
+            Token::new(2..3, BrainToken::RightParen, ")".to_string()),
         ];
 
         let stream = &mut TokenStream::from_vec(tokens);
 
-        let result = Collection::parse(stream);
+        let result = Tuple::parse(stream);
 
-        assert!(result.is_ok());
         assert_eq!(
             result.unwrap(),
-            Collection::new(vec![Expression::new_literal(Value::new_number(0))])
+            Tuple::new(vec![Expression::new_literal(Value::new_number(0))])
         );
     }
 }
